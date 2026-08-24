@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>事件衝擊日曆</title>
+<meta name="theme-color" content="#0A0E13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="事件日曆">
+<link rel="manifest" href="./manifest.webmanifest">
+<style>
+:root{
+  --bg:#0A0E13; --panel:#111821; --panel2:#0E141C; --line:#1E2833; --line2:#2A3846;
+  --tx:#E6EDF3; --tx2:#9BAAB9; --tx3:#61707E;
+  --num:#E8A33D; --den:#4CC2E0; --risk:#C77DFF; --today:#FF6B4A;
+  --up:#3FD68C; --dn:#FF6B6B;
+  --serif:"Noto Serif TC","Songti TC",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--sans)}
+body{padding-bottom:calc(env(safe-area-inset-bottom) + 60px)}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.wrap{max-width:920px;margin:0 auto;padding:0 14px}
+.hide{display:none!important}
+
+header{padding:16px 0 10px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;color:var(--tx3);text-transform:uppercase}
+h1{font-family:var(--serif);font-size:25px;margin:7px 0 5px;font-weight:700}
+.sub{font-size:12.5px;color:var(--tx2);line-height:1.65}
+.statusbar{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;font-family:var(--mono);font-size:10.5px;color:var(--tx3)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--tx3);display:inline-block}
+.dot.live{background:#3FD68C;box-shadow:0 0 8px #3FD68C88}
+
+.bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:11px 0}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{padding:7px 12px;font-size:12.5px;border-radius:7px;color:var(--tx2);white-space:nowrap}
+.seg button.on{background:var(--panel);color:var(--tx);box-shadow:inset 0 0 0 1px var(--line2)}
+.chip{padding:6px 11px;font-size:12px;border:1px solid var(--line);border-radius:20px;color:var(--tx2);background:var(--panel2);white-space:nowrap}
+.chip.on{color:var(--tx);border-color:currentColor}
+.chip.n.on{color:var(--num)} .chip.d.on{color:var(--den)} .chip.r.on{color:var(--risk)}
+.spacer{flex:1}
+.ghost{font-size:12px;color:var(--tx3);padding:6px 10px;border:1px solid var(--line);border-radius:8px}
+
+/* impact ring */
+.ring{position:relative;width:36px;height:36px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600}
+
+/* year axis */
+.yearhead{display:flex;justify-content:space-between;align-items:center;padding:4px 2px 10px}
+.yearhead .yr{font-family:var(--serif);font-size:30px;font-weight:700}
+.legend{display:flex;gap:12px;font-size:10.5px;color:var(--tx2);font-family:var(--mono)}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
+.mrow{display:grid;grid-template-columns:50px 1fr;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.mlabel{font-family:var(--serif);font-size:19px;font-weight:700;text-align:right}
+.mlabel small{display:block;font-family:var(--mono);font-size:9px;font-weight:400;color:var(--tx3);margin-top:1px}
+.mrow.cur .mlabel{color:var(--today)}
+.axis{position:relative;height:80px}
+.axis .mid{position:absolute;left:0;right:0;top:29px;height:1px;background:var(--line2)}
+.axis .past{position:absolute;top:0;bottom:0;left:0;background:#00000055;border-right:1px dashed #ffffff14}
+.mk{position:absolute;border-radius:2px}
+.mk.up{bottom:52px;background:var(--num)}
+.mk.dn{top:30px;background:var(--den)}
+.mk.rk{top:30px;background:var(--risk)}
+.axis .todaymark{position:absolute;top:2px;bottom:2px;width:1px;background:var(--today)}
+.dlab{position:absolute;font-family:var(--mono);font-size:9.5px;line-height:1;white-space:nowrap;transform:translateX(-50%);letter-spacing:-.02em}
+.dlab.n{color:var(--num)} .dlab.d{color:var(--den)} .dlab.r{color:var(--risk)}
+.wk{position:absolute;top:6px;bottom:22px;width:1px;background:#ffffff08}
+.px{position:absolute;left:0;right:0;top:0;bottom:20px;pointer-events:none;overflow:visible}
+.px svg{width:100%;height:100%;display:block}
+.hit{position:absolute;top:0;bottom:20px;width:14px;transform:translateX(-7px);cursor:pointer;border-radius:3px}
+.hit:hover{background:#ffffff0a}
+.tip{position:fixed;z-index:80;background:#151E28;border:1px solid var(--line2);border-radius:9px;padding:9px 11px;
+  box-shadow:0 8px 28px #000a;max-width:280px;pointer-events:none;opacity:0;transition:opacity .12s;font-size:12px;line-height:1.5}
+.tip.on{opacity:1}
+.tip .td{font-family:var(--mono);font-size:10px;color:var(--tx3);margin-bottom:5px;letter-spacing:.04em}
+.tip .ti{display:flex;gap:7px;align-items:baseline;padding:2px 0}
+.tip .ti .s{font-family:var(--mono);font-size:11px;font-weight:600;min-width:20px;text-align:right}
+.tip .ti .n{color:var(--tx);flex:1}
+.tip .tp{font-family:var(--mono);font-size:10px;color:var(--tx3);margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+@media (hover:none){.tip{display:none}}
+.mtags{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.tag{font-size:10px;font-family:var(--mono);color:var(--tx2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;white-space:nowrap}
+.tag.n{color:var(--num);border-color:#E8A33D40}
+.tag.d{color:var(--den);border-color:#4CC2E040}
+.tag.r{color:var(--risk);border-color:#C77DFF40}
+
+/* month grid */
+.mhead{display:flex;align-items:baseline;gap:10px;padding:6px 2px 12px}
+.mhead .big{font-family:var(--serif);font-size:36px;font-weight:700;line-height:1}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.dow{text-align:center;font-family:var(--mono);font-size:10px;color:var(--tx3);padding:3px 0 5px}
+.cell{aspect-ratio:1/1.05;border:1px solid transparent;border-radius:8px;background:var(--panel2);padding:4px 3px;display:flex;flex-direction:column;position:relative;min-height:44px}
+.cell.blank{background:none}
+.cell.has{border-color:var(--line);cursor:pointer}
+.cell.today{box-shadow:inset 0 0 0 1.5px var(--today)}
+.cell.sel{border-color:var(--tx2);background:var(--panel)}
+.cell .dnum{font-family:var(--mono);font-size:12px;color:var(--tx2);line-height:1}
+.cell.today .dnum{color:var(--today);font-weight:700}
+.cell.dim{opacity:.5}
+.cell .marks{flex:1;position:relative;margin-top:3px}
+.cell .hair{position:absolute;left:1px;right:1px;top:50%;height:1px;background:#ffffff10}
+.cell .m{position:absolute;height:3px;border-radius:2px;left:1px;right:1px}
+.cell .heat{position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:2px}
+
+/* list */
+.section{margin-top:20px}
+.section h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--tx3);text-transform:uppercase;margin:0 0 10px;font-weight:500}
+.ev{display:grid;grid-template-columns:44px 46px 1fr;gap:9px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;align-items:center}
+.ev .when{font-family:var(--mono);font-size:11px;color:var(--tx2);text-align:right;line-height:1.3}
+.ev .when b{display:block;font-size:13px;color:var(--tx)}
+.ev .ttl{font-size:14.5px;line-height:1.3;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ev .meta{font-size:11px;color:var(--tx3);margin-top:3px;font-family:var(--mono)}
+.pill{font-size:9.5px;font-family:var(--mono);padding:1.5px 6px;border-radius:20px;border:1px solid}
+.pill.n{color:var(--num);border-color:#E8A33D50}
+.pill.d{color:var(--den);border-color:#4CC2E050}
+.pill.r{color:var(--risk);border-color:#C77DFF50}
+.est{font-size:9.5px;color:var(--tx3);font-family:var(--mono)}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:#000b;opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--panel);border-top:1px solid var(--line2);border-radius:16px 16px 0 0;transform:translateY(101%);transition:transform .26s cubic-bezier(.3,.8,.3,1);max-height:88vh;overflow-y:auto;padding-bottom:calc(env(safe-area-inset-bottom) + 24px)}
+.drawer.on{transform:translateY(0)}
+.handle{width:38px;height:4px;border-radius:3px;background:var(--line2);margin:9px auto 4px}
+.dwrap{padding:6px 18px 0}
+.dwrap h2{font-family:var(--serif);font-size:21px;margin:6px 0 2px}
+.dsub{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-bottom:12px}
+.block{border-top:1px solid var(--line);padding:14px 0}
+.block h4{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--tx3);text-transform:uppercase;margin:0 0 10px;font-weight:500}
+.kv{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:5px 0}
+.kv .k{color:var(--tx2)} .kv .v{font-family:var(--mono);color:var(--tx)}
+.mbar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:4px}
+.mbar i{display:block;height:100%;border-radius:3px}
+.chn{display:grid;grid-template-columns:88px 1fr;gap:8px;align-items:center;padding:4px 0;font-size:12px}
+.chn .bar{position:relative;height:14px;background:#ffffff08;border-radius:3px}
+.chn .bar .z{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line2)}
+.chn .bar i{position:absolute;top:2px;bottom:2px;border-radius:2px}
+.assets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}
+.acell{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 4px;text-align:center}
+.acell .an{font-size:10.5px;color:var(--tx2);margin-bottom:3px}
+.acell .av{font-family:var(--mono);font-size:14px;font-weight:600}
+.chk{font-size:12.5px;color:var(--tx2);line-height:1.7;padding-left:16px;position:relative;margin-bottom:8px}
+.chk:before{content:"";position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--line2)}
+.chk b{color:var(--tx);font-weight:600}
+.chk .src{font-family:var(--mono);font-size:10.5px;color:var(--tx3)}
+
+/* regime panel */
+.panelbox{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:14px}
+.panelbox h4{margin:0 0 6px;font-size:13px}
+.panelbox p{margin:0 0 10px;font-size:12px;color:var(--tx2);line-height:1.65}
+.rrow{padding:10px 0;border-top:1px solid var(--line)}
+.rrow:first-of-type{border-top:none}
+.rlab{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:7px}
+.rlab span:last-child{font-family:var(--mono);color:var(--tx2);font-size:11.5px}
+.opts{display:flex;gap:5px;flex-wrap:wrap}
+.opt{flex:1;min-width:60px;padding:7px 4px;font-size:11.5px;border:1px solid var(--line);border-radius:7px;color:var(--tx3);text-align:center}
+.opt.on{color:var(--tx);border-color:var(--tx2);background:var(--panel)}
+.note{font-size:11.5px;color:var(--tx3);line-height:1.65;margin-top:8px}
+input[type=text]{width:100%;background:var(--bg);border:1px solid var(--line2);color:var(--tx);border-radius:8px;padding:10px;font-family:var(--mono);font-size:12.5px}
+.btn{display:inline-block;background:var(--tx);color:#0A0E13;border-radius:8px;padding:9px 15px;font-size:13px;font-weight:600;margin-top:10px}
+.btn.sec{background:none;color:var(--tx2);border:1px solid var(--line2);font-weight:400}
+.log{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:10px;line-height:1.7;white-space:pre-wrap}
+table.tm{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:6px}
+table.tm th,table.tm td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:center}
+table.tm th{font-family:var(--mono);font-size:10px;color:var(--tx3);font-weight:500}
+table.tm td:first-child,table.tm th:first-child{text-align:left;color:var(--tx2)}
+.frm{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.fld label{display:block;font-size:10.5px;color:var(--tx3);font-family:var(--mono);margin-bottom:3px}
+.fld input{width:100%;background:var(--bg);border:1px solid var(--line2);color:var(--tx);border-radius:6px;padding:7px 8px;font-family:var(--mono);font-size:12.5px}
+.verdict{border-radius:8px;padding:11px 12px;margin-top:12px;font-size:12.5px;line-height:1.65;border:1px solid}
+.verdict .vt{font-weight:600;font-size:13.5px;margin-bottom:5px;display:block}
+.v1{border-color:#3FD68C50;background:#3FD68C0D;color:var(--tx)}
+.v2{border-color:#FFB84D50;background:#FFB84D0D;color:var(--tx)}
+.v3{border-color:#C77DFF50;background:#C77DFF0D;color:var(--tx)}
+.v4{border-color:#FF5C5C50;background:#FF5C5C0D;color:var(--tx)}
+.done{font-size:9.5px;font-family:var(--mono);color:#3FD68C;border:1px solid #3FD68C40;border-radius:20px;padding:1.5px 6px}
+.calrow{display:grid;grid-template-columns:1fr 60px 60px 52px;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px;align-items:center}
+.calrow .v{font-family:var(--mono);font-size:12px;text-align:right;color:var(--tx2)}
+pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:12px;font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--tx2);white-space:pre-wrap;overflow-x:auto;margin:8px 0 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Impact-Weighted Event Map</div>
+  <h1>事件衝擊日曆</h1>
+  <div class="sub">同一個 CPI，在不同環境下衝擊差三倍。這裡把每個事件拆成<b>意外空間 × 已定價程度 × 環境放大</b>三段來評分，並畫出它走哪幾條管道傳到你的部位。</div>
+  <div class="statusbar">
+    <span><span class="dot" id="srcdot"></span> <span id="srctext">內建規則引擎</span></span>
+    <span>·</span><span id="todaytxt"></span>
+    <span>·</span><span id="regimetxt"></span>
+  </div>
+</header>
+
+<div class="bar">
+  <div class="seg">
+    <button id="tabImpact" class="on">時間序</button>
+    <button id="tabYear">年度軸</button>
+    <button id="tabMonth">月曆</button>
+    <button id="tabReview">複盤</button>
+  </div>
+  <div class="spacer"></div>
+  <button class="ghost" id="btnRegime">環境</button>
+  <button class="ghost" id="btnCfg">資料</button>
+</div>
+
+<div class="bar" style="padding-top:0" id="filtbar">
+  <button class="chip n on" data-f="N">分子端</button>
+  <button class="chip d on" data-f="D">分母端</button>
+  <button class="chip r on" data-f="R">風險溢酬</button>
+  <span class="spacer"></span>
+  <button class="chip on" data-min="0">全部</button>
+  <button class="chip" data-min="45">45+</button>
+  <button class="chip" data-min="70">70+</button>
+</div>
+
+<!-- IMPACT -->
+<section id="viewImpact">
+  <div class="section" style="margin-top:2px">
+    <h3>未來 90 天 · 依日期</h3>
+    <div id="impactBody"></div>
+  </div>
+  <div class="log" style="margin-top:14px">依日期排列。分數 = 基準敏感度 × 環境放大 × 意外空間；70 以上代表值得預先調整曝險，40 以下通常只是噪音。用上面的分數門檻過濾掉噪音。</div>
+</section>
+
+<!-- YEAR -->
+<section id="viewYear" class="hide">
+  <div class="yearhead">
+    <div><button class="ghost" id="yPrev">←</button>
+    <span class="yr" id="yLabel" style="margin:0 8px"></span>
+    <button class="ghost" id="yNext">→</button></div>
+    <div class="legend"><span><i style="background:var(--num)"></i>分子</span><span><i style="background:var(--den)"></i>分母</span><span><i style="background:var(--risk)"></i>風險</span></div>
+  </div>
+  <div class="bar" style="padding:0 0 8px">
+    <span style="font-family:var(--mono);font-size:10.5px;color:var(--tx3);margin-right:4px">顯示日期</span>
+    <button class="chip" data-lab="35">35+</button>
+    <button class="chip on" data-lab="50">50+</button>
+    <button class="chip" data-lab="70">只看關鍵</button>
+    <span class="spacer"></span>
+    <button class="chip on" id="pxToggle">背景走勢</button>
+  </div>
+  <div id="yearBody"></div>
+  <div class="log" style="margin-top:12px" id="yearNote">軸上方＝分子端，下方＝分母端與風險；長度＝衝擊分數。</div>
+</section>
+
+<!-- MONTH -->
+<section id="viewMonth" class="hide">
+  <div class="mhead">
+    <button class="ghost" id="mPrev">←</button>
+    <span class="big" id="mLabel"></span>
+    <span style="font-family:var(--mono);font-size:13px;color:var(--tx3)" id="mYear"></span>
+    <div class="spacer"></div><button class="ghost" id="mNext">→</button>
+  </div>
+  <div class="grid" id="dowRow"></div>
+  <div class="grid" id="monthGrid" style="margin-top:3px"></div>
+  <div class="section"><h3 id="mListTitle"></h3><div id="monthList"></div></div>
+</section>
+
+<!-- REGIME -->
+<section id="viewRegime" class="hide">
+  <div class="panelbox">
+    <h4>當下環境</h4>
+    <p>這五格決定所有事件的放大係數。一個月調一次就夠——它們變的速度本來就慢。改完回到列表，排序會整個重算。</p>
+    <div id="regimeRows"></div>
+  </div>
+  <div class="panelbox">
+    <h4>為什麼是這五個</h4>
+    <p><b>衝擊來源</b>決定股債相關性的正負，也決定「好消息是好消息還是壞消息」。成長主導時強勁就業＝盈餘上修＞利率上升，股票漲；通膨主導時同一份就業報告會被讀成 Fed 更難降息，股債一起跌。這是整套判斷裡最會翻轉結論的一格。</p>
+    <p><b>通膨離目標距離</b>決定 CPI／PCE 的權重。通膨貼近目標時，一次 0.1% 的偏離沒人在乎；離目標一個百分點以上時，同樣的偏離會重寫整條政策路徑。</p>
+    <p><b>政策轉折距離</b>決定 FOMC 與非農的權重。Fed 明確在觀望期時，數據要很極端才會撬動點陣圖；一旦市場認為下次會議「可能動也可能不動」，每一份數據都變成投票。</p>
+    <p><b>波動定價水位</b>是反向的。選擇權隱含波動在低分位、部位擁擠時，同樣大小的意外會造成更大的實際價格變動——因為沒有人有避險墊，而且交易商的 gamma 部位會放大而不是吸收波動。</p>
+    <p><b>指數集中度</b>決定單一財報能不能變成總經事件。權值高度集中時，一檔 NVDA 財報對指數的衝擊會超過一份 PPI。</p>
+  </div>
+</section>
+
+<!-- TRANSMISSION -->
+<section id="viewMatrix" class="hide">
+  <div class="panelbox">
+    <h4>傳導矩陣</h4>
+    <p>沒有任何事件直接影響股價。它先撞上五條管道之一，管道再依各資產的曝險係數擴散。下表是「上行意外」（數據高於預期、財報優於預期）時的方向；下行意外把所有符號反過來看。</p>
+    <div style="overflow-x:auto"><table class="tm" id="matrixTable"></table></div>
+    <div class="note">＋代表該管道被推高。前端利率＝政策路徑；長端實質＝折現率主幹；通膨預期＝名目與實質的差；風險溢酬＝不確定性定價；盈餘預期＝分子。</div>
+  </div>
+  <div class="panelbox">
+    <h4>資產對管道的曝險</h4>
+    <div style="overflow-x:auto"><table class="tm" id="betaTable"></table></div>
+    <div class="note">數字是相對彈性，不是精確的迴歸係數。長天期成長股在實質利率與風險溢酬上的絕對值最大，這就是為什麼分母端事件對那斯達克的殺傷力遠高於對價值股。</div>
+  </div>
+</section>
+
+<!-- CFG -->
+<section id="viewCfg" class="hide">
+  <div class="panelbox">
+    <h4>自我更新</h4>
+    <p><b>規則引擎</b>：FOMC 用官方 2026–2027 排程；CPI／非農用 BLS 已公布日期，其餘年份按規律推（CPI＝第二週、非農＝第一個週五、PCE＝月底最後工作日、四巫日＝第三個週五）；財報用上次實際日 + 91 天。推算日標 <span class="est">≈</span>。</p>
+    <p><b>線上校正</b>：貼 FMP key，用實際公布日覆蓋推算日。</p>
+    <input type="text" id="apikey" placeholder="FMP API key（只留在這個分頁）">
+    <div><button class="btn" id="btnFetch">更新排程</button>
+    <button class="btn sec" id="btnMatrix" style="margin-left:8px">看傳導矩陣</button>
+    <button class="btn sec" id="btnDaily" style="margin-left:8px">每日排程</button></div>
+    <div class="log" id="fetchlog"></div>
+  </div>
+  <div class="panelbox">
+    <h4>更新日誌</h4>
+    <p>每天的排程任務改了什麼，都會寫進 data/changelog.json，這裡直接讀。</p>
+    <div id="chlog" class="log">載入中…</div>
+  </div>
+  <div class="panelbox">
+    <h4>評分公式</h4>
+    <p><span class="est">分數 = 100 × (B/100)^(1 / (1 + Σ wᵢ·rᵢ)) × 校準 × 日期折扣</span></p>
+    <p><b>B</b>＝該事件類型的基準敏感度，來自事件研究的歷史平均絕對變動。CPI 日標普平均絕對變動約 ±0.6～1.6%（隨通膨環境差很多），一般交易日約 ±1.0%；那斯達克在同一天的變動幅度通常比標普再大三到四成。<b>wᵢ·rᵢ</b>＝環境放大項。<b>D</b>＝離散度，推算日期的事件因為時間本身還不確定會打折。</p>
+    <p>環境放大作用在「離滿分的距離」上而不是直接相乘，所以無論環境多極端都不會全部擠在 100 分。公式刻意做得可拆解——每個事件的抽屜裡都會列出這次的乘數怎麼來的，不合理就自己改環境設定。</p>
+  </div>
+  <div class="panelbox">
+    <h4>存成本機檔案</h4>
+    <p>搜尋 <span class="est">const HARDCODED_KEY = ""</span> 填入 key，<span class="est">WATCH</span> 陣列改追蹤清單，<span class="est">CAT</span> 物件改各事件的基準敏感度與管道向量。</p>
+  </div>
+</section>
+
+<!-- REVIEW -->
+<section id="viewReview" class="hide">
+  <div class="section" style="margin-top:2px">
+    <h3>過去 60 天 · 待複盤</h3>
+    <div id="reviewBody"></div>
+  </div>
+  <div class="panelbox">
+    <h4>校準結果</h4>
+    <p>累積的複盤會回頭修正各事件類型的基準敏感度。實際反應持續小於基準＝這個事件在現在的環境裡被高估了，分數自動往下調。</p>
+    <div id="calibBody"></div>
+    <div style="margin-top:10px">
+      <button class="btn sec" id="btnExport">匯出複盤 JSON</button>
+      <button class="btn sec" id="btnImport" style="margin-left:8px">匯入</button>
+      <input type="file" id="fileIn" accept="application/json" style="display:none">
+    </div>
+    <div class="log" id="storelog"></div>
+  </div>
+</section>
+
+<!-- DAILY -->
+<section id="viewDaily" class="hide">
+  <div class="panelbox">
+    <h4>設成每天自動跑</h4>
+    <p>用 <b>Claude Cowork 的排程任務</b>（側邊欄 Scheduled → New task，或在任何 Cowork 對話裡打 /schedule）。它跑在雲端，電腦關著也會執行，而且吃得到你連的連接器、skill 跟網頁搜尋。Pro／Max／Team／Enterprise 都有。Claude Code Desktop 的 Routines 是開發者版本，需要指定資料夾，適合你想讓它直接改本機這個 HTML 檔的情況。</p>
+    <p>把下面整段貼進任務的 prompt，cadence 選「每個工作日」，時間設台北早上 7:00（美股收盤後、台股開盤前）。</p>
+    <pre class="seed" id="seedA"></pre>
+    <button class="btn sec" id="copyA">複製</button>
+  </div>
+  <div class="panelbox">
+    <h4>盤後複盤任務（可選，第二個排程）</h4>
+    <p>台北時間隔天早上跑，專門處理前一晚有事件的日子。沒有事件的日子它會直接說沒事，不用勉強生內容。</p>
+    <pre class="seed" id="seedB"></pre>
+    <button class="btn sec" id="copyB">複製</button>
+  </div>
+  <div class="panelbox">
+    <h4>每週前瞻任務（第三個排程）</h4>
+    <p>每週日晚上跑，專門掃富途那類把整月／整週大事整理好的中文來源，補進日曆。跟每日任務不重疊——每日抓的是「突發變動」，每週抓的是「別人已經整理好的完整清單」。</p>
+    <pre class="seed" id="seedC"></pre>
+    <button class="btn sec" id="copyC">複製</button>
+  </div>
+  <div class="panelbox">
+    <h4>為什麼分成三個任務</h4>
+    <p>每日任務要的是即時性——只抓昨天到今天之間的變動。每週任務要的是完整性——把富途那種整月大事清單一次補齊。複盤任務要的是精度——只處理昨天真的發生的那一兩件事，填成結構化資料。三者的失敗模式不同，混在一起會讓 Claude 每天產出一份又長又沒重點的東西。</p>
+  </div>
+</section>
+
+</div>
+
+<div class="tip" id="tip"></div>
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer">
+  <div class="handle"></div>
+  <div class="dwrap"><h2 id="dTitle"></h2><div class="dsub" id="dSub"></div><div id="dBody"></div></div>
+</div>
+
+<script>
+"use strict";
+const HARDCODED_KEY = "";
+
+const WATCH=[
+ {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3"},
+ {s:"TSM",n:"台積電",anchor:"2026-10-15",cat:"earn3"},
+ {s:"ASML",n:"ASML",anchor:"2026-10-14",cat:"earn2"},
+ {s:"MU",n:"MU",anchor:"2026-09-24",cat:"earn2"},
+ {s:"AMAT",n:"AMAT",anchor:"2026-08-13",cat:"earn2"},
+ {s:"LRCX",n:"LRCX",anchor:"2026-07-29",cat:"earn1"},
+ {s:"KLAC",n:"KLAC",anchor:"2026-07-28",cat:"earn1"},
+ {s:"AMD",n:"AMD",anchor:"2026-08-04",cat:"earn2"},
+ {s:"AVGO",n:"AVGO",anchor:"2026-09-10",cat:"earn2"},
+ {s:"INTC",n:"INTC",anchor:"2026-10-22",cat:"earn1"},
+ {s:"MSFT",n:"微軟",anchor:"2026-07-29",cat:"earn3"},
+ {s:"GOOGL",n:"Google",anchor:"2026-07-28",cat:"earn2"},
+ {s:"AMZN",n:"Amazon",anchor:"2026-07-30",cat:"earn2"},
+ {s:"META",n:"Meta",anchor:"2026-07-29",cat:"earn2"},
+ {s:"AAPL",n:"Apple",anchor:"2026-07-30",cat:"earn2"},
+ {s:"ORCL",n:"Oracle",anchor:"2026-09-10",cat:"earn2"}
+];
+const FOMC={2026:[["01-28",0],["03-18",1],["04-29",0],["06-17",1],["07-29",0],["09-16",1],["10-28",0],["12-09",1]],
+            2027:[["01-27",0],["03-17",1],["04-28",0],["06-09",1],["07-28",0],["09-15",1],["10-27",0],["12-08",1]],
+            2028:[["01-26",0]]};
+const NFP26=["01-09","02-11","03-06","04-03","05-08","06-05","07-02","08-07","09-04","10-02","11-06","12-04"];
+const CPI26=["01-13","02-13","03-11","04-10","05-12","06-10","07-14","08-12","09-11","10-14","11-10","12-10"];
+
+/* ═══ 管道與資產 ═══ */
+const CH=[["front","前端利率"],["real","長端實質"],["be","通膨預期"],["erp","風險溢酬"],["eps","盈餘預期"]];
+const ASSETS=[
+ {k:"ndx",n:"那斯達克",b:{front:-.9,real:-1.0,be:-.2,erp:-1.0,eps:1.0}},
+ {k:"spx",n:"標普500",b:{front:-.7,real:-.8,be:-.1,erp:-.9,eps:.9}},
+ {k:"fin",n:"金融/價值",b:{front:.3,real:.1,be:.2,erp:-.8,eps:.6}},
+ {k:"tlt",n:"長天期債",b:{front:-.4,real:-1.0,be:-.7,erp:.6,eps:-.2}},
+ {k:"gld",n:"黃金",b:{front:-.5,real:-1.0,be:.8,erp:.6,eps:-.1}},
+ {k:"dxy",n:"美元",b:{front:.8,real:.6,be:-.2,erp:.4,eps:.1}},
+ {k:"twse",n:"台股半導",b:{front:-.8,real:-.9,be:-.1,erp:-1.1,eps:1.2}},
+ {k:"hyg",n:"高收益債",b:{front:-.3,real:-.4,be:-.2,erp:-1.0,eps:.5}}
+];
+
+/* ═══ 事件類型：基準敏感度 B、環境權重 w、管道向量（上行意外）═══ */
+const CAT={
+ fomc     :{B:70,label:"FOMC 決議",w:{pivot:.55,vol:.20},ch:{front:1,real:.85,be:-.25,erp:.45,eps:-.15}},
+ fomc_sep :{B:84,label:"FOMC＋點陣圖",w:{pivot:.60,vol:.20},ch:{front:1,real:1,be:-.3,erp:.5,eps:-.2}},
+ cpi      :{B:72,label:"CPI",w:{infl:.60,pivot:.30,vol:.15},ch:{front:.95,real:.8,be:.7,erp:.4,eps:-.1}},
+ nfp      :{B:66,label:"非農就業",w:{pivot:.45,vol:.15,shock:.35},ch:{front:.85,real:.7,be:.3,erp:-.15,eps:.55}},
+ pce      :{B:46,label:"PCE 物價",w:{infl:.5,pivot:.2},ch:{front:.7,real:.6,be:.55,erp:.25,eps:-.05}},
+ gdp      :{B:40,label:"GDP",w:{shock:.35},ch:{front:.5,real:.45,be:.2,erp:-.2,eps:.7}},
+ ppi      :{B:26,label:"PPI",w:{infl:.4},ch:{front:.4,real:.35,be:.45,erp:.15,eps:-.2}},
+ ism      :{B:30,label:"ISM/PMI",w:{shock:.4},ch:{front:.35,real:.3,be:.15,erp:-.2,eps:.6}},
+ retail   :{B:28,label:"零售銷售",w:{shock:.35},ch:{front:.4,real:.3,be:.2,erp:-.15,eps:.55}},
+ jolts    :{B:20,label:"JOLTS",w:{pivot:.3},ch:{front:.35,real:.25,be:.1,erp:-.1,eps:.25}},
+ minutes  :{B:22,label:"會議紀要",w:{pivot:.4},ch:{front:.5,real:.4,be:-.1,erp:.25,eps:0}},
+ jackson  :{B:52,label:"Jackson Hole",w:{pivot:.5},ch:{front:.7,real:.85,be:-.2,erp:.4,eps:-.1}},
+ refund   :{B:30,label:"財政部再融資",w:{},ch:{front:.1,real:.75,be:.1,erp:.25,eps:0}},
+ quad     :{B:24,label:"四巫日",w:{vol:.55},ch:{front:0,real:0,be:0,erp:.5,eps:0}},
+ election :{B:58,label:"政治事件",w:{vol:.25},ch:{front:.2,real:.4,be:.3,erp:.8,eps:.2}},
+ earn3    :{B:64,label:"權值財報",w:{conc:.60,vol:.20},ch:{front:0,real:0,be:0,erp:-.3,eps:1}},
+ earn2    :{B:42,label:"財報",w:{conc:.35,vol:.15},ch:{front:0,real:0,be:0,erp:-.15,eps:.85}},
+ earn1    :{B:26,label:"財報",w:{conc:.2},ch:{front:0,real:0,be:0,erp:-.1,eps:.7}},
+ cloud    :{B:62,label:"雲端資本支出",w:{conc:.55},ch:{front:0,real:0,be:0,erp:-.25,eps:1}}
+};
+
+/* ═══ 環境設定 ═══ */
+const REGIME_DEF=[
+ {k:"shock",n:"衝擊來源",d:"決定股債相關性與好消息的符號",
+  opts:[["成長主導",-1],["混合",0],["通膨主導",1]],v:1},
+ {k:"infl",n:"通膨離目標距離",d:"決定物價數據的權重",
+  opts:[["貼近",0],["偏離 0.5-1pp",.5],["偏離 >1pp",1]],v:1},
+ {k:"pivot",n:"政策轉折距離",d:"決定 Fed 與就業數據的權重",
+  opts:[["明確觀望",0],["方向未定",.6],["下次可能動",1]],v:.6},
+ {k:"vol",n:"波動定價水位",d:"低分位＝部位擁擠＝同樣意外放更大",
+  opts:[["高分位",0],["中位",.4],["低分位",1]],v:1},
+ {k:"conc",n:"指數集中度",d:"決定單一財報能不能變成總經事件",
+  opts:[["分散",0],["偏高",.5],["極度集中",1]],v:1}
+];
+const R={}; REGIME_DEF.forEach(r=>R[r.k]=r.v);
+
+/* ═══ 工具 ═══ */
+const TODAY=new Date();TODAY.setHours(0,0,0,0);
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse=s=>{const[a,b,c]=s.split("-").map(Number);const d=new Date(a,b-1,c);d.setHours(0,0,0,0);return d;};
+const dim=(y,m)=>new Date(y,m+1,0).getDate();
+const addD=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d);};
+const nthWd=(y,m,wd,n)=>{const f=new Date(y,m,1);return new Date(y,m,1+((wd-f.getDay()+7)%7)+(n-1)*7);};
+const lastBiz=(y,m)=>{let d=new Date(y,m+1,0);while(d.getDay()%6===0)d.setDate(d.getDate()-1);return d;};
+const nextBiz=d=>{const x=new Date(d);while(x.getDay()%6===0)x.setDate(x.getDate()+1);return x;};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const $=i=>document.getElementById(i);
+
+/* ═══ 衝擊評分 ═══ */
+function score(e){
+  const c=CAT[e.cat]||CAT.ism;
+  let mult=1, parts=[];
+  for(const [k,w] of Object.entries(c.w||{})){
+    let r=R[k];
+    if(k==="shock"){                       // 成長型數據在通膨主導環境下反而更燙手
+      r=(R.shock>0)?1:(R.shock<0?.35:.6);
+    }
+    const add=w*r;
+    if(add>0.001){mult+=add;parts.push([k,w,r,add]);}
+  }
+  const disc = e.est?0.94:1;
+  const cal = (CALIB[e.cat]&&CALIB[e.cat].n>=2)?CALIB[e.cat].adj:1;
+  // 環境放大作用在「離滿分的距離」上，mult=1 時就等於基準，不會爆表
+  const raw = 100*Math.pow(c.B/100, 1/Math.max(mult,.4));
+  const s = clamp(Math.round(raw*disc*cal),0,99);
+  return {s,mult,parts,disc,B:c.B,cal,raw:Math.round(raw)};
+}
+const RK={shock:"衝擊來源",infl:"通膨距離",pivot:"政策轉折",vol:"波動水位",conc:"指數集中"};
+
+/* 資產影響：管道向量 × 曝險，符號為「上行意外」 */
+function assetImpact(e){
+  const c=CAT[e.cat]||CAT.ism, out={};
+  let chv={...c.ch};
+  // 成長型數據：成長主導環境放大 eps、壓低 front；通膨主導反過來
+  if(["nfp","gdp","ism","retail","jolts"].includes(e.cat)){
+    const g=(R.shock<0)?1:(R.shock>0?-1:0);
+    chv.eps*= (1+0.5*g); chv.front*=(1-0.35*g); chv.real*=(1-0.35*g);
+  }
+  ASSETS.forEach(a=>{
+    let v=0; CH.forEach(([k])=>v+=(chv[k]||0)*(a.b[k]||0));
+    out[a.k]=v;
+  });
+  return {chv,out};
+}
+
+/* ═══ 排程產生 ═══ */
+function buildBaseline(y0,y1){
+  const E=[];
+  const P=(date,kind,title,cat,est,note,checks)=>E.push({date,kind,title,cat,est:!!est,note,checks:checks||[]});
+  const CK={
+    fomc:[["聲明稿與上次的逐字差異","對照 Fed 官網前後兩份聲明，改掉的形容詞就是訊號"],
+          ["會前的 OIS／Fed Funds 期貨隱含機率","已經 90% 定價的結果不會造成衝擊，40/60 才會"],
+          ["記者會而非聲明","歷史上會後 30 分鐘的變動常大於聲明當下"]],
+    fomc_sep:[["點陣圖中位數移動幾碼","比利率決定本身重要得多"],
+          ["長期中性利率 (longer run) 有沒有移動","那是重定價整條曲線的變數"],
+          ["會前 OIS 對明年路徑的定價","點陣圖跟市場定價的落差就是衝擊空間"]],
+    cpi:[["克里夫蘭 Fed 的 CPI Nowcast 跟共識差多少","差距大＝意外空間大。Cleveland Fed Inflation Nowcasting"],
+         ["核心服務除房租 (supercore)","這一段才是 Fed 判斷通膨黏性的依據"],
+         ["當天 SPX 平價跨式報價 vs 平常日","報價明顯高於平常＝市場已經在等大變動；報價平淡而數據意外＝殺傷力最大"]],
+    nfp:[["ADP、初領失業金、JOLTS 的方向是否一致","三個都同向時非農的意外空間變小"],
+         ["時薪年增率而非新增人數","薪資才是通往通膨的那條線"],
+         ["前兩個月的修正值","近年修正幅度常大於當月意外"]],
+    earn3:[["會前隱含波動 vs 過去四次實際變動","隱含低於歷史實際＝定價不足"],
+         ["指引與資本支出，不是本季 EPS","本季數字是分子的過去式，指引才是未來式"],
+         ["同業已公布的訂單與庫存","上游設備商的數字通常先洩題"]],
+    cloud:[["四家的資本支出指引加總年增","那是整條 AI 供應鏈分子端的源頭"],
+         ["折舊年限有沒有調整","會直接改寫未來幾年的 EPS 軌跡"]],
+    quad:[["未平倉集中在哪些履約價","到期後 gamma 消失，價格可能立刻脫離原本被釘住的區間"]],
+    election:[["選前的博弈盤定價","已經定價的結果不構成意外"],
+         ["分立政府 vs 一黨獨大","決定財政擴張規模，進而決定公債供給"]],
+    default:[["共識預期是多少","沒有共識就沒有意外，沒有意外就沒有衝擊"],
+         ["這個數字最近三次的意外方向","連續同向意外代表模型系統性偏誤，第四次通常還會偏同一邊"]]
+  };
+  const ck=k=>CK[k]||CK.default;
+
+  for(let y=y0;y<=y1;y++){
+    (FOMC[y]||[]).forEach(([md,sep])=>{
+      const d=y+"-"+md, c=sep?"fomc_sep":"fomc";
+      P(d,"D",sep?"FOMC 決議＋點陣圖":"FOMC 利率決議",c,y>=2027,
+        sep?"除利率外更新經濟預測與點陣圖，是重新定價整條殖利率曲線的場合。":"只有聲明稿與記者會，市場靠措辭變化推斷傾向。",ck(c));
+      P(addD(d,21),"D","FOMC 會議紀要","minutes",true,"看內部對通膨與就業的分歧程度。",ck("default"));
+    });
+    P(iso(nthWd(y,7,4,4)),"D","Jackson Hole 年會","jackson",y!==2026,"主席演說常被用來預告政策框架轉向。",ck("fomc"));
+    for(let m=0;m<12;m++){
+      P((y===2026)?y+"-"+NFP26[m]:iso(nthWd(y,m,5,1)),"D","非農就業","nfp",y!==2026,
+        "就業是雙重使命的另一半。薪資增速比新增人數更影響利率路徑。",ck("nfp"));
+      const cpi=(y===2026)?y+"-"+CPI26[m]:iso(nthWd(y,m,2,2));
+      P(cpi,"D","CPI","cpi",y!==2026,"核心服務與房租分項決定通膨黏性，比總數重要。",ck("cpi"));
+      P(addD(cpi,1),"D","PPI","ppi",true,"上游價格，CPI 的前置指標。",ck("default"));
+      P(iso(lastBiz(y,m)),"D","PCE 物價指數","pce",true,"Fed 真正盯的通膨指標。",ck("cpi"));
+      P(iso(nthWd(y,m,2,3)),"D","零售銷售","retail",true,"消費動能，同時牽動分子的營收預期。",ck("default"));
+      P(iso(nextBiz(new Date(y,m,1))),"D","ISM 製造業 PMI","ism",true,"製造業循環位置，領先半導體庫存循環。",ck("default"));
+    }
+    [0,3,6,9].forEach((m,i)=>P(iso(lastBiz(y,m)),"D",`Q${i===0?4:i} GDP 初值`,"gdp",true,"成長率同時影響盈餘軌跡與政策路徑。",ck("default")));
+    [2,5,8,11].forEach(m=>P(iso(nthWd(y,m,5,3)),"R","四巫日","quad",true,"四種衍生品同日到期，gamma 曝險翻轉，常造成無基本面的方向波動。",ck("quad")));
+    [1,4,7,10].forEach(m=>P(iso(nthWd(y,m,3,1)),"D","財政部季度再融資","refund",true,"發債的期別配置直接決定長端供給。",ck("default")));
+    [0,3,6,9].forEach(m=>{if(y>=y0&&y<=y1)P(iso(nthWd(y,m,2,4)),"N","大型雲端財報週","cloud",true,"四大的資本支出指引，是整條 AI 供應鏈分子端的源頭。",ck("cloud"));});
+  }
+  P("2026-11-03","R","美國期中選舉","election",false,"席次決定 2027 起的財政與稅制走向，也決定關稅政策的政治約束。",ck("election"));
+  P("2027-01-15","R","政府撥款期限","election",true,"關門風險會延後官方數據發布，讓市場暫時失去分母端的判斷依據。",ck("default"));
+
+  WATCH.forEach(w=>{
+    const a=parse(w.anchor);
+    for(let k=-4;k<=8;k++){
+      const d=new Date(a);d.setDate(d.getDate()+k*91);
+      if(d.getFullYear()<y0||d.getFullYear()>y1)continue;
+      P(iso(d),"N",w.n+" 財報",w.cat,k!==0,"財報＋法說。指引與資本支出改寫的是未來現金流，不是本季數字。",ck(w.cat==="earn3"?"earn3":"default"));
+    }
+  });
+  const seen=new Set(),out=[];
+  for(const e of E.sort((a,b)=>a.date.localeCompare(b.date))){
+    const k=e.date+"|"+e.title; if(seen.has(k))continue; seen.add(k); out.push(e);
+  }
+  return out;
+}
+let EVENTS=buildBaseline(TODAY.getFullYear()-1,TODAY.getFullYear()+1);
+let SOURCE="內建規則引擎";
+
+/* ═══ FMP 校正 ═══ */
+const KW=[[/fomc|federal funds|interest rate decision/i,{k:"D",c:"fomc",t:"FOMC 利率決議"}],
+ [/nonfarm|non-farm|payroll/i,{k:"D",c:"nfp",t:"非農就業"}],
+ [/^cpi|consumer price/i,{k:"D",c:"cpi",t:"CPI"}],
+ [/pce/i,{k:"D",c:"pce",t:"PCE 物價指數"}],
+ [/gdp/i,{k:"D",c:"gdp",t:"GDP"}],
+ [/ppi|producer price/i,{k:"D",c:"ppi",t:"PPI"}],
+ [/ism|pmi/i,{k:"D",c:"ism",t:"ISM / PMI"}],
+ [/retail sales/i,{k:"D",c:"retail",t:"零售銷售"}],
+ [/jolts|job openings/i,{k:"D",c:"jolts",t:"JOLTS 職缺"}]];
+async function refresh(key){
+  const el=$("fetchlog"); el.textContent=""; const log=m=>el.textContent+=m+"\n";
+  if(!key){log("沒有 key。規則引擎照常運作，推算日期維持 ≈。");return;}
+  const from=iso(TODAY),to=iso(new Date(TODAY.getFullYear()+1,TODAY.getMonth(),TODAY.getDate()));
+  const fresh=[];
+  try{
+    const r=await fetch(`https://financialmodelingprep.com/stable/economic-calendar?from=${from}&to=${to}&apikey=${encodeURIComponent(key)}`);
+    const j=await r.json();
+    if(!Array.isArray(j))throw new Error(j&&j["Error Message"]||"格式不符");
+    j.forEach(x=>{
+      if((x.country||"").toUpperCase()!=="US")return;
+      let hit=null; for(const[re,v]of KW)if(re.test(x.event||"")){hit=v;break;}
+      if(!hit)return;
+      fresh.push({date:(x.date||"").slice(0,10),kind:hit.k,title:hit.t,cat:hit.c,est:false,
+        note:"FMP 確認的官方發布時間。",checks:[]});
+    });
+    log(`總經事件 ${fresh.length} 筆`);
+  }catch(e){log("總經抓取失敗："+e.message);}
+  let ok=0;
+  for(const w of WATCH){
+    try{
+      const j=await(await fetch(`https://financialmodelingprep.com/stable/earnings?symbol=${w.s}&apikey=${encodeURIComponent(key)}`)).json();
+      if(Array.isArray(j)){j.forEach(x=>{const d=(x.date||"").slice(0,10);
+        if(d&&d>=from&&d<=to)fresh.push({date:d,kind:"N",title:w.n+" 財報",cat:w.cat,est:false,note:"官方確認的財報日。",checks:[]});});ok++;}
+    }catch(e){}
+  }
+  log(`財報：${ok}/${WATCH.length} 檔`);
+  if(!fresh.length){log("沒有資料，維持內建排程。");return;}
+  const keep=EVENTS.filter(e=>!(e.est&&e.date>=from&&fresh.some(f=>f.title===e.title&&Math.abs(parse(f.date)-parse(e.date))<=10*864e5)));
+  const seen=new Set(),out=[];
+  for(const e of [...keep,...fresh].sort((a,b)=>a.date.localeCompare(b.date))){
+    const k=e.date+"|"+e.title;if(seen.has(k))continue;seen.add(k);
+    if(!e.checks||!e.checks.length){const o=EVENTS.find(x=>x.title===e.title);e.checks=o?o.checks:[];e.note=e.note||(o?o.note:"");}
+    out.push(e);
+  }
+  EVENTS=out;SOURCE="FMP 校正 · "+iso(TODAY);log(`合併完成，共 ${EVENTS.length} 筆。`);render();
+}
+
+
+/* ═══ 複盤資料 ═══ */
+let REVIEW={};                       // key: date|title
+const RKEY="event-cal:reviews";
+const hasStore=()=>typeof window!=="undefined"&&window.storage&&typeof window.storage.get==="function";
+async function loadReviews(){
+  if(!hasStore())return;
+  try{const r=await window.storage.get(RKEY);if(r&&r.value)REVIEW=JSON.parse(r.value);}catch(e){}
+}
+async function saveReviews(){
+  if(!hasStore()){note("瀏覽器本機開啟時不會自動保存，請用「匯出複盤 JSON」留檔。");return;}
+  try{await window.storage.set(RKEY,JSON.stringify(REVIEW));note("已保存 "+Object.keys(REVIEW).length+" 筆複盤。");}
+  catch(e){note("保存失敗："+e.message);}
+}
+function note(m){const el=$("storelog");if(el)el.textContent=m;}
+const rkey=e=>e.date+"|"+e.title;
+
+/* 反應強度：把各資產變動折成一個標準化幅度 */
+function reactionMag(r){
+  const a=Math.abs(parseFloat(r.spx)||0), b=Math.abs(parseFloat(r.ndx)||0);
+  const y=Math.abs(parseFloat(r.y10)||0)/10;      // 10bp ≈ 1%
+  return Math.max(a,b*0.75,y);
+}
+/* 四象限判讀 */
+function verdict(e,r){
+  const sc=score(e).s;
+  const sz=parseFloat(r.z); const mag=reactionMag(r);
+  const ai=assetImpact(e);
+  const expSign=Math.sign(ai.out.spx||0)*Math.sign(sz||0);   // 預期的股市方向
+  const gotSign=Math.sign(parseFloat(r.spx)||0);
+  const bigS=Math.abs(sz)>=1, bigM=mag>= (sc>=60?0.9:0.6);
+  if(sz&&gotSign&&expSign&&expSign!==gotSign)
+    return {k:4,t:"方向背離 — 環境可能已經切換",
+      d:"意外的方向跟價格反應對不上。最常見的兩個原因：市場已經定價到反方向的極端（意外反而是解除不確定性），或者主導的衝擊來源換了——例如壞數據不再被讀成盈餘下修，而是被讀成降息提前。這是所有訊號裡資訊量最高的一種。",
+      a:["回「環境」那頁檢查衝擊來源是不是該從通膨主導改成成長主導（或反過來）","把這個判讀套到接下來兩週的同類事件，看是不是重複出現——連兩次才算換檔，一次可能只是噪音","如果你有部位是建立在舊環境的假設上，這是最早的減碼訊號"]};
+  if(bigS&&bigM) return {k:1,t:"意外大、反應大 — 環境確認",
+      d:"傳導鏈按預期運作，市場的反應函數跟你的模型一致。這代表接下來同類事件的評分是可信的。",
+      a:["這條傳導鏈目前有效，同類事件可以照分數配置曝險","趨勢型跟隨的勝率在這種環境下較高，但要注意反應大之後短期通常有回吐","記錄下當時的環境設定，那組參數目前是對的"]};
+  if(bigS&&!bigM) return {k:2,t:"意外大、反應小 — 已被定價或被壓過",
+      d:"數據明顯偏離共識，價格卻沒動。要嘛市場早就從其他管道知道（nowcast、前置指標），要嘛有更大的力量正壓著（例如強勁的資金流或即將到來的更大事件）。",
+      a:["調降這個類型在目前環境下的權重——它的資訊已經提前洩漏了","去找真正壓著價格的那個力量是什麼，那個才是現在的主導變數","小心被壓抑的反應延後爆發，特別是下一個大事件過後"]};
+  if(!bigS&&bigM) return {k:3,t:"意外小、反應大 — 部位而非資訊",
+      d:"數據其實沒什麼意外，價格卻大幅波動。這通常不是基本面，是擁擠部位在平倉，或是衍生品到期造成的機械式流動。",
+      a:["這種變動的均值回歸機率高，通常是反向操作的機會而不是趨勢起點","檢查是不是四巫日、月底再平衡或大額到期附近","把「波動定價水位」調到低分位——市場現在很脆弱，任何小事都會放大"]};
+  return {k:2,t:"意外小、反應小 — 非事件",
+      d:"照劇本走，沒有新資訊。這類事件在目前環境下可以降到只做記錄。",
+      a:["把這個類型的基準敏感度往下調，別再為它預留曝險","如果連續三次都是非事件，可以從關注清單移除"]};
+}
+/* 校準：實際反應 vs 基準，回推 B 的乘數 */
+function calib(){
+  const acc={};
+  Object.entries(REVIEW).forEach(([k,r])=>{
+    const e=EVENTS.find(x=>rkey(x)===k); if(!e)return;
+    const c=CAT[e.cat]; if(!c)return;
+    const mag=reactionMag(r); if(!mag)return;
+    (acc[e.cat]=acc[e.cat]||{n:0,sum:0,label:c.label,B:c.B}).n++;
+    acc[e.cat].sum+=mag;
+  });
+  Object.values(acc).forEach(a=>{
+    a.avg=a.sum/a.n;
+    const expect=a.B/70;                       // B=70 對應約 1.0% 的典型變動
+    a.ratio=a.avg/Math.max(expect,.15);
+    a.adj=clamp(1+(a.ratio-1)*0.4,0.6,1.5);    // 只吃 40% 的偏差，避免過擬合
+  });
+  return acc;
+}
+let CALIB={};
+function applyCalib(){CALIB=calib();}
+
+
+/* ═══ 那斯達克背景走勢 ═══ */
+let PX={};              // "YYYY-MM-DD" -> close
+let PXSRC="", PXON=true;
+async function loadPx(key){
+  const from=(TODAY.getFullYear()-2)+"-01-01", to=iso(TODAY);
+  // 1) FMP（有 key 時最穩）
+  if(key){
+    try{
+      const j=await(await fetch(`https://financialmodelingprep.com/stable/historical-price-eod/light?symbol=QQQ&from=${from}&to=${to}&apikey=${encodeURIComponent(key)}`)).json();
+      if(Array.isArray(j)&&j.length){
+        j.forEach(r=>{if(r.date)PX[r.date.slice(0,10)]=+(r.price??r.close);});
+        PXSRC="QQQ · FMP";return true;}
+    }catch(e){}
+  }
+  // 2) Stooq CSV（免 key，但可能被 CORS 擋）
+  try{
+    const t=await(await fetch("https://stooq.com/q/d/l/?s=%5Endx&i=d")).text();
+    const lines=t.trim().split("\n"); if(lines.length<10) throw new Error("空資料");
+    const head=lines[0].split(","), di=head.indexOf("Date"), ci=head.indexOf("Close");
+    if(di<0||ci<0) throw new Error("欄位不符");
+    lines.slice(1).forEach(l=>{const c=l.split(",");const d=c[di],v=parseFloat(c[ci]);
+      if(d&&d>=from&&isFinite(v))PX[d]=v;});
+    if(Object.keys(PX).length){PXSRC="NDX · Stooq";return true;}
+  }catch(e){}
+  return false;
+}
+/* 該年度的價格範圍，讓 12 個月共用同一把尺 */
+function pxRange(y){
+  let lo=Infinity,hi=-Infinity,n=0;
+  Object.entries(PX).forEach(([d,v])=>{if(+d.slice(0,4)===y){lo=Math.min(lo,v);hi=Math.max(hi,v);n++;}});
+  return n>4?{lo,hi}:null;
+}
+function pxPath(y,m,days,rng){
+  if(!rng||!PXON)return "";
+  const pts=[];
+  for(let d=1;d<=days;d++){
+    const v=PX[y+"-"+pad(m+1)+"-"+pad(d)];
+    if(v==null)continue;
+    const x=((d-.5)/days*100).toFixed(2);
+    const yy=(58-(v-rng.lo)/(rng.hi-rng.lo)*52).toFixed(2);
+    pts.push(x+","+yy);
+  }
+  if(pts.length<2)return "";
+  const line=pts.join(" ");
+  const area=`0,60 ${pts[0].split(",")[0]},60 ${line} ${pts[pts.length-1].split(",")[0]},60 100,60`;
+  return `<div class="px"><svg viewBox="0 0 100 60" preserveAspectRatio="none">
+    <polygon points="${area}" fill="#4CC2E0" opacity="0.05"/>
+    <polyline points="${line}" fill="none" stroke="#8FA3B5" stroke-width="0.7" opacity="0.38"
+      vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg></div>`;
+}
+
+
+/* ═══ 同源資料：由 GitHub Actions / Claude routine 每天產生 ═══ */
+let BUILD="";
+async function loadRemote(){
+  let got=false;
+  try{
+    const r=await fetch("./data/events.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){
+      const j=await r.json();
+      if(j&&Array.isArray(j.events)&&j.events.length){
+        mergeRemote(j.events); BUILD=j.generated||""; SOURCE=j.source||"每日排程"; got=true;
+      }
+    }
+  }catch(e){}
+  try{
+    const r=await fetch("./data/px.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();
+      if(j&&j.series){Object.assign(PX,j.series);PXSRC=j.symbol||"NDX";}}
+  }catch(e){}
+  try{
+    const r=await fetch("./data/changelog.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){CHANGELOG=await r.json();}
+  }catch(e){}
+  return got;
+}
+let CHANGELOG=null;
+/* 遠端事件覆蓋推算日：同名事件 ±10 天內視為同一件事 */
+function mergeRemote(list){
+  const from=iso(TODAY);
+  const clean=list.filter(e=>e&&e.date&&e.title&&e.kind).map(e=>({
+    date:e.date.slice(0,10),kind:e.kind,title:e.title,cat:e.cat||"ism",
+    est:!!e.est,note:e.note||"",checks:Array.isArray(e.checks)?e.checks:[],src:e.src||""}));
+  const keep=EVENTS.filter(e=>!(e.est&&e.date>=from&&
+    clean.some(f=>f.title===e.title&&Math.abs(parse(f.date)-parse(e.date))<=10*864e5)));
+  const seen=new Set(),out=[];
+  for(const e of [...keep,...clean].sort((a,b)=>a.date.localeCompare(b.date))){
+    const k=e.date+"|"+e.title; if(seen.has(k))continue; seen.add(k);
+    if(!e.checks.length){const o=EVENTS.find(x=>x.title===e.title&&x.checks&&x.checks.length);
+      if(o){e.checks=o.checks;e.note=e.note||o.note;}}
+    out.push(e);
+  }
+  EVENTS=out;
+}
+
+/* ═══ 狀態 ═══ */
+let view="impact",curY=TODAY.getFullYear(),curM=TODAY.getMonth(),selDay=null;
+const filt={N:true,D:true,R:true};
+const vis=()=>EVENTS.filter(e=>filt[e.kind]);
+const byMonth=(y,m)=>vis().filter(e=>{const d=parse(e.date);return d.getFullYear()===y&&d.getMonth()===m;});
+let SHOWLAB=50, MINS=0;
+const col=s=>s>=70?"#FF5C5C":s>=50?"#FFB84D":s>=32?"#8FA3B5":"#4A5A69";
+
+/* ═══ 繪製 ═══ */
+function ring(s){
+  const c=col(s),r=15,C=2*Math.PI*r;
+  return `<div class="ring"><svg width="36" height="36"><circle cx="18" cy="18" r="${r}" stroke="#1E2833" stroke-width="3" fill="none"/>
+  <circle cx="18" cy="18" r="${r}" stroke="${c}" stroke-width="3" fill="none" stroke-linecap="round"
+   stroke-dasharray="${C}" stroke-dashoffset="${C*(1-s/100)}"/></svg><div class="val" style="color:${c}">${s}</div></div>`;
+}
+function evHTML(e){
+  const sc=score(e).s,d=parse(e.date),w=["日","一","二","三","四","五","六"][d.getDay()];
+  const diff=Math.round((d-TODAY)/864e5);
+  return `<div class="ev" data-tip="${e.date}" data-d="${e.date}" data-t="${encodeURIComponent(e.title)}">
+   <div class="when"><b>${d.getMonth()+1}/${d.getDate()}</b>週${w}</div>${ring(sc)}
+   <div><div class="ttl">${e.title}<span class="pill ${e.kind.toLowerCase()}">${e.kind==="N"?"分子":e.kind==="D"?"分母":"風險"}</span>${e.est?'<span class="est">≈</span>':""}</div>
+   <div class="meta">${diff===0?"今天":diff>0?`${diff} 天後`:`${-diff} 天前`} · ${(CAT[e.cat]||{}).label||""}</div></div></div>`;
+}
+function bind(root){root.querySelectorAll(".ev").forEach(el=>el.onclick=()=>
+  openDay(el.dataset.d,vis().filter(x=>x.date===el.dataset.d),decodeURIComponent(el.dataset.t)));}
+
+function renderImpact(){
+  const end=iso(new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()+90));
+  const evs=vis().filter(e=>e.date>=iso(TODAY)&&e.date<=end&&score(e).s>=MINS)
+    .sort((a,b)=>a.date.localeCompare(b.date)||score(b).s-score(a).s);
+  let html="",lastM="",lastD="";
+  evs.forEach(e=>{
+    const d=parse(e.date),mk=d.getFullYear()+"-"+d.getMonth();
+    if(mk!==lastM){lastM=mk;
+      const mv=evs.filter(x=>{const p=parse(x.date);return p.getFullYear()+"-"+p.getMonth()===mk;});
+      const nC=mv.filter(x=>x.kind==="N").length,dC=mv.length-nC;
+      html+=`<h3 style="margin-top:${lastD?"24px":"0"}">${d.getFullYear()} 年 ${d.getMonth()+1} 月 · ${nC}N / ${dC}D</h3>`;}
+    lastD=e.date; html+=evHTML(e);});
+  $("impactBody").innerHTML=html||'<div class="log">此篩選下沒有事件。</div>';
+  bind($("impactBody"));bindTips($("impactBody"));
+}
+function renderYear(){
+  $("yLabel").textContent=curY+" 年";
+  const box=$("yearBody");box.innerHTML="";
+  const rng=pxRange(curY);
+  for(let m=0;m<12;m++){
+    const evs=byMonth(curY,m),days=dim(curY,m);
+    const tot=evs.reduce((a,e)=>a+score(e).s,0);
+    let mk=pxPath(curY,m,days,rng);
+    for(let wd=8;wd<=days;wd+=7) mk+=`<div class="wk" style="left:${((wd-.5)/days*100).toFixed(2)}%"></div>`;
+    const perDay={};
+    evs.forEach(e=>{const s=score(e).s,dnum=parse(e.date).getDate(),x=(dnum-.5)/days*100;
+      const h=Math.max(3,s*.20),c=e.kind==="N"?"up":e.kind==="D"?"dn":"rk";
+      mk+=`<div class="mk ${c}" style="left:${x.toFixed(2)}%;height:${h}px;width:${s>=60?4:2.5}px;margin-left:-${s>=60?2:1.25}px;opacity:${.35+s/160}"></div>`;
+      const p=perDay[dnum]=perDay[dnum]||{x,d:dnum,s:0,k:"D",date:e.date};
+      if(s>p.s){p.s=s;p.k=e.kind;}});
+    // 日期只標一次：取當天分數最高的事件決定顏色
+    const arr=Object.values(perDay).filter(o=>o.s>=SHOWLAB).sort((a,b)=>a.x-b.x);
+    const rows=[[],[]];
+    arr.forEach(o=>{
+      let r=0;
+      if(rows[0].length&&o.x-rows[0][rows[0].length-1]<8)r=1;
+      if(r===1&&rows[1].length&&o.x-rows[1][rows[1].length-1]<8)return;
+      rows[r].push(o.x);
+      mk+=`<div class="dlab ${o.k.toLowerCase()}" style="left:${o.x.toFixed(2)}%;bottom:${4+(1-r)*11}px">${o.d}</div>`;});
+    // 滑鼠感應區
+    Object.values(perDay).forEach(o=>{
+      mk+=`<div class="hit" data-tip="${o.date}" style="left:${o.x.toFixed(2)}%"></div>`;});
+    let past="";
+    if(curY<TODAY.getFullYear()||(curY===TODAY.getFullYear()&&m<TODAY.getMonth()))past='<div class="past" style="right:0"></div>';
+    else if(curY===TODAY.getFullYear()&&m===TODAY.getMonth()){const x=(TODAY.getDate()/days*100).toFixed(2);
+      past=`<div class="past" style="width:${x}%"></div><div class="todaymark" style="left:${x}%"></div>`;}
+    const top=evs.map(e=>({e,s:score(e).s})).sort((a,b)=>b.s-a.s).slice(0,3)
+      .map(x=>`<span class="tag ${x.e.kind.toLowerCase()}">${parse(x.e.date).getDate()}日 ${x.e.title} ${x.s}</span>`).join("");
+    const row=document.createElement("div");
+    row.className="mrow"+(curY===TODAY.getFullYear()&&m===TODAY.getMonth()?" cur":"");
+    row.innerHTML=`<div class="mlabel">${m+1}月<small>Σ${tot}</small></div>
+      <div><div class="axis">${past}<div class="mid"></div>${mk}</div><div class="mtags">${top}</div></div>`;
+    row.onclick=()=>{curM=m;switchView("month");};
+    box.appendChild(row);
+  }
+  bindTips(box);
+}
+function renderMonth(){
+  $("mLabel").textContent=(curM+1)+"月";$("mYear").textContent=curY;
+  $("dowRow").innerHTML=["日","一","二","三","四","五","六"].map(d=>`<div class="dow">${d}</div>`).join("");
+  const g=$("monthGrid");g.innerHTML="";
+  const first=new Date(curY,curM,1).getDay(),n=dim(curY,curM),evs=byMonth(curY,curM);
+  for(let i=0;i<first;i++){const c=document.createElement("div");c.className="cell blank";g.appendChild(c);}
+  for(let d=1;d<=n;d++){
+    const ds=curY+"-"+pad(curM+1)+"-"+pad(d),de=evs.filter(e=>e.date===ds);
+    const mx=de.reduce((a,e)=>Math.max(a,score(e).s),0);
+    const c=document.createElement("div");
+    c.className="cell"+(de.length?" has":"")+(ds===iso(TODAY)?" today":"")+(parse(ds)<TODAY?" dim":"")+(selDay===ds?" sel":"");
+    let mk='<div class="hair"></div>';
+    de.filter(e=>e.kind==="N").slice(0,3).forEach((e,i)=>mk+=`<div class="m" style="bottom:${52+i*22}%;background:var(--num);opacity:${.4+score(e).s/160}"></div>`);
+    de.filter(e=>e.kind!=="N").slice(0,3).forEach((e,i)=>mk+=`<div class="m" style="top:${52+i*22}%;background:var(--${e.kind==="D"?"den":"risk"});opacity:${.4+score(e).s/160}"></div>`);
+    if(de.length)c.dataset.tip=ds;
+    c.innerHTML=`<div class="dnum">${d}</div><div class="marks">${mk}</div>`+
+      (mx?`<div class="heat" style="background:${col(mx)};opacity:${.25+mx/150}"></div>`:"");
+    if(de.length)c.onclick=()=>{selDay=ds;renderMonth();openDay(ds,de);};
+    g.appendChild(c);
+  }
+  const shown=evs.filter(e=>score(e).s>=MINS).sort((a,b)=>a.date.localeCompare(b.date)||score(b).s-score(a).s);
+  $("mListTitle").textContent=`${curM+1}月 · ${shown.length} 筆 · 依日期`;
+  $("monthList").innerHTML=shown.map(e=>evHTML(e)).join("")||'<div class="log">無事件。</div>';
+  bind($("monthList"));bindTips($("monthList"));bindTips($("monthGrid"));
+}
+
+function openDay(ds,evs,focus){
+  const d=parse(ds),w=["日","一","二","三","四","五","六"][d.getDay()],diff=Math.round((d-TODAY)/864e5);
+  $("dTitle").textContent=`${d.getMonth()+1} 月 ${d.getDate()} 日`;
+  $("dSub").textContent=`${d.getFullYear()} · 週${w} · ${diff===0?"今天":diff>0?`還有 ${diff} 天`:`${-diff} 天前`}`;
+  const order=evs.slice().sort((a,b)=>(b.title===focus)-(a.title===focus)||score(b).s-score(a).s);
+  $("dBody").innerHTML=order.map(e=>{
+    const sc=score(e),ai=assetImpact(e),c=CAT[e.cat]||CAT.ism;
+    const mults=sc.parts.map(([k,w,r,add])=>
+      `<div class="kv"><span class="k">${RK[k]||k}</span><span class="v" style="color:${add>.25?"#FFB84D":"var(--tx2)"}">×${(1+add).toFixed(2)}</span></div>`).join("")
+      ||'<div class="kv"><span class="k">無環境放大</span><span class="v">×1.00</span></div>';
+    const chn=CH.map(([k,n])=>{
+      const v=clamp(ai.chv[k]||0,-1.2,1.2),wd=Math.abs(v)/1.2*50;
+      return `<div class="chn"><span style="color:var(--tx2)">${n}</span><div class="bar"><div class="z"></div>
+      <i style="${v>=0?`left:50%;width:${wd}%`:`right:50%;width:${wd}%`};background:${v>=0?"var(--dn)":"var(--up)"}"></i></div></div>`;}).join("");
+    const ast=ASSETS.map(a=>{const v=ai.out[a.k];
+      return `<div class="acell"><div class="an">${a.n}</div><div class="av" style="color:${v>.15?"var(--up)":v<-.15?"var(--dn)":"var(--tx3)"}">${v>0?"+":""}${v.toFixed(1)}</div></div>`;}).join("");
+    const cks=(e.checks||[]).map(c=>`<div class="chk"><b>${c[0]}</b><br><span class="src">${c[1]}</span></div>`).join("");
+    return `<div class="block">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:6px">${ring(sc.s)}
+        <div><div style="font-size:16px;font-weight:600">${e.title} ${e.est?'<span class="est">≈</span>':""}</div>
+        <div class="est">${c.label} · 基準 ${sc.B} · 環境 ×${sc.mult.toFixed(2)} → ${sc.raw}${sc.cal!==1?` · 校準 ×${sc.cal.toFixed(2)}`:""}${sc.disc<1?" · 推算日折 6%":""}</div></div></div>
+      <div style="font-size:12.5px;color:var(--tx2);line-height:1.65;margin:8px 0 14px">${e.note||""}</div>
+
+      <h4>環境放大從哪來</h4>${mults}
+
+      <h4 style="margin-top:16px">傳導管道（上行意外時）</h4>${chn}
+      <div class="note" style="margin-bottom:12px">紅＝該管道被推高，綠＝被壓低。下行意外整組反過來。</div>
+
+      <h4>推算的資產方向</h4><div class="assets">${ast}</div>
+      <div class="note">相對強弱，不是預測漲跌幅。絕對值大的就是這個事件真正會打到的地方。</div>
+
+      ${cks&&diff>=0?`<h4 style="margin-top:16px">當天怎麼判斷大不大</h4>${cks}`:""}
+      ${diff<0?reviewForm(e):""}
+    </div>`;
+  }).join("");
+  $("dBody").querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{
+    const k=decodeURIComponent(b.dataset.save),g=i=>{const el=$("rv_"+i);return el?el.value.trim():"";};
+    REVIEW[k]={cons:g("cons"),act:g("act"),z:g("z"),spx:g("spx"),ndx:g("ndx"),y10:g("y10"),dxy:g("dxy"),gld:g("gld"),memo:g("memo"),ts:iso(TODAY)};
+    await saveReviews();applyCalib();
+    const e2=EVENTS.find(x=>rkey(x)===k);
+    openDay(e2.date,vis().filter(x=>x.date===e2.date),e2.title);
+    if(view==="review")renderReview();
+  });
+  hideTip();$("drawer").classList.add("on");$("scrim").classList.add("on");
+}
+
+function renderRegime(){
+  $("regimeRows").innerHTML=REGIME_DEF.map(r=>`
+   <div class="rrow"><div class="rlab"><span>${r.n}</span><span>${r.d}</span></div>
+   <div class="opts">${r.opts.map(([n,v])=>
+     `<button class="opt${R[r.k]===v?" on":""}" data-k="${r.k}" data-v="${v}">${n}</button>`).join("")}</div></div>`).join("");
+  $("regimeRows").querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    R[b.dataset.k]=parseFloat(b.dataset.v);renderRegime();updateRegimeText();});
+}
+function updateRegimeText(){
+  const s=R.shock>0?"通膨主導":R.shock<0?"成長主導":"混合衝擊";
+  $("regimetxt").textContent=`${s}／波動${R.vol>=1?"低分位":R.vol>=.4?"中位":"高分位"}`;
+}
+function renderMatrix(){
+  const rows=["fomc_sep","cpi","nfp","gdp","earn3","cloud","refund","election","quad"];
+  $("matrixTable").innerHTML=`<tr><th>事件</th>${CH.map(([,n])=>`<th>${n}</th>`).join("")}</tr>`+
+   rows.map(k=>{const c=CAT[k];
+    return `<tr><td>${c.label}</td>${CH.map(([ch])=>{const v=c.ch[ch]||0;
+      return `<td style="color:${v>.15?"var(--dn)":v<-.15?"var(--up)":"var(--tx3)"}">${v?(v>0?"+":"")+v.toFixed(2):"·"}</td>`;}).join("")}</tr>`;}).join("");
+  $("betaTable").innerHTML=`<tr><th>資產</th>${CH.map(([,n])=>`<th>${n}</th>`).join("")}</tr>`+
+   ASSETS.map(a=>`<tr><td>${a.n}</td>${CH.map(([k])=>{const v=a.b[k];
+     return `<td style="color:${v>.15?"var(--up)":v<-.15?"var(--dn)":"var(--tx3)"}">${v>0?"+":""}${v.toFixed(1)}</td>`;}).join("")}</tr>`).join("");
+}
+
+
+/* ═══ 每日排程 prompt ═══ */
+const SEED_A=`每個工作日台北時間早上 7:00 執行。用繁體中文回覆，語氣直接，不要客套開場。
+
+【任務】更新我的美股事件行事曆，找出還沒被排進去的新事件。
+
+1. 搜尋接下來 30 天的美股重大事件，來源優先順序：
+   - 官方：federalreserve.gov 行事曆、bls.gov/schedule、bea.gov、treasury.gov 再融資公告
+   - 財報：我追蹤的 NVDA、TSM、ASML、MU、AMAT、LRCX、KLAC、AMD、AVGO、INTC、MSFT、GOOGL、AMZN、META、AAPL、ORCL 的財報日確認或變更
+   - 富途牛牛（優先來源，中文整理最完整）：
+     · 專題頁 https://news.futunn.com/hk/news-topics/1357/calendar-of-major-events-in-us-stocks —「美股投資必備！X月重磅大事搶先看」每月底更新次月全月大事
+     · 財經日曆 https://news.futunn.com/hk/new-calendar
+     · 業績日曆 https://www.futunn.com/hk/quote/calendar
+     · 「一週前瞻」系列文章，每週日或週一發布
+   - 論壇與市場討論：r/investing、r/stocks、r/wallstreetbets 的高熱度討論、Hacker News、X 上的總經帳號、Seeking Alpha 與 Zerohedge 的事件預告、PTT Stock 板
+2. 只回報「新出現或有變動」的項目。已經在標準行事曆上的例行數據（CPI、非農、FOMC、PCE）除非日期改變否則不要重複列出。
+3. 每一則用這個格式：
+   日期 | 事件 | 分子端/分母端/風險溢酬 | 為什麼重要（一句）| 來源連結
+4. 特別留意這幾類容易漏掉的事件：臨時的 Fed 官員演說與政策訊號、財報日變更、突發的關稅或出口管制公告、大型 IPO 與指數調整、OPEC+ 會議、日本央行決議、台積電月營收公布日。
+5. 最後給我一段「本週最需要注意的一件事」，一句話，並說明理由。
+6. 如果這一天真的沒有新事件，就直接說「沒有新事件」，不要為了湊字數硬找。`;
+
+const SEED_B=`每個工作日台北時間早上 8:00 執行。用繁體中文回覆，直接進入重點。
+
+【任務】複盤昨晚美股的重大事件。
+
+1. 先確認昨天美股交易時段有沒有這些事件之一：CPI、非農、PCE、GDP、FOMC 決議或紀要、ISM、零售銷售、我追蹤清單裡任何一檔的財報。沒有的話直接回「昨天沒有需要複盤的事件」，結束。
+2. 有的話，對每一個事件給我：
+   - 共識預期 vs 實際公布值，以及意外幅度（如果找得到歷史標準差就換算成 z 分數）
+   - 當天市場反應：標普 500 %、那斯達克 100 %、美國 10 年期殖利率變動 bp、美元指數 %、黃金 %
+   - 反應是否符合傳導邏輯。判斷標準：物價數據高於預期應該推升殖利率、壓低長天期成長股；就業數據強勁在通膨主導環境下是利空、在成長主導環境下是利多
+3. 然後套用四象限判讀，明確講出是哪一種：
+   意外大反應大＝環境確認 / 意外大反應小＝已被定價 / 意外小反應大＝部位而非資訊 / 方向背離＝環境可能切換
+4. 給我三個具體的後續動作，要能執行，不要「持續觀察」這種空話。
+5. 最後輸出一段可以直接貼進我行事曆工具的 JSON：
+   {"date":"YYYY-MM-DD","title":"事件名","cons":"","act":"","z":"","spx":"","ndx":"","y10":"","dxy":"","gld":"","memo":""}`;
+
+
+const SEED_C=`每週日台北時間晚上 21:00 執行。用繁體中文回覆，直接列清單，不要開場白。
+
+【任務】把接下來 4 週的美股大事補齊，來源以已經整理好的中文財經媒體為主。
+
+1. 一定要看的來源，逐個檢查：
+   - 富途牛牛「美股重磅事件日曆」專題：https://news.futunn.com/hk/news-topics/1357/calendar-of-major-events-in-us-stocks
+     每月底會發一篇「美股投資必備！X月重磅大事搶先看」，把整月的 Fed 會議、通膨數據、財報、期權到期都圈出來。如果這週剛好有新的一篇，整篇讀完並抽出所有日期。
+   - 富途財經日曆：https://news.futunn.com/hk/new-calendar
+   - 富途業績日曆：https://www.futunn.com/hk/quote/calendar
+   - 富途「一週前瞻」最新一篇
+   - 補充：FinGuider 美股財經日曆、MacroMicro 財經日曆、鉅亨網本週財經大事
+2. 跟這份標準清單比對，只回報「不在清單上」或「日期跟清單不同」的項目：
+   FOMC 決議、CPI、PPI、非農、PCE、GDP、ISM、零售銷售、四巫日、財政部季度再融資，
+   以及 NVDA、TSM、ASML、MU、AMAT、LRCX、KLAC、AMD、AVGO、INTC、MSFT、GOOGL、AMZN、META、AAPL、ORCL 的財報。
+3. 每則格式：
+   日期 | 事件 | 分子端／分母端／風險溢酬 | 一句話說明為什麼重要 | 來源連結
+4. 分類原則：改變市場對「未來現金流」判斷的算分子端（財報、法說、產業出貨、資本支出指引）；
+   改變折現率的算分母端（Fed、通膨、就業、財政部發債）；主要動風險溢酬的算風險（選舉、地緣、關稅、期權到期）。
+5. 最後給我：「未來四週衝擊最大的三天」，each 一句話講為什麼，並指出那三天分別是分子端還是分母端主導。
+6. 這週如果沒有新增或變動，就說「沒有變動」，不要重述已知的例行數據。`;
+
+function renderDaily(){
+  $("seedA").textContent=SEED_A;$("seedB").textContent=SEED_B;$("seedC").textContent=SEED_C;
+}
+function copyTxt(t,btn){
+  navigator.clipboard.writeText(t).then(()=>{const o=btn.textContent;btn.textContent="已複製";setTimeout(()=>btn.textContent=o,1400);});
+}
+
+/* ═══ 複盤畫面 ═══ */
+function renderReview(){
+  const from=iso(new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()-60));
+  const evs=vis().filter(e=>e.date<iso(TODAY)&&e.date>=from&&score(e).s>=35)
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  $("reviewBody").innerHTML=evs.map(e=>{
+    const r=REVIEW[rkey(e)],sc=score(e).s,d=parse(e.date);
+    return `<div class="ev" data-tip="${e.date}" data-d="${e.date}" data-t="${encodeURIComponent(e.title)}">
+      <div class="when"><b>${d.getMonth()+1}/${d.getDate()}</b></div>${ring(sc)}
+      <div><div class="ttl">${e.title}${r?'<span class="done">已複盤</span>':""}</div>
+      <div class="meta">${r?verdict(e,r).t:"點開填入實際值與市場反應"}</div></div></div>`;
+  }).join("")||'<div class="log">這 60 天沒有值得複盤的事件。</div>';
+  bind($("reviewBody"));bindTips($("reviewBody"));
+  applyCalib();
+  const c=Object.entries(CALIB);
+  $("calibBody").innerHTML=c.length?c.map(([k,a])=>
+    `<div class="calrow"><span>${a.label}</span><span class="v">${a.n} 次</span>
+     <span class="v">實際 ${a.avg.toFixed(2)}%</span>
+     <span class="v" style="color:${a.adj>1.05?"#FF5C5C":a.adj<0.95?"#4CC2E0":"var(--tx3)"}">×${a.adj.toFixed(2)}</span></div>`).join("")
+    :'<div class="log">還沒有複盤資料。累積兩筆以上，該類型的分數才會開始被校準。</div>';
+}
+function reviewForm(e){
+  const k=rkey(e),r=REVIEW[k]||{};
+  const f=(id,lab,ph,v)=>`<div class="fld"><label>${lab}</label><input id="rv_${id}" placeholder="${ph}" value="${v||""}"></div>`;
+  let out=`<h4 style="margin-top:18px">複盤：實際 vs 預期</h4><div class="frm">
+   ${f("cons","共識預期","例 0.2%",r.cons)}${f("act","實際公布","例 0.4%",r.act)}
+   ${f("z","意外 z 分數","正=高於預期",r.z)}${f("spx","標普當日 %","例 -0.8",r.spx)}
+   ${f("ndx","那斯達克 %","例 -1.3",r.ndx)}${f("y10","10Y 變動 bp","例 +7",r.y10)}
+   ${f("dxy","美元 %","",r.dxy)}${f("gld","黃金 %","",r.gld)}
+   </div><div style="grid-column:1/-1;margin-top:8px"><div class="fld"><label>備註（法說重點、盤中轉折）</label><input id="rv_memo" value="${(r.memo||"").replace(/"/g,"&quot;")}"></div></div>
+   <button class="btn" data-save="${encodeURIComponent(k)}" style="margin-top:12px">存入複盤</button>`;
+  if(r.act||r.spx){
+    const v=verdict(e,r);
+    out+=`<div class="verdict v${v.k}"><span class="vt">${v.t}</span>${v.d}
+      <div style="margin-top:10px">${v.a.map(x=>`<div class="chk">${x}</div>`).join("")}</div></div>`;
+  }
+  return out;
+}
+
+
+/* ═══ 浮出說明 ═══ */
+const KN={N:"分子",D:"分母",R:"風險"};
+function tipHTML(ds){
+  const evs=vis().filter(e=>e.date===ds).map(e=>({e,s:score(e).s})).sort((a,b)=>b.s-a.s);
+  if(!evs.length)return "";
+  const d=parse(ds),w=["日","一","二","三","四","五","六"][d.getDay()];
+  const diff=Math.round((d-TODAY)/864e5);
+  const rows=evs.slice(0,5).map(x=>`<div class="ti">
+    <span class="s" style="color:${col(x.s)}">${x.s}</span>
+    <span class="n">${x.e.title}${x.e.est?' <span class="est">≈</span>':""}</span>
+    <span class="pill ${x.e.kind.toLowerCase()}">${KN[x.e.kind]}</span></div>`).join("");
+  const more=evs.length>5?`<div class="tp">另有 ${evs.length-5} 筆</div>`:"";
+  const top=evs[0].e;
+  const path=(CAT[top.cat]||{}).label?`<div class="tp">${top.title}：${(assetImpact(top).out.ndx<0?"上行意外壓那斯達克":"上行意外撐那斯達克")} · 點開看完整傳導</div>`:"";
+  return `<div class="td">${d.getMonth()+1}/${d.getDate()} 週${w} · ${diff===0?"今天":diff>0?diff+" 天後":-diff+" 天前"}</div>${rows}${more}${path}`;
+}
+let tipEl=null;
+function showTip(ds,ev){
+  if(!tipEl)tipEl=$("tip");
+  const h=tipHTML(ds); if(!h){hideTip();return;}
+  tipEl.innerHTML=h; tipEl.classList.add("on");
+  moveTip(ev);
+}
+function moveTip(ev){
+  if(!tipEl||!tipEl.classList.contains("on"))return;
+  const pad=14,r=tipEl.getBoundingClientRect();
+  let x=ev.clientX+pad, y=ev.clientY+pad;
+  if(x+r.width>window.innerWidth-8) x=ev.clientX-r.width-pad;
+  if(y+r.height>window.innerHeight-8) y=ev.clientY-r.height-pad;
+  tipEl.style.left=Math.max(8,x)+"px"; tipEl.style.top=Math.max(8,y)+"px";
+}
+function hideTip(){if(tipEl)tipEl.classList.remove("on");}
+/* 綁在容器上，用事件代理，重繪後不用重綁 */
+function bindTips(root){
+  if(!root||root.__tipbound)return; root.__tipbound=true;
+  root.addEventListener("mouseover",e=>{
+    const t=e.target.closest("[data-tip]"); if(!t)return; showTip(t.dataset.tip,e);});
+  root.addEventListener("mousemove",e=>{
+    const t=e.target.closest("[data-tip]"); if(t)moveTip(e); else hideTip();});
+  root.addEventListener("mouseleave",hideTip);
+}
+
+function render(){
+  $("srctext").textContent=SOURCE;$("srcdot").className="dot"+(SOURCE.startsWith("FMP")?" live":"");
+  $("todaytxt").textContent=iso(TODAY)+(BUILD?" · 資料 "+BUILD.slice(0,10):"");updateRegimeText();
+  if(view==="impact")renderImpact();else if(view==="year")renderYear();
+  else if(view==="month")renderMonth();else if(view==="regime")renderRegime();
+  else if(view==="matrix")renderMatrix();else if(view==="review")renderReview();
+  else if(view==="daily")renderDaily();
+  if(view==="cfg"&&$("chlog")){
+    $("chlog").textContent=Array.isArray(CHANGELOG)&&CHANGELOG.length
+      ? CHANGELOG.slice(0,12).map(c=>`${c.date}  ${c.text}`).join("\n")
+      : "尚無日誌（本機開啟或還沒跑過排程）。";
+  }
+}
+function switchView(v){
+  view=v;["Impact","Year","Month","Regime","Matrix","Cfg","Review","Daily"].forEach(x=>$("view"+x).classList.add("hide"));
+  $("view"+v[0].toUpperCase()+v.slice(1)).classList.remove("hide");
+  [["tabImpact","impact"],["tabYear","year"],["tabMonth","month"],["tabReview","review"]].forEach(([i,k])=>$(i).classList.toggle("on",k===v));
+  $("filtbar").classList.toggle("hide",["regime","matrix","cfg","daily"].includes(v));
+  render();window.scrollTo({top:0,behavior:"smooth"});
+}
+$("tabImpact").onclick=()=>switchView("impact");
+$("tabYear").onclick=()=>switchView("year");
+$("tabMonth").onclick=()=>switchView("month");
+$("tabReview").onclick=()=>switchView("review");
+$("btnRegime").onclick=()=>switchView("regime");
+$("btnCfg").onclick=()=>switchView("cfg");
+$("btnMatrix").onclick=()=>switchView("matrix");
+$("yPrev").onclick=()=>{curY--;renderYear();};
+$("yNext").onclick=()=>{curY++;renderYear();};
+$("mPrev").onclick=()=>{if(--curM<0){curM=11;curY--;}renderMonth();};
+$("mNext").onclick=()=>{if(++curM>11){curM=0;curY++;}renderMonth();};
+$("pxToggle").onclick=()=>{PXON=!PXON;$("pxToggle").classList.toggle("on",PXON);renderYear();};
+document.querySelectorAll(".chip[data-min]").forEach(b=>b.onclick=()=>{
+  MINS=parseInt(b.dataset.min,10);
+  $("pxToggle").onclick=()=>{PXON=!PXON;$("pxToggle").classList.toggle("on",PXON);renderYear();};
+document.querySelectorAll(".chip[data-min]").forEach(x=>x.classList.toggle("on",x===b));
+  render();});
+document.querySelectorAll(".chip[data-lab]").forEach(b=>b.onclick=()=>{
+  SHOWLAB=parseInt(b.dataset.lab,10);
+  $("pxToggle").onclick=()=>{PXON=!PXON;$("pxToggle").classList.toggle("on",PXON);renderYear();};
+document.querySelectorAll(".chip[data-min]").forEach(b=>b.onclick=()=>{
+  MINS=parseInt(b.dataset.min,10);
+  $("pxToggle").onclick=()=>{PXON=!PXON;$("pxToggle").classList.toggle("on",PXON);renderYear();};
+document.querySelectorAll(".chip[data-min]").forEach(x=>x.classList.toggle("on",x===b));
+  render();});
+document.querySelectorAll(".chip[data-lab]").forEach(x=>x.classList.toggle("on",x===b));
+  renderYear();});
+document.querySelectorAll(".chip[data-f]").forEach(b=>b.onclick=()=>{
+  filt[b.dataset.f]=!filt[b.dataset.f];b.classList.toggle("on",filt[b.dataset.f]);render();});
+$("scrim").onclick=()=>{$("drawer").classList.remove("on");$("scrim").classList.remove("on");};
+document.querySelector(".handle").onclick=()=>{$("drawer").classList.remove("on");$("scrim").classList.remove("on");};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("drawer").classList.remove("on");$("scrim").classList.remove("on");}});
+$("btnFetch").onclick=()=>{const k=$("apikey").value.trim()||HARDCODED_KEY;
+  refresh(k);loadPx(k).then(ok=>{pxNote(ok);if(view==="year")renderYear();});};
+$("btnDaily").onclick=()=>switchView("daily");
+$("copyA").onclick=e=>copyTxt(SEED_A,e.target);
+$("copyB").onclick=e=>copyTxt(SEED_B,e.target);
+$("copyC").onclick=e=>copyTxt(SEED_C,e.target);
+$("btnExport").onclick=()=>{
+  const blob=new Blob([JSON.stringify(REVIEW,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="event-reviews-"+iso(TODAY)+".json";a.click();note("已匯出。");
+};
+$("btnImport").onclick=()=>$("fileIn").click();
+$("fileIn").onchange=async ev=>{
+  const f=ev.target.files[0];if(!f)return;
+  try{REVIEW={...REVIEW,...JSON.parse(await f.text())};await saveReviews();applyCalib();renderReview();
+    note("已匯入，共 "+Object.keys(REVIEW).length+" 筆。");}
+  catch(e){note("匯入失敗："+e.message);}
+};
+
+window.addEventListener("scroll",hideTip,{passive:true});
+renderRegime();
+function pxNote(ok){
+  const el=$("yearNote"); if(!el)return;
+  el.textContent="軸上方＝分子端，下方＝分母端與風險；長度＝衝擊分數。"+
+    (ok?`背景淡線為 ${PXSRC} 收盤，12 個月共用同一把尺，看得出事件密集區落在走勢的哪一段。`
+       :"背景走勢未載入——貼上 FMP key 後按更新，或把檔案存到本機再開（瀏覽器 CORS 會擋掉免 key 的來源）。");
+}
+(async()=>{
+  await loadReviews(); applyCalib();
+  const remote=await loadRemote();
+  render();
+  if(!Object.keys(PX).length) await loadPx(HARDCODED_KEY);
+  pxNote(Object.keys(PX).length>0);
+  if(!remote&&HARDCODED_KEY) refresh(HARDCODED_KEY);
+  render();
+  if("serviceWorker" in navigator&&location.protocol.startsWith("http")){
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>

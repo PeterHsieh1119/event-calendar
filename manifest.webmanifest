@@ -1,0 +1,13 @@
+{
+  "name": "分子／分母 事件衝擊日曆",
+  "short_name": "事件日曆",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0A0E13",
+  "theme_color": "#0A0E13",
+  "orientation": "portrait",
+  "icons": [
+    {"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
