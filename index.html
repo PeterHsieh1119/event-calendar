@@ -344,6 +344,11 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
     <div class="log" id="fetchlog"></div>
   </div>
   <div class="panelbox">
+    <h4>雲端資料狀態</h4>
+    <p>這些檔案由 GitHub Actions 與四個 routine 每天寫入，網站每次載入都重抓。</p>
+    <div id="dataStat"></div>
+  </div>
+  <div class="panelbox">
     <h4>更新日誌</h4>
     <p>每天的排程任務改了什麼，都會寫進 data/changelog.json，這裡直接讀。</p>
     <div id="chlog" class="log">載入中…</div>
@@ -545,10 +550,18 @@ function saveRegimeLocal(){
   REGIME_LOCAL={values:{...R},ts:iso(TODAY)};
   try{localStorage.setItem(GKEY,JSON.stringify(REGIME_LOCAL));}catch(e){}
 }
+let REGIME_SUPERSEDED=null;
 function applyRegime(j){
   if(!j||!j.values||!Object.keys(j.values).length)return;   // 空檔案＝routine 還沒設過
   REGIME_META=j;
-  if(REGIME_LOCAL)return;
+  const asof=j.asof||String(j.generated||"").slice(0,10);
+  // 手動覆蓋只擋到 routine 下一次重設為止。不設這個期限的話，
+  // 按過一次按鈕就等於把環境永遠凍住，之後 routine 再怎麼更新都進不來。
+  if(REGIME_LOCAL&&REGIME_LOCAL.ts&&asof&&asof<=REGIME_LOCAL.ts)return;
+  if(REGIME_LOCAL){
+    REGIME_SUPERSEDED=REGIME_LOCAL.ts; REGIME_LOCAL=null;
+    try{localStorage.removeItem(GKEY);}catch(e){}
+  }
   Object.entries(j.values).forEach(([k,v])=>{if(k in R&&isFinite(v))R[k]=+v;});
 }
 function clearRegimeLocal(){
@@ -962,49 +975,83 @@ function pxPath(y,m,days,scale){
 
 /* ═══ 同源資料：由 GitHub Actions / Claude routine 每天產生 ═══ */
 let BUILD="";
+/* 每個雲端檔的載入狀態，顯示在「資料」頁，讓你一眼看出雲端有沒有在動 */
+const DATASTAT={};
+function stat(f,label,ok,gen,n,note){DATASTAT[f]={label,ok,gen:gen||"",n,note:note||""};}
+
 async function loadRemote(){
   let got=false;
+  const grab=async(f)=>{
+    const r=await fetch("./data/"+f+"?t="+Date.now(),{cache:"no-store"});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    return r.json();
+  };
   try{
-    const r=await fetch("./data/events.json?t="+Date.now(),{cache:"no-store"});
-    if(r.ok){
-      const j=await r.json();
-      if(j&&Array.isArray(j.events)&&j.events.length){
-        mergeRemote(j.events); BUILD=j.generated||""; SOURCE=j.source||"每日排程"; got=true;
-      }
-    }
-  }catch(e){}
+    const j=await grab("events.json");
+    const n=(j&&Array.isArray(j.events))?j.events.length:0;
+    if(n){mergeRemote(j.events); BUILD=j.generated||""; SOURCE=j.source||"每日排程"; got=true;}
+    stat("events.json","確認過的事件",n>0,j&&j.generated,n,j&&j.source);
+  }catch(e){stat("events.json","確認過的事件",false,"",0,"讀取失敗");}
   // curated.json：routine 隨時可以寫入的新事件與日期更正。直接讀它，
   // 不用等隔天 Actions 把它合併進 events.json——同名事件 ±10 天內會覆蓋推算日。
   try{
-    const r=await fetch("./data/curated.json?t="+Date.now(),{cache:"no-store"});
-    if(r.ok){
-      const j=await r.json();
-      const list=Array.isArray(j)?j:(j&&j.items);
-      if(Array.isArray(list)&&list.length){mergeRemote(list);CURATED=list.length;got=true;}
-    }
-  }catch(e){}
+    const j=await grab("curated.json");
+    const list=Array.isArray(j)?j:(j&&j.items);
+    const n=Array.isArray(list)?list.length:0;
+    if(n){mergeRemote(list);CURATED=n;got=true;}
+    stat("curated.json","策劃事件與日期更正",n>0,j&&j.generated,n);
+  }catch(e){stat("curated.json","策劃事件與日期更正",false,"",0,"讀取失敗");}
   try{
-    const r=await fetch("./data/px.json?t="+Date.now(),{cache:"no-store"});
-    if(r.ok){const j=await r.json();
-      if(j&&j.series){Object.assign(PX,j.series);PXSRC=j.symbol||"NDX";}}
-  }catch(e){}
+    const j=await grab("px.json");
+    const n=(j&&j.series)?Object.keys(j.series).length:0;
+    if(n){Object.assign(PX,j.series);PXSRC=j.symbol||"NDX";}
+    stat("px.json","價格日線",n>0,j&&j.generated,n,j&&j.symbol);
+  }catch(e){stat("px.json","價格日線",false,"",0,"讀取失敗");}
   try{
-    const r=await fetch("./data/priced.json?t="+Date.now(),{cache:"no-store"});
-    if(r.ok){const j=await r.json();applyPriced(Array.isArray(j)?j:(j&&j.items));}
-  }catch(e){}
+    const j=await grab("priced.json");
+    const list=Array.isArray(j)?j:(j&&j.items);
+    applyPriced(list);
+    stat("priced.json","已定價程度",Array.isArray(list)&&list.length>0,j&&j.generated,
+      Array.isArray(list)?list.length:0);
+  }catch(e){stat("priced.json","已定價程度",false,"",0,"讀取失敗");}
   try{
-    const r=await fetch("./data/reviews.json?t="+Date.now(),{cache:"no-store"});
-    if(r.ok){const j=await r.json();applyRemoteReviews(Array.isArray(j)?j:(j&&j.items));}
-  }catch(e){}
+    const j=await grab("reviews.json");
+    const list=Array.isArray(j)?j:(j&&j.items);
+    applyRemoteReviews(list);
+    stat("reviews.json","routine 複盤",Array.isArray(list)&&list.length>0,j&&j.generated,
+      Array.isArray(list)?list.length:0);
+  }catch(e){stat("reviews.json","routine 複盤",false,"",0,"讀取失敗");}
   try{
-    const r=await fetch("./data/regime.json?t="+Date.now(),{cache:"no-store"});
-    if(r.ok){applyRegime(await r.json());}
-  }catch(e){}
+    const j=await grab("regime.json");
+    applyRegime(j);
+    const n=(j&&j.values)?Object.keys(j.values).length:0;
+    stat("regime.json","環境設定",n>0,(j&&(j.asof||j.generated))||"",n);
+  }catch(e){stat("regime.json","環境設定",false,"",0,"讀取失敗");}
   try{
-    const r=await fetch("./data/changelog.json?t="+Date.now(),{cache:"no-store"});
-    if(r.ok){CHANGELOG=await r.json();}
-  }catch(e){}
+    const j=await grab("changelog.json");
+    CHANGELOG=j;
+    stat("changelog.json","更新日誌",Array.isArray(j)&&j.length>0,
+      (Array.isArray(j)&&j[0]&&j[0].date)||"",Array.isArray(j)?j.length:0);
+  }catch(e){stat("changelog.json","更新日誌",false,"",0,"讀取失敗");}
   return got;
+}
+function renderDataStat(){
+  const el=$("dataStat"); if(!el)return;
+  const rows=Object.entries(DATASTAT).map(([f,d])=>{
+    const c=d.ok?"var(--up)":"var(--tx3)";
+    const when=d.gen?String(d.gen).slice(0,16).replace("T"," "):"—";
+    return `<div class="calrow"><span style="font-family:var(--mono);font-size:11px">${f}</span>`
+      +`<span class="v">${d.label}</span>`
+      +`<span class="v" style="color:${c}">${d.ok?d.n+" 筆":(d.note||"尚無資料")}</span>`
+      +`<span class="v">${when}</span></div>`;
+  }).join("");
+  const local=[];
+  local.push(`本機複盤 ${Object.values(REVIEW).filter(r=>r.by!=="routine").length} 筆`);
+  local.push(REGIME_LOCAL?`環境已被你手動覆蓋（${REGIME_LOCAL.ts}）`:"環境用雲端的版本");
+  el.innerHTML=rows+`<div class="log" style="margin-top:10px">`
+    +`上面七個檔案都在 repo 裡，每次打開網站都會重新抓一次（不吃快取），`
+    +`所以你換手機、換瀏覽器看到的都是 routine 最新寫進去的版本。`
+    +`<br>只存在這台裝置上的：${local.join("、")}。</div>`;
 }
 let CHANGELOG=null, CURATED=0, RREV=0;
 /* data/reviews.json：由每日盤後 routine 寫入的複盤。
@@ -1333,9 +1380,12 @@ function renderRegime(){
     ?`routine 於 ${REGIME_META.asof||REGIME_META.generated} 設定：${REGIME_META.basis||"（沒有附說明）"}`
     :"routine 還沒設過環境（data/regime.json 是空的），目前用的是程式內建的預設值。每週日的任務會依市場結構重設它。";
   meta.innerHTML=REGIME_LOCAL
-    ? `<b>你手動覆蓋了這組設定</b>（${REGIME_LOCAL.ts}）。${src}`
-      +`<div style="margin-top:8px"><button class="btn sec" id="btnRegimeReset">回到 routine 設定</button></div>`
-    : src;
+    ? `<b>你手動覆蓋了這組設定</b>（${REGIME_LOCAL.ts}）。這個覆蓋只擋到 routine 下一次重設為止，`
+      +`之後會自動換回雲端的版本，不會把環境永遠凍在今天。${src}`
+      +`<div style="margin-top:8px"><button class="btn sec" id="btnRegimeReset">現在就回到 routine 設定</button></div>`
+    : (REGIME_SUPERSEDED
+        ? `你在 ${REGIME_SUPERSEDED} 手動改過，但 routine 之後重設了環境，已經改用新的那組。${src}`
+        : src);
   const rb=$("btnRegimeReset"); if(rb)rb.onclick=clearRegimeLocal;
 }
 function updateRegimeText(){
@@ -1467,6 +1517,7 @@ function render(){
   $("todaytxt").textContent=iso(TODAY)+(BUILD?" · 資料 "+BUILD.slice(0,10):"");updateRegimeText();
   if(view==="impact")renderImpact();else if(view==="year")renderYear();
   else if(view==="month")renderMonth();else if(view==="regime")renderRegime();
+  if(view==="cfg")renderDataStat();
   else if(view==="matrix")renderMatrix();else if(view==="review")renderReview();
   else if(view==="daily")renderDaily();
   if(view==="cfg"&&$("chlog")){

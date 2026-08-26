@@ -240,6 +240,8 @@ def main():
 
     px = prices()
     if px:
+        # 加上時間戳，網站的「雲端資料狀態」面板要顯示這是什麼時候抓的
+        px["generated"] = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
         save("px.json", px)
 
     print("完成。")
