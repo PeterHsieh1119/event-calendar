@@ -1,5 +1,22 @@
 {
- "generated": "",
+ "generated": "2026-08-26T13:46:16Z",
  "note": "由每日 routine 覆蓋寫入。items 每筆對應日曆上的一個事件，pxd 是 0~1 的已定價程度。",
- "items": []
+ "items": [
+  {
+   "date": "2026-08-26",
+   "title": "NVDA 財報",
+   "pxd": 0.68,
+   "basis": "選擇權隱含變動約6%，是過去四季實際變動中位數(約2.5%)的兩倍以上，顯示市場已為財報後大幅震盪充分定價。",
+   "src": "IBKR 選擇權鏈即時報價（自算ATM straddle）／Benzinga",
+   "asof": "2026-08-26"
+  },
+  {
+   "date": "2026-09-04",
+   "title": "非農就業",
+   "pxd": 0.4,
+   "basis": "共識已因近兩個月連續不如預期（6月+57K、7月-23K且前值大幅下修）而降到55-65K的低點，但SPX非農日跨式隱含波動仍處全年低檔，尾部風險並未完全消化。",
+   "src": "Wolfe Research／CNBC 非農報導彙整／optionstradingreport.com",
+   "asof": "2026-08-26"
+  }
+ ]
 }
