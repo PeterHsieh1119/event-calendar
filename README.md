@@ -1,5 +1,5 @@
 # 分子／分母 事件衝擊日曆
-
+網址：https://peterhsieh1119.github.io/tongue-scan/](https://peterhsieh1119.github.io/event-calendar/
 手機打得開的公開網址 + 每天自動更新資料 + 每天由 Claude 改進一小塊。
 
 三層機制各司其職，壞掉一層其他兩層照跑：
