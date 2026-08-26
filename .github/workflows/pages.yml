@@ -10,9 +10,13 @@ permissions:
   pages: write
   id-token: write
 
+# 只允許一個部署同時進行，但**不要**取消進行中的那個。
+# 中途取消 Pages 部署會讓 deployment 卡在半途，後續的 run 會變成 startup_failure
+# 而且整個 concurrency group 會塞住——8/26 的 run #13、#14 就是這樣掛的。
+# 這是 GitHub 官方 Pages 範本的寫法，不要改回 true。
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   # 部署前的閘門。四個 routine 都會直接 commit 到 main，沒有人在旁邊審，
