@@ -304,6 +304,7 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
     <h4>當下環境</h4>
     <p>這五格決定所有事件的放大係數。一個月調一次就夠——它們變的速度本來就慢。改完回到列表，排序會整個重算。</p>
     <div id="regimeRows"></div>
+    <div id="regimeMeta" class="log" style="margin-top:12px"></div>
   </div>
   <div class="panelbox">
     <h4>為什麼是這五個</h4>
@@ -529,6 +530,35 @@ const REGIME_DEF=[
   opts:[["分散",0],["偏高",.5],["極度集中",1]],v:1}
 ];
 const R={}; REGIME_DEF.forEach(r=>R[r.k]=r.v);
+
+/* 環境設定有兩個來源：data/regime.json（每週由 routine 依市場結構重設）
+   與你自己在「環境」頁按的選項（存在這個瀏覽器裡）。手動設過就以你的為準，
+   按「回到 routine 設定」可以放掉覆蓋。 */
+const GKEY="event-cal:regime";
+let REGIME_META=null, REGIME_LOCAL=null;
+function loadRegimeLocal(){
+  try{const v=localStorage.getItem(GKEY); if(v)REGIME_LOCAL=JSON.parse(v);}catch(e){}
+  if(REGIME_LOCAL&&REGIME_LOCAL.values)
+    Object.entries(REGIME_LOCAL.values).forEach(([k,v])=>{if(k in R&&isFinite(v))R[k]=+v;});
+}
+function saveRegimeLocal(){
+  REGIME_LOCAL={values:{...R},ts:iso(TODAY)};
+  try{localStorage.setItem(GKEY,JSON.stringify(REGIME_LOCAL));}catch(e){}
+}
+function applyRegime(j){
+  if(!j||!j.values||!Object.keys(j.values).length)return;   // 空檔案＝routine 還沒設過
+  REGIME_META=j;
+  if(REGIME_LOCAL)return;
+  Object.entries(j.values).forEach(([k,v])=>{if(k in R&&isFinite(v))R[k]=+v;});
+}
+function clearRegimeLocal(){
+  REGIME_LOCAL=null;
+  try{localStorage.removeItem(GKEY);}catch(e){}
+  if(REGIME_META&&REGIME_META.values)
+    Object.entries(REGIME_META.values).forEach(([k,v])=>{if(k in R&&isFinite(v))R[k]=+v;});
+  else REGIME_DEF.forEach(r=>R[r.k]=r.v);
+  renderRegime();updateRegimeText();render();
+}
 
 /* ═══ 工具 ═══ */
 const TODAY=new Date();TODAY.setHours(0,0,0,0);
@@ -821,8 +851,9 @@ function calib(){
     const e=EVENTS.find(x=>rkey(x)===k); if(!e)return;
     const c=CAT[e.cat]; if(!c)return;
     const mag=reactionMag(r); if(!mag)return;
-    const sg=sigmaAt(e.date);
-    const z=(sg&&sg>0.05)?mag/sg:mag/0.9;      // 沒有價格資料時退回 0.9% 的長期均值
+    const given=parseFloat(r.sigma);           // routine 複盤時附的當日一般波動
+    const sg=(isFinite(given)&&given>0.05)?given:sigmaAt(e.date);
+    const z=(sg&&sg>0.05)?mag/sg:mag/0.9;      // 都沒有時退回 0.9% 的長期均值
     (acc[e.cat]=acc[e.cat]||{n:0,sum:0,sumZ:0,label:c.label,B:c.B}).n++;
     acc[e.cat].sum+=mag; acc[e.cat].sumZ+=z;
   });
@@ -962,12 +993,36 @@ async function loadRemote(){
     if(r.ok){const j=await r.json();applyPriced(Array.isArray(j)?j:(j&&j.items));}
   }catch(e){}
   try{
+    const r=await fetch("./data/reviews.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();applyRemoteReviews(Array.isArray(j)?j:(j&&j.items));}
+  }catch(e){}
+  try{
+    const r=await fetch("./data/regime.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){applyRegime(await r.json());}
+  }catch(e){}
+  try{
     const r=await fetch("./data/changelog.json?t="+Date.now(),{cache:"no-store"});
     if(r.ok){CHANGELOG=await r.json();}
   }catch(e){}
   return got;
 }
-let CHANGELOG=null, CURATED=0;
+let CHANGELOG=null, CURATED=0, RREV=0;
+/* data/reviews.json：由每日盤後 routine 寫入的複盤。
+   本機自己填過的同一筆優先，routine 的只補空缺，不會蓋掉你的紀錄。 */
+function applyRemoteReviews(items){
+  if(!Array.isArray(items))return;
+  let n=0;
+  items.forEach(it=>{
+    if(!it||!it.date||!it.title)return;
+    const k=it.date+"|"+it.title;
+    if(REVIEW[k])return;
+    REVIEW[k]={cons:it.cons||"",act:it.act||"",z:it.z||"",spx:it.spx||"",ndx:it.ndx||"",
+      y10:it.y10||"",dxy:it.dxy||"",gld:it.gld||"",memo:it.memo||"",
+      sigma:it.sigma||"",ts:it.asof||it.date,by:"routine"};
+    n++;
+  });
+  RREV=n;
+}
 /* data/priced.json：routine 每天寫入「這個事件目前被 price in 多少」。
    以 標題 + 日期（容許 ±3 天，確認日可能微調）對應回事件。 */
 let PRICED=[];
@@ -1271,7 +1326,17 @@ function renderRegime(){
    <div class="opts">${r.opts.map(([n,v])=>
      `<button class="opt${R[r.k]===v?" on":""}" data-k="${r.k}" data-v="${v}">${n}</button>`).join("")}</div></div>`).join("");
   $("regimeRows").querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
-    R[b.dataset.k]=parseFloat(b.dataset.v);renderRegime();updateRegimeText();});
+    R[b.dataset.k]=parseFloat(b.dataset.v);saveRegimeLocal();
+    renderRegime();updateRegimeText();render();});
+  const meta=$("regimeMeta"); if(!meta)return;
+  const src=REGIME_META
+    ?`routine 於 ${REGIME_META.asof||REGIME_META.generated} 設定：${REGIME_META.basis||"（沒有附說明）"}`
+    :"routine 還沒設過環境（data/regime.json 是空的），目前用的是程式內建的預設值。每週日的任務會依市場結構重設它。";
+  meta.innerHTML=REGIME_LOCAL
+    ? `<b>你手動覆蓋了這組設定</b>（${REGIME_LOCAL.ts}）。${src}`
+      +`<div style="margin-top:8px"><button class="btn sec" id="btnRegimeReset">回到 routine 設定</button></div>`
+    : src;
+  const rb=$("btnRegimeReset"); if(rb)rb.onclick=clearRegimeLocal;
 }
 function updateRegimeText(){
   const s=R.shock>0?"通膨主導":R.shock<0?"成長主導":"混合衝擊";
@@ -1324,7 +1389,7 @@ function renderReview(){
     const r=REVIEW[rkey(e)],sc=score(e).s,d=parse(e.date);
     return `<div class="ev" data-tip="${e.date}" data-d="${e.date}" data-t="${encodeURIComponent(e.title)}">
       <div class="when"><b>${d.getMonth()+1}/${d.getDate()}</b></div>${ring(sc)}
-      <div><div class="ttl">${e.title}${r?'<span class="done">已複盤</span>':""}</div>
+      <div><div class="ttl">${e.title}${r?`<span class="done">${r.by==="routine"?"routine 已填":"已複盤"}</span>`:""}</div>
       <div class="meta">${r?verdict(e,r).t:"點開填入實際值與市場反應"}</div></div></div>`;
   }).join("")||'<div class="log">這 60 天沒有值得複盤的事件。</div>';
   bind($("reviewBody"));bindTips($("reviewBody"));
@@ -1484,8 +1549,10 @@ function pxNote(ok){
 }
 (async()=>{
   loadSeeds();                      // prompt 檔慢慢載，不擋主畫面
+  loadRegimeLocal();
   await loadReviews(); applyCalib();
   const remote=await loadRemote();
+  applyCalib(); renderRegime(); updateRegimeText();
   render();
   if(!Object.keys(PX).length) await loadPx(HARDCODED_KEY);
   pxNote(Object.keys(PX).length>0);
