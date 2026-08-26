@@ -58,20 +58,23 @@ h1{font-family:var(--serif);font-size:25px;margin:7px 0 5px;font-weight:700}
 .mlabel{font-family:var(--serif);font-size:19px;font-weight:700;text-align:right}
 .mlabel small{display:block;font-family:var(--mono);font-size:9px;font-weight:400;color:var(--tx3);margin-top:1px}
 .mrow.cur .mlabel{color:var(--today)}
-.axis{position:relative;height:80px}
-.axis .mid{position:absolute;left:0;right:0;top:29px;height:1px;background:var(--line2)}
+/* 月列的幾何刻意跟頂部總覽軸對齊：中線都在 62px、標記都用 s*0.32、
+   曲線振幅都是 34。同一個事件在兩邊看起來要一樣大，不然會以為資料不同。
+   月列比總覽高 12px，多出來的是底下放日期標籤的帶狀區。 */
+.axis{position:relative;height:120px}
+.axis .mid{position:absolute;left:0;right:0;top:62px;height:1px;background:var(--line2)}
 .axis .past{position:absolute;top:0;bottom:0;left:0;background:#00000055;border-right:1px dashed #ffffff14}
 .mk{position:absolute;border-radius:2px}
-.mk.up{bottom:52px;background:var(--num)}
-.mk.dn{top:30px;background:var(--den)}
-.mk.rk{top:30px;background:var(--risk)}
+.mk.up{bottom:60px;background:var(--num)}
+.mk.dn{top:64px;background:var(--den)}
+.mk.rk{top:64px;background:var(--risk)}
 .axis .todaymark{position:absolute;top:2px;bottom:2px;width:1px;background:var(--today)}
 .dlab{position:absolute;font-family:var(--mono);font-size:9.5px;line-height:1;white-space:nowrap;transform:translateX(-50%);letter-spacing:-.02em}
 .dlab.n{color:var(--num)} .dlab.d{color:var(--den)} .dlab.r{color:var(--risk)}
-.wk{position:absolute;top:6px;bottom:22px;width:1px;background:#ffffff08}
-.px{position:absolute;left:0;right:0;top:0;bottom:20px;pointer-events:none;overflow:visible}
+.wk{position:absolute;top:6px;bottom:26px;width:1px;background:#ffffff08}
+.px{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;overflow:visible}
 .px svg{width:100%;height:100%;display:block}
-.hit{position:absolute;top:0;bottom:20px;width:14px;transform:translateX(-7px);cursor:pointer;border-radius:3px}
+.hit{position:absolute;top:0;bottom:26px;width:14px;transform:translateX(-7px);cursor:pointer;border-radius:3px}
 .hit:hover{background:#ffffff0a}
 .tip{position:fixed;z-index:80;background:#151E28;border:1px solid var(--line2);border-radius:9px;padding:9px 11px;
   box-shadow:0 8px 28px #000a;max-width:280px;pointer-events:none;opacity:0;transition:opacity .12s;font-size:12px;line-height:1.5}
@@ -228,8 +231,8 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
 
 <div class="bar">
   <div class="seg">
-    <button id="tabImpact" class="on">時間序</button>
-    <button id="tabYear">年度軸</button>
+    <button id="tabImpact">時間序</button>
+    <button id="tabYear" class="on">年度軸</button>
     <button id="tabMonth">月曆</button>
     <button id="tabReview">複盤</button>
   </div>
@@ -252,7 +255,7 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
 </div>
 
 <!-- IMPACT -->
-<section id="viewImpact">
+<section id="viewImpact" class="hide">
   <div class="section" style="margin-top:2px">
     <h3>未來 90 天 · 依日期</h3>
     <div id="impactBody"></div>
@@ -261,7 +264,7 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
 </section>
 
 <!-- YEAR -->
-<section id="viewYear" class="hide">
+<section id="viewYear">
   <div class="yearhead">
     <div><button class="ghost" id="yPrev">←</button>
     <span class="yr" id="yLabel" style="margin:0 8px"></span>
@@ -954,24 +957,24 @@ function pctScale(y){
 }
 /* 背景走勢：以分子／分母中線為零，漲的部分填綠、跌的部分填紅。
    同一條封閉路徑畫兩次，分別用中線上下的 clipPath 切開。 */
-const PXZERO=29, PXAMP=25;
+const PXZERO=62, PXAMP=34, PXBOX=120;   // 跟頂部總覽軸的 TLZERO / 振幅一致
 function pxPath(y,m,days,scale){
   if(!scale||!PXON)return "";
   const ser=monthDailyPct(y,m);
   if(ser.length<2)return "";
   const pts=ser.map(p=>{
     const x=((p.d-.5)/days*100).toFixed(2);
-    const yy=clamp(PXZERO-p.v/scale*PXAMP,1,59).toFixed(2);
+    const yy=clamp(PXZERO-p.v/scale*PXAMP,4,PXBOX-4).toFixed(2);
     return x+","+yy;
   });
   const line=pts.join(" ");
   const x0=pts[0].split(",")[0], xN=pts[pts.length-1].split(",")[0];
   const area=`${x0},${PXZERO} ${line} ${xN},${PXZERO}`;
   const id=`pxc${y}_${m}`;
-  return `<div class="px"><svg viewBox="0 0 100 60" preserveAspectRatio="none">
+  return `<div class="px"><svg viewBox="0 0 100 ${PXBOX}" preserveAspectRatio="none">
     <defs>
       <clipPath id="${id}a"><rect x="0" y="0" width="100" height="${PXZERO}"/></clipPath>
-      <clipPath id="${id}b"><rect x="0" y="${PXZERO}" width="100" height="${60-PXZERO}"/></clipPath>
+      <clipPath id="${id}b"><rect x="0" y="${PXZERO}" width="100" height="${PXBOX-PXZERO}"/></clipPath>
     </defs>
     <polygon points="${area}" fill="#3FD68C" opacity="0.13" clip-path="url(#${id}a)"/>
     <polygon points="${area}" fill="#FF6B6B" opacity="0.13" clip-path="url(#${id}b)"/>
@@ -1108,7 +1111,7 @@ function mergeRemote(list){
 }
 
 /* ═══ 狀態 ═══ */
-let view="impact",curY=TODAY.getFullYear(),curM=TODAY.getMonth(),selDay=null;
+let view="year",curY=TODAY.getFullYear(),curM=TODAY.getMonth(),selDay=null;
 const filt={N:true,D:true,R:true};
 const vis=()=>EVENTS.filter(e=>filt[e.kind]);
 const byMonth=(y,m)=>vis().filter(e=>{const d=parse(e.date);return d.getFullYear()===y&&d.getMonth()===m;});
@@ -1254,8 +1257,8 @@ function renderYear(){
     for(let wd=8;wd<=days;wd+=7) mk+=`<div class="wk" style="left:${((wd-.5)/days*100).toFixed(2)}%"></div>`;
     const perDay={};
     evs.forEach(e=>{const s=score(e).s,dnum=parse(e.date).getDate(),x=(dnum-.5)/days*100;
-      const h=Math.max(3,s*.20),c=e.kind==="N"?"up":e.kind==="D"?"dn":"rk";
-      mk+=`<div class="mk ${c}" style="left:${x.toFixed(2)}%;height:${h}px;width:${s>=60?4:2.5}px;margin-left:-${s>=60?2:1.25}px;opacity:${.35+s/160}"></div>`;
+      const h=Math.max(2,s*.32),c=e.kind==="N"?"up":e.kind==="D"?"dn":"rk";   // 同總覽軸
+      mk+=`<div class="mk ${c}" style="left:${x.toFixed(2)}%;height:${h.toFixed(1)}px;width:${s>=60?4:2.5}px;margin-left:-${s>=60?2:1.25}px;opacity:${(.4+s/170).toFixed(2)}"></div>`;
       const p=perDay[dnum]=perDay[dnum]||{x,d:dnum,s:0,k:"D",date:e.date};
       if(s>p.s){p.s=s;p.k=e.kind;}});
     // 日期只標一次：取當天分數最高的事件決定顏色
@@ -1266,7 +1269,7 @@ function renderYear(){
       if(rows[0].length&&o.x-rows[0][rows[0].length-1]<8)r=1;
       if(r===1&&rows[1].length&&o.x-rows[1][rows[1].length-1]<8)return;
       rows[r].push(o.x);
-      mk+=`<div class="dlab ${o.k.toLowerCase()}" style="left:${o.x.toFixed(2)}%;bottom:${4+(1-r)*11}px">${o.d}</div>`;});
+      mk+=`<div class="dlab ${o.k.toLowerCase()}" style="left:${o.x.toFixed(2)}%;bottom:${3+(1-r)*11}px">${o.d}</div>`;});
     // 滑鼠感應區
     Object.values(perDay).forEach(o=>{
       mk+=`<div class="hit" data-tip="${o.date}" style="left:${o.x.toFixed(2)}%"></div>`;});
