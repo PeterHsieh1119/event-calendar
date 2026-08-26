@@ -165,23 +165,27 @@ def prices():
                     series[d] = round(float(v), 2)
             print(f"  價格 {len(series)} 筆 (QQQ/FMP)")
             return {"symbol": "QQQ · FMP", "series": series}
+    # Yahoo Finance chart API：免 key、純 HTTP，GitHub Actions 裡跑得動。
+    # 原本用的 Stooq CSV 已經改成要瀏覽器執行 JavaScript 才給資料，永遠會失敗。
     try:
-        txt = get("https://stooq.com/q/d/l/?s=%5Endx&i=d")
-        lines = txt.strip().split("\n")
-        head = lines[0].split(",")
-        di, ci = head.index("Date"), head.index("Close")
-        cutoff = (TODAY - dt.timedelta(days=760)).isoformat()
-        series = {}
-        for ln in lines[1:]:
-            c = ln.split(",")
-            if len(c) > max(di, ci) and c[di] >= cutoff:
-                try:
-                    series[c[di]] = round(float(c[ci]), 2)
-                except ValueError:
-                    pass
-        if series:
-            print(f"  價格 {len(series)} 筆 (NDX/Stooq)")
-            return {"symbol": "NDX · Stooq", "series": series}
+        j = get_json("https://query1.finance.yahoo.com/v8/finance/chart/QQQ"
+                     "?range=2y&interval=1d")
+        res = (j or {}).get("chart", {}).get("result") or []
+        if res:
+            r0 = res[0]
+            ts = r0.get("timestamp") or []
+            quote = (r0.get("indicators", {}).get("quote") or [{}])[0]
+            closes = quote.get("close") or []
+            series = {}
+            for t, v in zip(ts, closes):
+                if v is None:
+                    continue
+                d = dt.datetime.fromtimestamp(t, dt.timezone.utc).date().isoformat()
+                series[d] = round(float(v), 2)
+            if series:
+                print(f"  價格 {len(series)} 筆 (QQQ/Yahoo)")
+                return {"symbol": "QQQ · Yahoo", "series": series}
+        print("  ! Yahoo 回傳格式不符", file=sys.stderr)
     except Exception as e:
         print(f"  ! 價格抓取失敗: {e}", file=sys.stderr)
     return None
