@@ -1,5 +1,5 @@
 // 網路優先、離線用快取。資料檔永遠先走網路，殼層抓不到才回快取。
-const CACHE = "evcal-v2";
+const CACHE = "evcal-v3";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", e => {
