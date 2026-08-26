@@ -1,6 +1,8 @@
 // 網路優先、離線用快取。資料檔永遠先走網路，殼層抓不到才回快取。
 const CACHE = "evcal-v3";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg",
+  "./routines/daily.md", "./routines/review.md",
+  "./routines/weekly.md", "./routines/intraday.md"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
