@@ -18,13 +18,26 @@ FROM = TODAY.isoformat()
 TO = (TODAY + dt.timedelta(days=400)).isoformat()
 
 WATCH = [
-    ("NVDA", "NVDA", "earn3"), ("TSM", "台積電", "earn3"), ("ASML", "ASML", "earn2"),
-    ("MU", "MU", "earn2"), ("AMAT", "AMAT", "earn2"), ("LRCX", "LRCX", "earn1"),
-    ("KLAC", "KLAC", "earn1"), ("AMD", "AMD", "earn2"), ("AVGO", "AVGO", "earn2"),
-    ("INTC", "INTC", "earn1"), ("MSFT", "微軟", "earn3"), ("GOOGL", "Google", "earn2"),
-    ("AMZN", "Amazon", "earn2"), ("META", "Meta", "earn2"), ("AAPL", "Apple", "earn2"),
-    ("ORCL", "Oracle", "earn2"),
+    ("NVDA", "NVDA", "earn3", "AMC"), ("TSM", "台積電", "earn3", "BMO"),
+    ("ASML", "ASML", "earn2", "BMO"), ("MU", "MU", "earn2", "AMC"),
+    ("AMAT", "AMAT", "earn2", "AMC"), ("LRCX", "LRCX", "earn1", "AMC"),
+    ("KLAC", "KLAC", "earn1", "AMC"), ("AMD", "AMD", "earn2", "AMC"),
+    ("AVGO", "AVGO", "earn2", "AMC"), ("INTC", "INTC", "earn1", "AMC"),
+    ("MSFT", "微軟", "earn3", "AMC"), ("GOOGL", "Google", "earn2", "AMC"),
+    ("AMZN", "Amazon", "earn2", "AMC"), ("META", "Meta", "earn2", "AMC"),
+    ("AAPL", "Apple", "earn2", "AMC"), ("ORCL", "Oracle", "earn2", "AMC"),
 ]
+
+# 公布時間（美東）。前端用它換算台北時間，並判斷美股／台股各自在哪個交易日吸收。
+# AMC = 收盤後，BMO = 開盤前，TW = 台北時間下午公布。
+TOD = {
+    "fomc": "14:00", "fomc_sep": "14:00", "minutes": "14:00",
+    "cpi": "08:30", "ppi": "08:30", "nfp": "08:30", "pce": "08:30",
+    "gdp": "08:30", "retail": "08:30", "refund": "08:30",
+    "jolts": "10:00", "ism": "10:00", "jackson": "10:00",
+    "quad": "09:30", "opex": "09:30", "election": "19:00", "twrev": "TW",
+    "cloud": "AMC", "earn1": "AMC", "earn2": "AMC", "earn3": "AMC",
+}
 
 # 官方已公布的 FOMC 排程（2026 確定 / 2027 暫定）。決議日＝會議第二天。
 FOMC = {
@@ -122,7 +135,7 @@ def fmp_earnings():
     if not KEY:
         return []
     out = []
-    for sym, name, cat in WATCH:
+    for sym, name, cat, tod in WATCH:
         j = get_json(f"https://financialmodelingprep.com/stable/earnings"
                      f"?symbol={sym}&apikey={KEY}")
         if not isinstance(j, list):
@@ -131,7 +144,7 @@ def fmp_earnings():
             d = str(x.get("date", ""))[:10]
             if FROM <= d <= TO:
                 out.append(dict(date=d, kind="N", cat=cat, title=f"{name} 財報",
-                                est=False, src="FMP earnings",
+                                est=False, t=tod, src="FMP earnings",
                                 note="指引與資本支出改寫的是未來現金流，不是本季數字。"))
     print(f"  財報 {len(out)} 筆")
     return out
@@ -207,6 +220,11 @@ def main():
             continue
         seen.add(k)
         uniq.append(e)
+
+    # 每筆都要有公布時間，缺的用類型預設值補上
+    for e in uniq:
+        if not e.get("t"):
+            e["t"] = TOD.get(e.get("cat", ""), "08:30")
 
     save("events.json", {
         "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),

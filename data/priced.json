@@ -1,0 +1,5 @@
+{
+ "generated": "",
+ "note": "由每日 routine 覆蓋寫入。items 每筆對應日曆上的一個事件，pxd 是 0~1 的已定價程度。",
+ "items": []
+}
