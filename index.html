@@ -249,7 +249,7 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
     <button class="chip on" id="pxToggle">背景走勢</button>
   </div>
   <div id="yearBody"></div>
-  <div class="log" style="margin-top:12px" id="yearNote">軸上方＝分子端，下方＝分母端與風險；長度＝衝擊分數。</div>
+  <div class="log" style="margin-top:12px" id="yearNote">軸上方＝分子端，下方＝分母端與風險；長度＝衝擊分數。月份下方的百分比是當月漲跌（前月最後收盤到本月最後收盤，當月為月初至今），資料來源同背景走勢；沒有價格資料的月份顯示 —。</div>
 </section>
 
 <!-- MONTH -->
@@ -802,6 +802,18 @@ async function loadPx(key){
   }catch(e){}
   return false;
 }
+/* 當月漲跌：前一個月最後收盤 → 本月最後收盤。當月尚未結束時就是月初至今。 */
+function monthPct(y,m){
+  const pre=y+"-"+pad(m+1)+"-";
+  const ks=Object.keys(PX).sort();
+  const inM=ks.filter(k=>k.startsWith(pre));
+  if(!inM.length)return null;
+  const prior=ks.filter(k=>k<inM[0]);
+  const base=prior.length?PX[prior[prior.length-1]]:PX[inM[0]];
+  const end=PX[inM[inM.length-1]];
+  if(!base||!end||!isFinite(base)||!isFinite(end)||base<=0)return null;
+  return (end/base-1)*100;
+}
 /* 該年度的價格範圍，讓 12 個月共用同一把尺 */
 function pxRange(y){
   let lo=Infinity,hi=-Infinity,n=0;
@@ -939,8 +951,6 @@ function renderYear(){
   const rng=pxRange(curY);
   for(let m=0;m<12;m++){
     const evs=byMonth(curY,m),days=dim(curY,m);
-    const byDay={};evs.forEach(e=>{(byDay[e.date]=byDay[e.date]||[]).push(e);});
-    const tot=Object.values(byDay).reduce((a,l)=>a+dayScore(l),0);
     let mk=pxPath(curY,m,days,rng);
     for(let wd=8;wd<=days;wd+=7) mk+=`<div class="wk" style="left:${((wd-.5)/days*100).toFixed(2)}%"></div>`;
     const perDay={};
@@ -969,7 +979,11 @@ function renderYear(){
       .map(x=>`<span class="tag ${x.e.kind.toLowerCase()}">${parse(x.e.date).getDate()}日 ${x.e.title} ${x.s}</span>`).join("");
     const row=document.createElement("div");
     row.className="mrow"+(curY===TODAY.getFullYear()&&m===TODAY.getMonth()?" cur":"");
-    row.innerHTML=`<div class="mlabel">${m+1}月<small>Σ${tot}</small></div>
+    const pct=monthPct(curY,m);
+    const pctHTML=(pct==null)
+      ? '<small style="color:var(--tx3)">—</small>'
+      : `<small style="color:${pct>=0?"var(--up)":"var(--dn)"}">${pct>=0?"+":""}${pct.toFixed(1)}%</small>`;
+    row.innerHTML=`<div class="mlabel">${m+1}月${pctHTML}</div>
       <div><div class="axis">${past}<div class="mid"></div>${mk}</div><div class="mtags">${top}</div></div>`;
     row.onclick=()=>{curM=m;switchView("month");};
     box.appendChild(row);
