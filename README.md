@@ -32,14 +32,25 @@
 
 ## 二、每天讓 Claude 維護（三個排程任務）
 
-完整的 prompt 放在網站裡：開網址 → **資料** → **每日排程**，三段各有「複製」按鈕。
-放在那裡而不是這份 README，是為了避免兩邊改到不同步。這裡只說明三者的分工。
+四段 prompt 是 `routines/` 底下的四個檔案，**那就是唯一的來源**。
+cloud routine 的 prompt 只有一句「讀 routines/X.md 照做」，網站的
+**資料 → 每日排程** 頁也是 fetch 同樣四個檔來顯示，所以不會有兩邊走鐘的問題。
+prompt 進了版控，每週任務可以用 PR 改進自己的指示。
 
-| 任務 | 何時跑 | 負責的檔案 | 產出方式 |
-|---|---|---|---|
-| 每日：定價與新事件 | 交易日台北 07:00 | `data/priced.json`、`data/curated.json` | 直接 commit 到 main |
-| 每日：盤後複盤 | 交易日台北 08:00 | 不改檔案，輸出可貼上的 JSON | 只回報 |
-| 每週：前瞻與工程改進 | 週日台北 21:00 | `index.html`、`scripts/` | 開 PR 等你 merge |
+| 任務 | 何時跑 | 指示檔 | 負責的檔案 | 產出方式 |
+|---|---|---|---|---|
+| 每日：定價與新事件 | 交易日台北 07:00 | `routines/daily.md` | `data/priced.json`、`data/curated.json` | 直接 commit main |
+| 每日：盤後複盤 | 交易日台北 08:00 | `routines/review.md` | 不改檔案 | 只回報 |
+| 每日：當日校正 | 交易日台北 21:30 | `routines/intraday.md` | `data/priced.json`、`data/curated.json` | 直接 commit main |
+| 每週：前瞻與工程改進 | 週日台北 21:00 | `routines/weekly.md` | `index.html`、`scripts/`、`routines/` | 開 PR 等你 merge |
+
+**當日校正**那一趟跑在美東 09:30，也就是當天 08:30 那批數據公布完之後。
+它只看今天與未來三天：核對官方排程有沒有跟日曆對不上、更新近身事件的定價。
+有了它，「PCE 提前到今天公布」這種事當天晚上就會進日曆，不用等隔天早上。
+
+自我修正的閉環：早上估 pxd → 事件發生 → 複盤任務比對實際反應與當初的 pxd →
+指出哪裡估錯 → 隔天早上的任務讀得到這個結論。每日任務開頭還有一道清理程序，
+修掉不合法的 `cat`、補上缺漏的 `t`、移除過期條目，資料不會越積越髒。
 
 刻意這樣切：**資料改動直接推、程式碼改動走 PR**。
 資料錯了下一次覆蓋就好，程式碼壞了整個網站打不開，那個要你看過再上。
@@ -85,6 +96,10 @@ data/curated.json            routine 放人工策劃事件（Actions 不覆蓋�
 data/priced.json             routine 每天寫入的已定價程度 pxd（Actions 不覆蓋）
 data/px.json                 QQQ / NDX 日線，年度軸背景與校準用的波動基準
 data/changelog.json          每日改動紀錄，網站的「資料」頁會顯示
+routines/daily.md            每日 07:00 任務的指示（網站與 cloud routine 讀同一份）
+routines/review.md           每日 08:00 盤後複盤
+routines/intraday.md         每日 21:30 當日校正
+routines/weekly.md           每週日前瞻與工程改進
 scripts/fetch_events.py      Actions 跑的抓取程式
 .github/workflows/           update-data.yml（每天）、pages.yml（部署）
 ```
@@ -94,7 +109,10 @@ scripts/fetch_events.py      Actions 跑的抓取程式
 前端啟動時：先讀 `data/events.json`（同源，不需要 key，手機直接可用）→
 用它覆蓋規則引擎推算的日期（同名事件 ±10 天內視為同一件事）→
 讀 `data/px.json` 畫背景走勢、並當作校準時的波動基準 →
+讀 `data/curated.json` 疊上 routine 隨時寫入的新事件與日期更正（同名 ±10 天內覆蓋推算日）→
 讀 `data/priced.json` 疊上已定價程度（±3 天內對應）→ 都失敗才退回純規則引擎。
+
+`curated.json` 由前端直接讀取，不用等隔天 Actions 合併，所以 routine 一 push 就生效。
 
 所以就算 Actions 掛了、FMP 額度用完了、你人在飛機上，打開網址還是有一份完整的日曆。
 
