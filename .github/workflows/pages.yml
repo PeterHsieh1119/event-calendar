@@ -15,7 +15,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # 部署前的閘門。四個 routine 都會直接 commit 到 main，沒有人在旁邊審，
+  # 所以壞掉的東西必須擋在這裡——這一關沒過就不部署，線上維持上一個好版本。
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: JS 語法
+        run: |
+          python - <<'PY'
+          import re, sys, io
+          src = io.open("index.html", encoding="utf-8").read()
+          m = re.search(r"<script>(.*?)</script>", src, re.S)
+          if not m:
+              sys.exit("index.html 裡找不到 <script> 區塊")
+          io.open("_inline.js", "w", encoding="utf-8").write(m.group(1))
+          PY
+          node --check _inline.js
+          rm -f _inline.js
+      - name: 資料驗證
+        run: python scripts/validate_data.py
+      - name: 行為煙霧測試
+        run: node scripts/smoke_test.js
+      - name: service worker 語法
+        run: node --check sw.js
+      - name: 抓取程式語法
+        run: python -m py_compile scripts/fetch_events.py
+
   deploy:
+    needs: validate
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -389,6 +389,13 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
 <!-- DAILY -->
 <section id="viewDaily" class="hide">
   <div class="panelbox">
+    <h4>共用規範（四個任務都會先讀這份）</h4>
+    <p>合法的事件類型代碼、<span class="est">t</span> 欄位格式、來源分級、雲端擋掉的網域、
+    不准捏造的規則、commit 前的兩道閘門。改這一份會同時影響四個任務。</p>
+    <pre class="seed" id="seedS"></pre>
+    <button class="btn sec" id="copyS">複製</button>
+  </div>
+  <div class="panelbox">
     <h4>設成每天自動跑</h4>
     <p>用 <b>Claude Cowork 的排程任務</b>（側邊欄 Scheduled → New task，或在任何 Cowork 對話裡打 /schedule）。它跑在雲端，電腦關著也會執行，而且吃得到你連的連接器、skill 跟網頁搜尋。Pro／Max／Team／Enterprise 都有。Claude Code Desktop 的 Routines 是開發者版本，需要指定資料夾，適合你想讓它直接改本機這個 HTML 檔的情況。</p>
     <p>把下面整段貼進任務的 prompt，cadence 選「每個工作日」，時間設台北早上 7:00（美股收盤後、台股開盤前）。</p>
@@ -1407,8 +1414,9 @@ function renderMatrix(){
 /* ═══ 每日排程 prompt ═══ */
 /* 四段 routine prompt 存在 routines/ 底下，網站與 cloud routine 讀的是同一份檔案。
    放在檔案裡而不是寫死在這支 JS 裡，是為了讓每週任務可以用 PR 改進自己的 prompt。 */
-const SEEDS={A:{f:"daily.md",el:"seedA"},B:{f:"review.md",el:"seedB"},
-             C:{f:"weekly.md",el:"seedC"},D:{f:"intraday.md",el:"seedD"}};
+const SEEDS={S:{f:"_shared.md",el:"seedS"},A:{f:"daily.md",el:"seedA"},
+             B:{f:"review.md",el:"seedB"},D:{f:"intraday.md",el:"seedD"},
+             C:{f:"weekly.md",el:"seedC"}};
 const SEEDTXT={};
 async function loadSeeds(){
   await Promise.all(Object.entries(SEEDS).map(async ([k,v])=>{

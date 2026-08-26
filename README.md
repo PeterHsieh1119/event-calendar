@@ -16,9 +16,10 @@
 
 1. 開一個 repo，例如 `event-calendar`，把這整個資料夾推上去（`main` 分支）。
 2. **Settings → Pages** → Source 選 **GitHub Actions**。
-3. **Settings → Secrets and variables → Actions → New repository secret**
-   - Name: `FMP_API_KEY`　Value: 你的 FMP key
-   - 沒有 key 也能跑，只是只剩官方 Fed／BLS 排程 + Stooq 的免費 NDX 日線。
+3. `FMP_API_KEY` 這個 secret **可設可不設**。
+   價格走 Yahoo（免 key），事件靠規則引擎與 routine 的網頁搜尋補，
+   財報的隱含變動由 routine 直接接 IBKR 選擇權鏈自己算。
+   設了的話 Actions 會多抓 FMP 的總經行事曆與財報日，資料更完整一些，但不是必要的。
 4. 推上去後 `pages.yml` 會自動部署，網址是
    `https://<你的帳號>.github.io/event-calendar/`
 5. **Actions → 每日更新事件資料 → Run workflow** 手動跑一次，確認 `data/events.json` 有東西。
@@ -37,12 +38,44 @@ cloud routine 的 prompt 只有一句「讀 routines/X.md 照做」，網站的
 **資料 → 每日排程** 頁也是 fetch 同樣四個檔來顯示，所以不會有兩邊走鐘的問題。
 prompt 進了版控，每週任務可以用 PR 改進自己的指示。
 
-| 任務 | 何時跑 | 指示檔 | 負責的檔案 | 產出方式 |
-|---|---|---|---|---|
-| 每日：定價與新事件 | 交易日台北 07:00 | `routines/daily.md` | `data/priced.json`、`data/curated.json` | 直接 commit main |
-| 每日：盤後複盤 | 交易日台北 08:00 | `routines/review.md` | 不改檔案 | 只回報 |
-| 每日：當日校正 | 交易日台北 21:30 | `routines/intraday.md` | `data/priced.json`、`data/curated.json` | 直接 commit main |
-| 每週：前瞻與工程改進 | 週日台北 21:00 | `routines/weekly.md` | `index.html`、`scripts/`、`routines/` | 開 PR 等你 merge |
+| 任務 | 何時跑 | 指示檔 | 負責的檔案 |
+|---|---|---|---|
+| 每日：定價與新事件 | 交易日台北 07:00 | `routines/daily.md` | `priced.json`、`curated.json` |
+| 每日：盤後複盤 | 交易日台北 08:00 | `routines/review.md` | `reviews.json` |
+| 每日：當日校正 | 交易日台北 21:30 | `routines/intraday.md` | `priced.json`、`curated.json` |
+| 每週：前瞻、環境、校正、工程 | 週日台北 21:00 | `routines/weekly.md` | `regime.json`、`index.html`、`scripts/`、`routines/` |
+
+四份任務檔開頭都會先讀 `routines/_shared.md`，那份放的是共用規範：
+合法的事件類型代碼、`t` 欄位格式、來源分級、雲端擋掉的網域、不准捏造的規則、
+以及 commit 前必須通過的兩道閘門。改那一份會同時影響四個任務。
+
+**全部直接 commit 到 main，沒有 PR、不需要你按任何按鈕。**
+安全網是閘門，不是人工審查——見下一節。
+
+### 兩道閘門
+
+沒有人在旁邊審 routine 的 commit，所以壞掉的東西必須被機器擋住：
+
+```bash
+python scripts/validate_data.py    # 資料閘門
+node scripts/smoke_test.js         # 行為煙霧測試
+```
+
+`validate_data.py` 檢查的是那些「不會報錯、只會靜默出錯」的事：未知的事件類型會被
+當成 ISM 計分、`priced` 對不上標題整筆失效、日期格式錯了整筆消失、複盤缺 `sigma`
+等於白填。合法的 `cat` 清單直接從 `index.html` 的 `CAT` 抓，不另外維護一份會走鐘的表。
+
+`smoke_test.js` 把 `index.html` 的整段 script 抽出來，用最小 DOM stub 在 Node 裡跑起來，
+對純函式下 287 項斷言：三張設定表的鍵要對得上、規則引擎不能產生未知的 `cat`、
+分數與落差的邊界、夏令冬令時區換算、同日聚合的次可加性、當月漲跌對照手算。
+`node --check` 只看得出語法錯誤，看不出「時區換算反了」這種事。
+
+兩道閘門都接在 `.github/workflows/pages.yml` 的 `validate` job 裡，
+`deploy` 依賴它。**沒過就不部署，線上維持上一個好版本。**
+`update-data.yml` 也會在 commit 前跑資料驗證。
+
+routine 在動任何東西之前也會先跑一次；如果在它還沒改東西之前就已經失敗，
+代表上一次有人推壞了，它會 `git revert` 那一筆再繼續。
 
 **當日校正**那一趟跑在美東 09:30，也就是當天 08:30 那批數據公布完之後。
 它只看今天與未來三天：核對官方排程有沒有跟日曆對不上、更新近身事件的定價。
@@ -96,11 +129,14 @@ data/curated.json            routine 放人工策劃事件（Actions 不覆蓋�
 data/priced.json             routine 每天寫入的已定價程度 pxd（Actions 不覆蓋）
 data/px.json                 QQQ / NDX 日線，年度軸背景與校準用的波動基準
 data/changelog.json          每日改動紀錄，網站的「資料」頁會顯示
+routines/_shared.md          四個任務共用的規範
 routines/daily.md            每日 07:00 任務的指示（網站與 cloud routine 讀同一份）
 routines/review.md           每日 08:00 盤後複盤
 routines/intraday.md         每日 21:30 當日校正
 routines/weekly.md           每週日前瞻與工程改進
 scripts/fetch_events.py      Actions 跑的抓取程式
+scripts/validate_data.py     資料閘門，routine 與 CI 都會跑
+scripts/smoke_test.js        行為煙霧測試，routine 與 CI 都會跑
 .github/workflows/           update-data.yml（每天）、pages.yml（部署）
 ```
 
