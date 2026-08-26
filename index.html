@@ -249,7 +249,7 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
     <button class="chip on" id="pxToggle">背景走勢</button>
   </div>
   <div id="yearBody"></div>
-  <div class="log" style="margin-top:12px" id="yearNote">軸上方＝分子端，下方＝分母端與風險；長度＝衝擊分數。月份下方的百分比是當月漲跌（前月最後收盤到本月最後收盤，當月為月初至今），資料來源同背景走勢；沒有價格資料的月份顯示 —。</div>
+  <div class="log" style="margin-top:12px" id="yearNote">軸上方＝分子端，下方＝分母端與風險；長度＝衝擊分數。<b>背景走勢</b>畫的是當月累積漲跌 %，以中間那條分子／分母分隔線為零，綠色＝月初至今為正、紅色＝為負；12 個月共用同一把尺，所以高低直接可比。月份下方的百分比是當月收盤漲跌（前月最後收盤到本月最後收盤，當月為月初至今），跟曲線終點是同一個數字；沒有價格資料的月份顯示 —。</div>
 </section>
 
 <!-- MONTH -->
@@ -814,28 +814,49 @@ function monthPct(y,m){
   if(!base||!end||!isFinite(base)||!isFinite(end)||base<=0)return null;
   return (end/base-1)*100;
 }
-/* 該年度的價格範圍，讓 12 個月共用同一把尺 */
-function pxRange(y){
-  let lo=Infinity,hi=-Infinity,n=0;
-  Object.entries(PX).forEach(([d,v])=>{if(+d.slice(0,4)===y){lo=Math.min(lo,v);hi=Math.max(hi,v);n++;}});
-  return n>4?{lo,hi}:null;
+/* 當月每一天相對「月初基準」的漲跌 %。基準＝前一個月最後收盤，
+   跟月標籤那個百分比同一把尺，所以曲線終點一定等於標籤的數字。 */
+function monthDailyPct(y,m){
+  const pre=y+"-"+pad(m+1)+"-";
+  const ks=Object.keys(PX).sort();
+  const inM=ks.filter(k=>k.startsWith(pre));
+  if(!inM.length)return [];
+  const prior=ks.filter(k=>k<inM[0]);
+  const base=prior.length?PX[prior[prior.length-1]]:PX[inM[0]];
+  if(!base||!isFinite(base)||base<=0)return [];
+  return inM.map(k=>({d:+k.slice(8,10),v:(PX[k]/base-1)*100}));
 }
-function pxPath(y,m,days,rng){
-  if(!rng||!PXON)return "";
-  const pts=[];
-  for(let d=1;d<=days;d++){
-    const v=PX[y+"-"+pad(m+1)+"-"+pad(d)];
-    if(v==null)continue;
-    const x=((d-.5)/days*100).toFixed(2);
-    const yy=(58-(v-rng.lo)/(rng.hi-rng.lo)*52).toFixed(2);
-    pts.push(x+","+yy);
-  }
-  if(pts.length<2)return "";
+/* 全年共用一把尺：取所有日漲跌的最大絕對值，12 個月才比得起來 */
+function pctScale(y){
+  let mx=0;
+  for(let m=0;m<12;m++)
+    monthDailyPct(y,m).forEach(p=>{if(Math.abs(p.v)>mx)mx=Math.abs(p.v);});
+  return mx>0.5?mx:null;
+}
+/* 背景走勢：以分子／分母中線為零，漲的部分填綠、跌的部分填紅。
+   同一條封閉路徑畫兩次，分別用中線上下的 clipPath 切開。 */
+const PXZERO=29, PXAMP=25;
+function pxPath(y,m,days,scale){
+  if(!scale||!PXON)return "";
+  const ser=monthDailyPct(y,m);
+  if(ser.length<2)return "";
+  const pts=ser.map(p=>{
+    const x=((p.d-.5)/days*100).toFixed(2);
+    const yy=clamp(PXZERO-p.v/scale*PXAMP,1,59).toFixed(2);
+    return x+","+yy;
+  });
   const line=pts.join(" ");
-  const area=`0,60 ${pts[0].split(",")[0]},60 ${line} ${pts[pts.length-1].split(",")[0]},60 100,60`;
+  const x0=pts[0].split(",")[0], xN=pts[pts.length-1].split(",")[0];
+  const area=`${x0},${PXZERO} ${line} ${xN},${PXZERO}`;
+  const id=`pxc${y}_${m}`;
   return `<div class="px"><svg viewBox="0 0 100 60" preserveAspectRatio="none">
-    <polygon points="${area}" fill="#4CC2E0" opacity="0.05"/>
-    <polyline points="${line}" fill="none" stroke="#8FA3B5" stroke-width="0.7" opacity="0.38"
+    <defs>
+      <clipPath id="${id}a"><rect x="0" y="0" width="100" height="${PXZERO}"/></clipPath>
+      <clipPath id="${id}b"><rect x="0" y="${PXZERO}" width="100" height="${60-PXZERO}"/></clipPath>
+    </defs>
+    <polygon points="${area}" fill="#3FD68C" opacity="0.13" clip-path="url(#${id}a)"/>
+    <polygon points="${area}" fill="#FF6B6B" opacity="0.13" clip-path="url(#${id}b)"/>
+    <polyline points="${line}" fill="none" stroke="#8FA3B5" stroke-width="0.7" opacity="0.45"
       vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg></div>`;
 }
 
@@ -948,10 +969,10 @@ function renderImpact(){
 function renderYear(){
   $("yLabel").textContent=curY+" 年";
   const box=$("yearBody");box.innerHTML="";
-  const rng=pxRange(curY);
+  const scale=pctScale(curY);
   for(let m=0;m<12;m++){
     const evs=byMonth(curY,m),days=dim(curY,m);
-    let mk=pxPath(curY,m,days,rng);
+    let mk=pxPath(curY,m,days,scale);
     for(let wd=8;wd<=days;wd+=7) mk+=`<div class="wk" style="left:${((wd-.5)/days*100).toFixed(2)}%"></div>`;
     const perDay={};
     evs.forEach(e=>{const s=score(e).s,dnum=parse(e.date).getDate(),x=(dnum-.5)/days*100;
