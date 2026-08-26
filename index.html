@@ -88,34 +88,31 @@ h1{font-family:var(--serif);font-size:25px;margin:7px 0 5px;font-weight:700}
 .tag.d{color:var(--den);border-color:#4CC2E040}
 .tag.r{color:var(--risk);border-color:#C77DFF40}
 
-/* continuous year timeline */
+/* top overview timeline — 只做定位與滑動，細節在下面的月列 */
 .tl{position:relative;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
-  border:1px solid var(--line);border-radius:10px;background:var(--panel2);overscroll-behavior-x:contain}
+  border:1px solid var(--line);border-radius:10px;background:var(--panel2);
+  overscroll-behavior-x:contain;margin-bottom:14px}
 .tl::-webkit-scrollbar{height:7px}
 .tl::-webkit-scrollbar-track{background:transparent}
 .tl::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
-.tlin{position:relative;height:212px}
+.tlin{position:relative;height:108px}
 .tlpast{position:absolute;top:0;bottom:0;left:0;background:#0000003d;pointer-events:none}
 .tlsep{position:absolute;top:0;bottom:0;width:1px;background:var(--line);pointer-events:none}
-.tlwk{position:absolute;top:26px;bottom:26px;width:1px;background:#ffffff08;pointer-events:none}
+.tlwk{position:absolute;top:20px;bottom:6px;width:1px;background:#ffffff08;pointer-events:none}
 .tlmid{position:absolute;left:0;right:0;height:1px;background:var(--line2);pointer-events:none}
-.tlmon{position:absolute;top:5px;font-family:var(--serif);font-size:16px;font-weight:700;
-  color:var(--tx2);white-space:nowrap;cursor:pointer;z-index:5;padding:2px 4px;border-radius:5px}
-.tlmon:hover{background:#ffffff0d}
-.tlmon small{font-family:var(--mono);font-size:10.5px;font-weight:400;margin-left:5px}
+.tlmon{position:absolute;top:3px;font-family:var(--mono);font-size:10.5px;color:var(--tx3);
+  white-space:nowrap;cursor:pointer;z-index:5;padding:2px 5px;border-radius:5px}
+.tlmon:hover{background:#ffffff0d;color:var(--tx2)}
+.tlmon b{font-family:var(--serif);font-size:12.5px;font-weight:700;margin-right:4px}
 .tlmon.cur{color:var(--today)}
 .tmk{position:absolute;border-radius:2px;pointer-events:none}
-.tlab{position:absolute;font-family:var(--mono);font-size:9.5px;line-height:1;white-space:nowrap;
-  transform:translateX(-50%);letter-spacing:-.02em;pointer-events:none}
-.tlab.n{color:var(--num)} .tlab.d{color:var(--den)} .tlab.r{color:var(--risk)}
-.ttl{position:absolute;font-size:10px;line-height:1;white-space:nowrap;transform:translateX(-50%);
-  pointer-events:none;color:var(--tx2)}
 .tltoday{position:absolute;top:0;bottom:0;width:1px;background:var(--today);z-index:3;pointer-events:none}
-.tlnow{position:absolute;top:3px;font-family:var(--mono);font-size:9px;color:var(--bg);
-  background:var(--today);padding:2px 5px;border-radius:4px;z-index:4;transform:translateX(-50%);
-  pointer-events:none;white-space:nowrap}
-.thit{position:absolute;top:26px;bottom:26px;transform:translateX(-50%);cursor:pointer;border-radius:3px;z-index:2}
-.thit:hover{background:#ffffff0d}
+.tlnow{position:absolute;bottom:3px;font-family:var(--mono);font-size:9px;color:var(--bg);
+  background:var(--today);padding:2px 5px;border-radius:4px;z-index:4;
+  transform:translateX(-50%);pointer-events:none;white-space:nowrap}
+.thit{position:absolute;top:20px;bottom:6px;transform:translateX(-50%);cursor:pointer;
+  border-radius:3px;z-index:2}
+.thit:hover{background:#ffffff0f}
 .tlpx{position:absolute;left:0;top:0;pointer-events:none}
 .tlpx svg{display:block}
 
@@ -278,11 +275,12 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
     <button class="chip" data-lab="70">只看關鍵</button>
     <span class="spacer"></span>
     <button class="chip on" id="pxToggle">背景走勢</button>
-    <span style="font-family:var(--mono);font-size:10.5px;color:var(--tx3);margin:0 2px 0 8px">縮放</span>
-    <button class="chip" data-ppd="6">年</button>
-    <button class="chip on" data-ppd="11">季</button>
-    <button class="chip" data-ppd="22">月</button>
+    <span style="font-family:var(--mono);font-size:10.5px;color:var(--tx3);margin:0 2px 0 8px">總覽</span>
+    <button class="chip" data-ppd="5">年</button>
+    <button class="chip on" data-ppd="9">季</button>
+    <button class="chip" data-ppd="18">月</button>
   </div>
+  <div id="tlWrap"></div>
   <div id="yearBody"></div>
   <div class="log" style="margin-top:12px" id="yearNote">軸上方＝分子端，下方＝分母端與風險；長度＝衝擊分數。<b>背景走勢</b>畫的是當月累積漲跌 %，以中間那條分子／分母分隔線為零，綠色＝月初至今為正、紅色＝為負；12 個月共用同一把尺，所以高低直接可比。月份下方的百分比是當月收盤漲跌（前月最後收盤到本月最後收盤，當月為月初至今），跟曲線終點是同一個數字；沒有價格資料的月份顯示 —。</div>
 </section>
@@ -860,6 +858,18 @@ async function loadPx(key){
   //   從瀏覽器打過去只會拿到 CORS 錯誤，留著只是每次載入都在 console 噴紅字。）
   return false;
 }
+/* 年初至今的累積漲跌序列，給頂部總覽軸用。基準＝去年最後收盤。 */
+function ytdSeries(y){
+  const ks=Object.keys(PX).sort();
+  const inY=ks.filter(k=>k.slice(0,4)===String(y));
+  if(inY.length<2)return null;
+  const prior=ks.filter(k=>k<inY[0]);
+  const base=prior.length?PX[prior[prior.length-1]]:PX[inY[0]];
+  if(!base||!isFinite(base)||base<=0)return null;
+  let mx=0;
+  const pts=inY.map(k=>{const v=(PX[k]/base-1)*100;if(Math.abs(v)>mx)mx=Math.abs(v);return {d:k,v};});
+  return {pts,mx:Math.max(mx,1)};
+}
 /* 當月漲跌：前一個月最後收盤 → 本月最後收盤。當月尚未結束時就是月初至今。 */
 function monthPct(y,m){
   const pre=y+"-"+pad(m+1)+"-";
@@ -872,46 +882,50 @@ function monthPct(y,m){
   if(!base||!end||!isFinite(base)||!isFinite(end)||base<=0)return null;
   return (end/base-1)*100;
 }
-/* 年初至今的累積漲跌序列。基準＝去年最後收盤，沒有就用今年第一筆。 */
-function ytdSeries(y){
+/* 當月每一天相對「月初基準」的漲跌 %。基準＝前一個月最後收盤，
+   跟月標籤那個百分比同一把尺，所以曲線終點一定等於標籤的數字。 */
+function monthDailyPct(y,m){
+  const pre=y+"-"+pad(m+1)+"-";
   const ks=Object.keys(PX).sort();
-  const inY=ks.filter(k=>k.slice(0,4)===String(y));
-  if(inY.length<2)return null;
-  const prior=ks.filter(k=>k<inY[0]);
-  const base=prior.length?PX[prior[prior.length-1]]:PX[inY[0]];
-  if(!base||!isFinite(base)||base<=0)return null;
-  let mx=0;
-  const pts=inY.map(k=>{
-    const v=(PX[k]/base-1)*100;
-    if(Math.abs(v)>mx)mx=Math.abs(v);
-    return {d:k,v};
-  });
-  return {pts,mx:Math.max(mx,1)};
+  const inM=ks.filter(k=>k.startsWith(pre));
+  if(!inM.length)return [];
+  const prior=ks.filter(k=>k<inM[0]);
+  const base=prior.length?PX[prior[prior.length-1]]:PX[inM[0]];
+  if(!base||!isFinite(base)||base<=0)return [];
+  return inM.map(k=>({d:+k.slice(8,10),v:(PX[k]/base-1)*100}));
 }
-/* 時間軸背景：一整年連續的累積漲跌 %，以中線為零，上綠下紅。 */
-function tlCurve(y,ppd,W,X){
-  if(!PXON)return "";
-  const ser=ytdSeries(y);
-  if(!ser)return "";
-  const A=78, pts=[];
-  ser.pts.forEach(p=>{
-    const x=X(p.d); if(x==null)return;
-    pts.push(x.toFixed(1)+","+clamp(TLZERO-p.v/ser.mx*A,26,TLH-6).toFixed(1));
+/* 全年共用一把尺：取所有日漲跌的最大絕對值，12 個月才比得起來 */
+function pctScale(y){
+  let mx=0;
+  for(let m=0;m<12;m++)
+    monthDailyPct(y,m).forEach(p=>{if(Math.abs(p.v)>mx)mx=Math.abs(p.v);});
+  return mx>0.5?mx:null;
+}
+/* 背景走勢：以分子／分母中線為零，漲的部分填綠、跌的部分填紅。
+   同一條封閉路徑畫兩次，分別用中線上下的 clipPath 切開。 */
+const PXZERO=29, PXAMP=25;
+function pxPath(y,m,days,scale){
+  if(!scale||!PXON)return "";
+  const ser=monthDailyPct(y,m);
+  if(ser.length<2)return "";
+  const pts=ser.map(p=>{
+    const x=((p.d-.5)/days*100).toFixed(2);
+    const yy=clamp(PXZERO-p.v/scale*PXAMP,1,59).toFixed(2);
+    return x+","+yy;
   });
-  if(pts.length<2)return "";
   const line=pts.join(" ");
   const x0=pts[0].split(",")[0], xN=pts[pts.length-1].split(",")[0];
-  const area=`${x0},${TLZERO} ${line} ${xN},${TLZERO}`;
-  const id="tlpx"+y;
-  return `<div class="tlpx"><svg width="${W}" height="${TLH}" viewBox="0 0 ${W} ${TLH}">
+  const area=`${x0},${PXZERO} ${line} ${xN},${PXZERO}`;
+  const id=`pxc${y}_${m}`;
+  return `<div class="px"><svg viewBox="0 0 100 60" preserveAspectRatio="none">
     <defs>
-      <clipPath id="${id}a"><rect x="0" y="0" width="${W}" height="${TLZERO}"/></clipPath>
-      <clipPath id="${id}b"><rect x="0" y="${TLZERO}" width="${W}" height="${TLH-TLZERO}"/></clipPath>
+      <clipPath id="${id}a"><rect x="0" y="0" width="100" height="${PXZERO}"/></clipPath>
+      <clipPath id="${id}b"><rect x="0" y="${PXZERO}" width="100" height="${60-PXZERO}"/></clipPath>
     </defs>
     <polygon points="${area}" fill="#3FD68C" opacity="0.13" clip-path="url(#${id}a)"/>
     <polygon points="${area}" fill="#FF6B6B" opacity="0.13" clip-path="url(#${id}b)"/>
-    <polyline points="${line}" fill="none" stroke="#8FA3B5" stroke-width="1" opacity="0.45"
-      stroke-linejoin="round"/></svg></div>`;
+    <polyline points="${line}" fill="none" stroke="#8FA3B5" stroke-width="0.7" opacity="0.45"
+      vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg></div>`;
 }
 
 
@@ -1030,73 +1044,64 @@ function renderImpact(){
   $("impactBody").innerHTML=html||'<div class="log">此篩選下沒有事件。</div>';
   bind($("impactBody"));bindTips($("impactBody"));
 }
-const TLH=212, TLZERO=112;
-let PPD=11;                     // 每天幾 px，由「縮放」chip 控制
+const TLH=108, TLZERO=62;
+let PPD=9;                       // 總覽軸每天幾 px
 const MN=["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
 
-function renderYear(){
-  $("yLabel").textContent=curY+" 年";
-  const box=$("yearBody");
+/* 頂部總覽軸：一整年拉成一條，只放事件標記與月份定位，不放日期與事件名——
+   那些文字在連續軸上一定會擠在一起，細節留給下面的月列。 */
+function renderTimeline(){
+  const wrap=$("tlWrap"); if(!wrap)return;
   const jan=new Date(curY,0,1); jan.setHours(0,0,0,0);
-  const yDays=((new Date(curY+1,0,1))-jan)/864e5;          // 365 或 366
+  const yDays=((new Date(curY+1,0,1))-jan)/864e5;
   const W=Math.round(yDays*PPD);
   const dx=ds=>{const t=(parse(ds)-jan)/864e5; return (t<0||t>=yDays)?null:t*PPD+PPD/2;};
 
   let h='<div class="tlmid" style="top:'+TLZERO+'px"></div>';
-  h+=tlCurve(curY,PPD,W,dx);
 
-  // 月分隔線與月標題（含當月漲跌）
+  // 背景：年初至今累積漲跌，中線為零、上綠下紅
+  const ser=PXON?ytdSeries(curY):null;
+  if(ser){
+    const A=34, pts=[];
+    ser.pts.forEach(p=>{const x=dx(p.d); if(x==null)return;
+      pts.push(x.toFixed(1)+","+clamp(TLZERO-p.v/ser.mx*A,20,TLH-6).toFixed(1));});
+    if(pts.length>1){
+      const line=pts.join(" ");
+      const x0=pts[0].split(",")[0], xN=pts[pts.length-1].split(",")[0];
+      const area=`${x0},${TLZERO} ${line} ${xN},${TLZERO}`;
+      const id="tlpx"+curY;
+      h+=`<div class="tlpx"><svg width="${W}" height="${TLH}" viewBox="0 0 ${W} ${TLH}">
+        <defs><clipPath id="${id}a"><rect x="0" y="0" width="${W}" height="${TLZERO}"/></clipPath>
+        <clipPath id="${id}b"><rect x="0" y="${TLZERO}" width="${W}" height="${TLH-TLZERO}"/></clipPath></defs>
+        <polygon points="${area}" fill="#3FD68C" opacity="0.13" clip-path="url(#${id}a)"/>
+        <polygon points="${area}" fill="#FF6B6B" opacity="0.13" clip-path="url(#${id}b)"/>
+        <polyline points="${line}" fill="none" stroke="#8FA3B5" stroke-width="1" opacity="0.4"
+          stroke-linejoin="round"/></svg></div>`;
+    }
+  }
+
   for(let m=0;m<12;m++){
     const x=Math.round(((new Date(curY,m,1))-jan)/864e5*PPD);
     if(m>0)h+=`<div class="tlsep" style="left:${x}px"></div>`;
     const pct=monthPct(curY,m);
-    const ph=(pct==null)?'<small style="color:var(--tx3)">—</small>'
-      :`<small style="color:${pct>=0?"var(--up)":"var(--dn)"}">${pct>=0?"+":""}${pct.toFixed(1)}%</small>`;
+    const ph=(pct==null)?"":`<span style="color:${pct>=0?"var(--up)":"var(--dn)"}">${pct>=0?"+":""}${pct.toFixed(1)}%</span>`;
     const cur=(curY===TODAY.getFullYear()&&m===TODAY.getMonth())?" cur":"";
-    h+=`<div class="tlmon${cur}" data-m="${m}" style="left:${x+5}px">${MN[m]}${ph}</div>`;
+    h+=`<div class="tlmon${cur}" data-m="${m}" style="left:${x+4}px"><b>${MN[m]}</b>${ph}</div>`;
   }
-  // 週線
   for(let t=0;t<yDays;t+=7) h+=`<div class="tlwk" style="left:${Math.round(t*PPD)}px"></div>`;
 
-  // 事件標記
-  const evs=vis().filter(e=>e.date.slice(0,4)===String(curY));
   const perDay={};
-  evs.forEach(e=>{
+  vis().filter(e=>e.date.slice(0,4)===String(curY)).forEach(e=>{
     const x=dx(e.date); if(x==null)return;
-    const sc=score(e).s, hh=Math.max(3,sc*.5);
+    const sc=score(e).s, hh=Math.max(2,sc*.32);
     const c=e.kind==="N"?"var(--num)":e.kind==="D"?"var(--den)":"var(--risk)";
-    const w=sc>=60?4:2.5;
+    const w=sc>=60?3.5:2;
     const top=e.kind==="N"?(TLZERO-2-hh):(TLZERO+2);
     h+=`<div class="tmk" style="left:${(x-w/2).toFixed(1)}px;top:${top.toFixed(1)}px;`+
-       `height:${hh.toFixed(1)}px;width:${w}px;background:${c};opacity:${(.35+sc/160).toFixed(2)}"></div>`;
-    const p=perDay[e.date]=perDay[e.date]||{x,date:e.date,s:0,k:"D",title:""};
-    if(sc>p.s){p.s=sc;p.k=e.kind;p.title=e.title;}
+       `height:${hh.toFixed(1)}px;width:${w}px;background:${c};opacity:${(.4+sc/170).toFixed(2)}"></div>`;
+    perDay[e.date]={x,date:e.date};
   });
 
-  // 日期標籤兩排、事件名一排，都做碰撞避讓
-  const days=Object.values(perDay).sort((a,b)=>a.x-b.x);
-  const rows=[[],[]], used=[];
-  days.filter(o=>o.s>=SHOWLAB).forEach(o=>{
-    const lab=(parse(o.date).getMonth()+1)+"/"+parse(o.date).getDate();
-    const wNeed=lab.length*6+6;
-    let r=-1;
-    for(let i=0;i<2;i++){
-      const last=rows[i][rows[i].length-1];
-      if(last==null||o.x-last>=wNeed){r=i;break;}
-    }
-    if(r<0)return;
-    rows[r].push(o.x);
-    h+=`<div class="tlab ${o.k.toLowerCase()}" style="left:${o.x.toFixed(1)}px;top:${168+r*12}px">${lab}</div>`;
-  });
-  days.filter(o=>o.s>=70).forEach(o=>{
-    const wNeed=o.title.length*10+10;
-    const last=used[used.length-1];
-    if(last!=null&&o.x-last<wNeed)return;
-    used.push(o.x);
-    h+=`<div class="ttl" style="left:${o.x.toFixed(1)}px;top:192px">${o.title}</div>`;
-  });
-
-  // 已過去的區間打暗、今天畫線
   let todayX=null;
   if(curY<TODAY.getFullYear())h+=`<div class="tlpast" style="width:${W}px"></div>`;
   else if(curY===TODAY.getFullYear()){
@@ -1107,29 +1112,73 @@ function renderYear(){
       h+=`<div class="tlnow" style="left:${todayX.toFixed(1)}px">今天</div>`;
     }
   }
-
-  // 有事件的日子做成可點可 hover 的感應區
-  days.forEach(o=>{
+  Object.values(perDay).forEach(o=>{
     h+=`<div class="thit" data-tip="${o.date}" data-d="${o.date}" `+
-       `style="left:${o.x.toFixed(1)}px;width:${Math.max(12,PPD).toFixed(0)}px"></div>`;
-  });
+       `style="left:${o.x.toFixed(1)}px;width:${Math.max(10,PPD).toFixed(0)}px"></div>`;});
 
-  box.innerHTML=`<div class="tl" id="tlScroll"><div class="tlin" style="width:${W}px">${h}</div></div>`;
+  wrap.innerHTML=`<div class="tl" id="tlScroll"><div class="tlin" style="width:${W}px">${h}</div></div>`;
   const sc=$("tlScroll");
   sc.querySelectorAll(".thit").forEach(el=>el.onclick=()=>{
     const ds=el.dataset.d; openDay(ds,vis().filter(x=>x.date===ds));});
   sc.querySelectorAll(".tlmon").forEach(el=>el.onclick=()=>{
-    curM=+el.dataset.m; switchView("month");});
+    const row=$("yearBody").children[+el.dataset.m];
+    if(row)row.scrollIntoView({behavior:"smooth",block:"center"});});
   bindTips(sc);
 
-  // 打開時捲到以今天為中心；不是今年就停在年初。
-  // 同步做一次（讀 clientWidth 會強制 layout），再用 rAF 補一次——
-  // 分頁在背景時不會產生影格，只靠 rAF 會等到使用者切回來才置中。
+  // 同步設一次（讀 clientWidth 會強制 layout），再用 rAF 補一次——
+  // 分頁在背景時不產生影格，只靠 rAF 會等使用者切回來才置中。
   const center=()=>{
     const t=(curY===TODAY.getFullYear()&&todayX!=null)?todayX:0;
     if(sc.clientWidth>0)sc.scrollLeft=Math.max(0,t-sc.clientWidth/2);
   };
   center(); requestAnimationFrame(center);
+}
+
+function renderYear(){
+  $("yLabel").textContent=curY+" 年";
+  renderTimeline();
+  const box=$("yearBody");box.innerHTML="";
+  const scale=pctScale(curY);
+  for(let m=0;m<12;m++){
+    const evs=byMonth(curY,m),days=dim(curY,m);
+    let mk=pxPath(curY,m,days,scale);
+    for(let wd=8;wd<=days;wd+=7) mk+=`<div class="wk" style="left:${((wd-.5)/days*100).toFixed(2)}%"></div>`;
+    const perDay={};
+    evs.forEach(e=>{const s=score(e).s,dnum=parse(e.date).getDate(),x=(dnum-.5)/days*100;
+      const h=Math.max(3,s*.20),c=e.kind==="N"?"up":e.kind==="D"?"dn":"rk";
+      mk+=`<div class="mk ${c}" style="left:${x.toFixed(2)}%;height:${h}px;width:${s>=60?4:2.5}px;margin-left:-${s>=60?2:1.25}px;opacity:${.35+s/160}"></div>`;
+      const p=perDay[dnum]=perDay[dnum]||{x,d:dnum,s:0,k:"D",date:e.date};
+      if(s>p.s){p.s=s;p.k=e.kind;}});
+    // 日期只標一次：取當天分數最高的事件決定顏色
+    const arr=Object.values(perDay).filter(o=>o.s>=SHOWLAB).sort((a,b)=>a.x-b.x);
+    const rows=[[],[]];
+    arr.forEach(o=>{
+      let r=0;
+      if(rows[0].length&&o.x-rows[0][rows[0].length-1]<8)r=1;
+      if(r===1&&rows[1].length&&o.x-rows[1][rows[1].length-1]<8)return;
+      rows[r].push(o.x);
+      mk+=`<div class="dlab ${o.k.toLowerCase()}" style="left:${o.x.toFixed(2)}%;bottom:${4+(1-r)*11}px">${o.d}</div>`;});
+    // 滑鼠感應區
+    Object.values(perDay).forEach(o=>{
+      mk+=`<div class="hit" data-tip="${o.date}" style="left:${o.x.toFixed(2)}%"></div>`;});
+    let past="";
+    if(curY<TODAY.getFullYear()||(curY===TODAY.getFullYear()&&m<TODAY.getMonth()))past='<div class="past" style="right:0"></div>';
+    else if(curY===TODAY.getFullYear()&&m===TODAY.getMonth()){const x=(TODAY.getDate()/days*100).toFixed(2);
+      past=`<div class="past" style="width:${x}%"></div><div class="todaymark" style="left:${x}%"></div>`;}
+    const top=evs.map(e=>({e,s:score(e).s})).sort((a,b)=>b.s-a.s).slice(0,3)
+      .map(x=>`<span class="tag ${x.e.kind.toLowerCase()}">${parse(x.e.date).getDate()}日 ${x.e.title} ${x.s}</span>`).join("");
+    const row=document.createElement("div");
+    row.className="mrow"+(curY===TODAY.getFullYear()&&m===TODAY.getMonth()?" cur":"");
+    const pct=monthPct(curY,m);
+    const pctHTML=(pct==null)
+      ? '<small style="color:var(--tx3)">—</small>'
+      : `<small style="color:${pct>=0?"var(--up)":"var(--dn)"}">${pct>=0?"+":""}${pct.toFixed(1)}%</small>`;
+    row.innerHTML=`<div class="mlabel">${m+1}月${pctHTML}</div>
+      <div><div class="axis">${past}<div class="mid"></div>${mk}</div><div class="mtags">${top}</div></div>`;
+    row.onclick=()=>{curM=m;switchView("month");};
+    box.appendChild(row);
+  }
+  bindTips(box);
 }
 function renderMonth(){
   $("mLabel").textContent=(curM+1)+"月";$("mYear").textContent=curY;
@@ -1391,7 +1440,7 @@ document.querySelectorAll(".chip[data-met]").forEach(b=>b.onclick=()=>{
 document.querySelectorAll(".chip[data-ppd]").forEach(b=>b.onclick=()=>{
   PPD=parseInt(b.dataset.ppd,10);
   document.querySelectorAll(".chip[data-ppd]").forEach(x=>x.classList.toggle("on",x===b));
-  renderYear();});
+  renderTimeline();});
 document.querySelectorAll(".chip[data-lab]").forEach(b=>b.onclick=()=>{
   SHOWLAB=parseInt(b.dataset.lab,10);
   document.querySelectorAll(".chip[data-lab]").forEach(x=>x.classList.toggle("on",x===b));
@@ -1423,14 +1472,15 @@ window.addEventListener("scroll",hideTip,{passive:true});
 renderRegime();
 function pxNote(ok){
   const el=$("yearNote"); if(!el)return;
-  el.innerHTML="一整年拉成一條時間軸，打開時停在以今天為中心的位置，左右滑動看前後。"+
-    "軸上方＝分子端，下方＝分母端與風險；長度＝衝擊分數。"+
-    "點任何一天開抽屜，點月份名稱跳到那個月的月曆。"+
-    (ok?`<b>背景走勢</b>是年初至今的累積漲跌 %，以中間那條分子／分母分隔線為零，`
-       +`綠色＝相對年初為正、紅色＝為負。月份名稱旁邊的百分比則是<b>當月</b>漲跌，`
-       +`兩者基準不同：曲線看的是全年累積，月標籤看的是這個月自己走了多少。資料來源 ${PXSRC}。`
+  el.innerHTML="<b>最上面那條</b>是整年的總覽，打開時停在以今天為中心的位置，可以左右滑；"+
+    "它只放事件標記與月份，不放日期和事件名，因為那些字在連續軸上一定會擠在一起。"+
+    "點上面的月份會捲到下面對應的那一列，點任何一天直接開抽屜。"+
+    "<b>下面每個月一列</b>才是看細節的地方：軸上方＝分子端，下方＝分母端與風險，長度＝衝擊分數。"+
+    (ok?`背景走勢都以分子／分母中線為零、上綠下紅，但兩邊基準不同：`
+       +`總覽軸畫的是<b>年初至今</b>的累積漲跌，月列畫的是<b>當月</b>累積漲跌，`
+       +`月份旁的百分比則是當月收盤漲跌，跟月列曲線的終點是同一個數字。資料來源 ${PXSRC}。`
        :"背景走勢未載入——data/px.json 是空的。Actions 每天會用 Yahoo 更新它，"
-       +"手動跑一次 Actions 的「每日更新事件資料」就會有。");
+       +"手動跑一次 Actions 的「每日更新事件資料」就會有。沒有價格資料的月份顯示 —。");
 }
 (async()=>{
   loadSeeds();                      // prompt 檔慢慢載，不擋主畫面
