@@ -80,6 +80,8 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "isEDT:isEDT,iso:iso,parse:parse,clamp:clamp,expectOf:expectOf," +
   "pxDelta:pxDelta,pxFmt:pxFmt,applyPx:applyPx,selectPx:selectPx," +
   "getPxSel:function(){return PXSEL;},getPxUnit:function(){return PXUNIT;}," +
+  "metricsOf:metricsOf,withUnit:withUnit,flowHTML:flowHTML,chainHTML:chainHTML," +
+  "readingHTML:readingHTML," +
   "setPX:function(o){PX=o;},setREVIEW:function(o){REVIEW=o;}};\n";
 
 try {
@@ -243,7 +245,36 @@ catKeys.forEach((k) => {
   eq("舊格式預設為價格單位", T.getPxUnit(), "pct");
 }
 
-/* ── 9. 版本字串：index.html 的 APP_VER 必須跟 sw.js 的 CACHE 一致 ── */
+/* ── 9. 多指標（財報的 EPS 與營收）與抽屜三個區塊 ── */
+{
+  const ev = { date: "2026-08-26", title: "NVDA 財報", cat: "earn3", kind: "N", est: false,
+    metrics: [{ n: "EPS", cons: "1.20", unit: "USD" },
+              { n: "營收", cons: "46.5", unit: "B" }] };
+  T.setREVIEW({ "2026-08-26|NVDA 財報": { cons: "1.20", act: "1.31", z: "1.8",
+    metrics: [{ n: "EPS", act: "1.31" }, { n: "營收", act: "46.6" }] } });
+  const mm = T.metricsOf(ev);
+  eq("兩個指標都併起來", mm.length, 2);
+  eq("EPS 有共識", mm[0].cons, "1.20");
+  eq("EPS 有實際", mm[0].act, "1.31");
+  eq("EPS 優於預期", mm[0].dir, 1);
+  eq("營收 46.5→46.6 只差 0.2%，算符合", mm[1].dir, 0);
+
+  eq("字母單位要空一格", T.withUnit("1.20", "USD"), "1.20 USD");
+  eq("符號單位不空格", T.withUnit("0.2", "%"), "0.2%");
+  eq("沒有單位就原樣", T.withUnit("5", ""), "5");
+  eq("沒有值就空字串", T.withUnit("", "USD"), "");
+
+  const flow = T.flowHTML(ev);
+  ok("走向圖有畫出來", flow.indexOf("高於預期") > 0 && flow.indexOf("低於預期") > 0);
+  ok("走向圖不引外部函式庫", flow.indexOf("<script") < 0 && flow.indexOf("http") < 0);
+  const chain = T.chainHTML(ev);
+  ok("傳導鏈有列出算式", chain.indexOf("事件推力") > 0 && chain.indexOf("加總") > 0);
+  const reading = T.readingHTML(ev);
+  ok("讀法有附免責", reading.indexOf("不是進出場建議") > 0);
+  T.setREVIEW({});
+}
+
+/* ── 10. 版本字串：index.html 的 APP_VER 必須跟 sw.js 的 CACHE 一致 ── */
 {
   const swSrc = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
   const swVer = (swSrc.match(/CACHE\s*=\s*"([^"]+)"/) || [])[1];

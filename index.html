@@ -119,6 +119,25 @@ h1{font-family:var(--serif);font-size:25px;margin:7px 0 5px;font-weight:700}
 .tlpx{position:absolute;left:0;top:0;pointer-events:none}
 .tlpx svg{display:block}
 
+/* 走向圖：方塊＋箭頭，純 CSS 畫，不引任何函式庫（單檔必須離線可用） */
+.flow{display:grid;grid-template-columns:auto 18px 1fr 18px 1fr;gap:8px;align-items:center;margin:10px 0 4px}
+.fnode{border:1px solid var(--line2);border-radius:9px;padding:8px 10px;background:var(--panel2);font-size:12.5px;line-height:1.35}
+.fnode b{display:block;font-size:13px}
+.fnode small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--tx3);margin-top:3px}
+.fnode.up{border-color:#3FD68C55} .fnode.dn{border-color:#FF6B6B55}
+.fnode.up b{color:var(--up)} .fnode.dn b{color:var(--dn)}
+.farrow{text-align:center;color:var(--tx3);font-size:15px;line-height:1}
+.fstack{display:grid;gap:8px}
+.fasset{font-family:var(--mono);font-size:11px;display:flex;justify-content:space-between;gap:8px;padding:1px 0}
+.fasset i{font-style:normal;color:var(--tx2)}
+@media(max-width:560px){.flow{grid-template-columns:1fr;gap:6px}.farrow{transform:rotate(90deg);height:14px}}
+.mtab{width:100%;border-collapse:collapse;font-size:12px;margin:2px 0 10px}
+.mtab th{text-align:left;font-family:var(--mono);font-size:10.5px;color:var(--tx3);font-weight:400;padding:4px 6px 4px 0;border-bottom:1px solid var(--line)}
+.mtab td{padding:5px 6px 5px 0;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11.5px}
+.mtab td:first-child{font-family:var(--sans);color:var(--tx2)}
+.chain{font-size:12px;line-height:1.7;color:var(--tx2)}
+.chain code{font-family:var(--mono);font-size:11px;color:var(--tx)}
+
 /* month grid */
 .mhead{display:flex;align-items:baseline;gap:10px;padding:6px 2px 12px}
 .mhead .big{font-family:var(--serif);font-size:36px;font-weight:700;line-height:1}
@@ -477,7 +496,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-v11";
+const APP_VER = "evcal-v12";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -880,6 +899,118 @@ function expectOf(e){
     hasCons:!!cons,hasAct:!!act};
 }
 const vcol=d=>d>0?"var(--dn)":d<0?"var(--den)":"var(--tx2)";
+/* USD 這種字母單位要空一格，% 這種符號單位不用 */
+const withUnit=(v,u)=>!v?"":(!u?String(v):(/^[A-Za-z]/.test(u)?v+" "+u:v+u));
+
+/* 多指標（財報的 EPS 與營收之類）：事前共識放 priced.json 的 metrics，
+   事後實際由複盤寫進 reviews.json 的同名 metrics，這裡併起來。 */
+function metricsOf(e){
+  const rv=REVIEW[rkey(e)]||{};
+  const pre=Array.isArray(e.metrics)?e.metrics:[];
+  const post=Array.isArray(rv.metrics)?rv.metrics:[];
+  const byName={};
+  pre.forEach(m=>{if(m&&m.n)byName[m.n]={n:m.n,cons:m.cons||"",unit:m.unit||"",act:""};});
+  post.forEach(m=>{
+    if(!m||!m.n)return;
+    byName[m.n]=byName[m.n]||{n:m.n,cons:"",unit:m.unit||"",act:""};
+    if(m.cons)byName[m.n].cons=m.cons;
+    if(m.act)byName[m.n].act=m.act;
+    if(m.unit)byName[m.n].unit=m.unit;
+  });
+  return Object.values(byName).map(m=>{
+    const c=parseFloat(m.cons), a=parseFloat(m.act);
+    let d=0,beat="";
+    if(isFinite(c)&&isFinite(a)){
+      const rel=Math.abs(c)>1e-9?(a-c)/Math.abs(c):(a-c);
+      // 財報用 1% 當門檻。2% 太寬——關鍵分項差 2% 市場就當 miss 在打了。
+      d=Math.abs(rel)<0.01?0:Math.sign(rel);
+      beat=(d===0?"符合":(d>0?"優於":"低於"))+(Math.abs(c)>1e-9?` ${(rel*100).toFixed(1)}%`:"");
+    }
+    return Object.assign({},m,{dir:d,beat:beat});
+  });
+}
+
+/* 走向圖：事件 → 兩種意外方向 → 各自打到的資產。
+   資產值用模型算出來的相對彈性，下行意外就是整組反號。 */
+function flowHTML(e){
+  const ai=assetImpact(e), c=CAT[e.cat]||CAT.ism;
+  const top=ASSETS.map(a=>({n:a.n,v:ai.out[a.k]}))
+    .sort((x,y)=>Math.abs(y.v)-Math.abs(x.v)).slice(0,4);
+  if(!top.length||Math.abs(top[0].v)<0.05)return "";
+  const ch=CH.map(([k,n])=>({n,v:ai.chv[k]||0}))
+    .filter(x=>Math.abs(x.v)>0.15)
+    .sort((x,y)=>Math.abs(y.v)-Math.abs(x.v)).slice(0,2);
+  const chTxt=ch.length?ch.map(x=>`${x.n} ${x.v>0?"↑":"↓"}`).join("、"):"傳導偏弱";
+  const chTxtDn=ch.length?ch.map(x=>`${x.n} ${x.v>0?"↓":"↑"}`).join("、"):"傳導偏弱";
+  const list=(sign)=>top.map(a=>{
+    const v=a.v*sign;
+    return `<div class="fasset"><i>${a.n}</i><span style="color:${v>0?"var(--up)":v<0?"var(--dn)":"var(--tx3)"}">`
+      +`${v>0?"+":""}${v.toFixed(1)}</span></div>`;}).join("");
+  const x=expectOf(e);
+  const sub=x.hasCons?`共識 ${withUnit(x.cons,x.unit)}`:(c.label||"");
+  return `<div class="flow">
+    <div class="fnode"><b>${e.title}</b><small>${sub}</small></div>
+    <div class="farrow">→</div>
+    <div class="fstack">
+      <div class="fnode up"><b>高於預期</b><small>${chTxt}</small></div>
+      <div class="fnode dn"><b>低於預期</b><small>${chTxtDn}</small></div>
+    </div>
+    <div class="farrow">→</div>
+    <div class="fstack">
+      <div class="fnode up">${list(1)}</div>
+      <div class="fnode dn">${list(-1)}</div>
+    </div>
+  </div>
+  <div class="note">數字是相對彈性不是漲跌幅預測，絕對值最大的那個才是這件事真正打到的地方。</div>`;
+}
+
+/* 傳導鏈：把「為什麼是這個數字」逐項攤開，可以自己核對 */
+function chainHTML(e){
+  const ai=assetImpact(e);
+  const top=ASSETS.map(a=>({a,v:ai.out[a.k]}))
+    .sort((x,y)=>Math.abs(y.v)-Math.abs(x.v))[0];
+  if(!top||Math.abs(top.v)<0.05)return "";
+  const parts=CH.map(([k,n])=>({n,c:ai.chv[k]||0,b:top.a.b[k]||0}))
+    .filter(x=>Math.abs(x.c*x.b)>0.02)
+    .sort((x,y)=>Math.abs(y.c*y.b)-Math.abs(x.c*x.b));
+  const rows=parts.map(x=>
+    `<div><code>${x.n}</code>：事件推力 <code>${x.c>0?"+":""}${x.c.toFixed(2)}</code>`
+    +` × ${top.a.n}對它的曝險 <code>${x.b>0?"+":""}${x.b.toFixed(1)}</code>`
+    +` = <code style="color:${(x.c*x.b)>0?"var(--up)":"var(--dn)"}">`
+    +`${(x.c*x.b)>0?"+":""}${(x.c*x.b).toFixed(2)}</code></div>`).join("");
+  return `<h4 style="margin-top:16px">傳導鏈（以受影響最大的 ${top.a.n} 為例）</h4>`
+    +`<div class="chain">${rows}`
+    +`<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">`
+    +`加總 = <code style="color:${top.v>0?"var(--up)":"var(--dn)"}">${top.v>0?"+":""}${top.v.toFixed(2)}</code>`
+    +`　這就是上面那張圖裡 ${top.a.n} 的數字。下行意外整組反號。</div></div>`;
+}
+
+/* 讀法：從模型算出來的東西講「這代表什麼、該看哪裡」。
+   這是模型讀法，不是進出場建議。 */
+function readingHTML(e){
+  const sc=score(e), ai=assetImpact(e), x=expectOf(e);
+  const top=ASSETS.map(a=>({n:a.n,v:ai.out[a.k]}))
+    .sort((p,q)=>Math.abs(q.v)-Math.abs(p.v))[0];
+  const out=[];
+  if(sc.gap>=45)out.push(`<b>落差 ${sc.gap}</b>——衝擊 ${sc.s} 裡有 ${sc.gap} 還沒被 price in，`
+    +`這種才是值得預先調整曝險的。`);
+  else if(sc.s>=60&&sc.gap<30)out.push(`<b>衝擊 ${sc.s} 但落差只有 ${sc.gap}</b>——`
+    +`事情很大，可是市場已經防得差不多了（已定價 ${Math.round(sc.pxd*100)}%）。`
+    +`方向不容易賺，事件過後的隱含波動壓縮通常比方向更確定。`);
+  else out.push(`落差 ${sc.gap}，在目前環境下屬於噪音區間，不用為它預留曝險。`);
+  if(top&&Math.abs(top.v)>0.05)
+    out.push(`真正打到的是 <b>${top.n}</b>（相對彈性 ${top.v>0?"+":""}${top.v.toFixed(1)}），`
+      +`不是你直覺想到的那個指數——看錯標的的話方向對了也賺不到。`);
+  if(x.verdict)out.push(`結果<b>${x.verdict}</b>${x.how?`（${x.how}）`:""}。`
+    +`回頭比對實際反應與這裡的推算，就是複盤在做的事。`);
+  else if(x.hasCons)out.push(`共識已經有了（${withUnit(x.cons,x.unit)}${x.src?`，${x.src}`:""}），`
+    +`公布後這裡會自動標出有沒有超乎預期。`);
+  if(e.est)out.push(`日期還是推算的，分數已經打了折。確認日出來之前不要把它當硬排程。`);
+  return `<h4 style="margin-top:16px">怎麼讀</h4><div class="chain">`
+    +out.map(t=>`<div>· ${t}</div>`).join("")
+    +`<div class="note" style="margin-top:8px">以上是這個模型算出來的讀法，`
+    +`不是進出場建議，也沒有考慮你的部位與風險承受度。</div></div>`;
+}
 
 /* 反應強度：把各資產變動折成一個標準化幅度 */
 function reactionMag(r){
@@ -1165,7 +1296,8 @@ function applyRemoteReviews(items){
     if(REVIEW[k])return;
     REVIEW[k]={cons:it.cons||"",act:it.act||"",z:it.z||"",spx:it.spx||"",ndx:it.ndx||"",
       y10:it.y10||"",dxy:it.dxy||"",gld:it.gld||"",memo:it.memo||"",
-      sigma:it.sigma||"",ts:it.asof||it.date,by:"routine"};
+      sigma:it.sigma||"",metrics:Array.isArray(it.metrics)?it.metrics:[],
+      ts:it.asof||it.date,by:"routine"};
     n++;
   });
   RREV=n;
@@ -1181,6 +1313,7 @@ function applyPriced(items){
     if(hit){
       e.pxd=clamp(+hit.pxd,0,1);e.pxdBasis=hit.basis||"";e.pxdSrc=hit.src||"";e.pxdAsof=hit.asof||"";
       e.cons=hit.cons||"";e.prev=hit.prev||"";e.punit=hit.unit||"";e.consSrc=hit.consSrc||"";
+      e.metrics=Array.isArray(hit.metrics)?hit.metrics:[];
     }
   });
 }
@@ -1230,7 +1363,7 @@ function evHTML(e){
   const xp=x.verdict
     ? `<span class="pill" style="color:${vcol(x.dir)};border-color:currentColor">${x.verdict}</span>`
     : (x.hasCons&&diff>=0?'<span class="pill" style="color:var(--tx3);border-color:var(--line2)">已有共識</span>':"");
-  const xm=x.verdict?` · ${x.how}`:(x.hasCons?` · 共識 ${x.cons}`:"");
+  const xm=x.verdict?` · ${x.how}`:(x.hasCons?` · 共識 ${withUnit(x.cons,x.unit)}`:"");
   return `<div class="ev" data-tip="${e.date}" data-d="${e.date}" data-t="${encodeURIComponent(e.title)}">
    <div class="when"><b>${d.getMonth()+1}/${d.getDate()}</b>週${w}</div>${ring(MET==="gap"?sc.gap:sc.s)}
    <div><div class="ttl">${e.title}<span class="pill ${e.kind.toLowerCase()}">${e.kind==="N"?"分子":e.kind==="D"?"分母":"風險"}</span>${e.est?'<span class="est">≈</span>':""}${xp}</div>
@@ -1423,12 +1556,18 @@ function openDay(ds,evs,focus){
   const order=evs.slice().sort((a,b)=>(b.title===focus)-(a.title===focus)||score(b).s-score(a).s);
   $("dBody").innerHTML=order.map(e=>{
     const sc=score(e),ai=assetImpact(e),c=CAT[e.cat]||CAT.ism,ss=session(e);
-    const xx=expectOf(e);
-    const xpBlock=(xx.hasCons||xx.hasAct)?(
+    const xx=expectOf(e), mm=metricsOf(e);
+    const mTab=mm.length?(`<table class="mtab"><tr><th>指標</th><th>市場預期</th><th>實際</th><th>差異</th></tr>`
+      +mm.map(m=>`<tr><td>${m.n}</td><td>${m.cons?withUnit(m.cons,m.unit):"—"}</td>`
+        +`<td>${m.act?withUnit(m.act,m.unit):"未公布"}</td>`
+        +`<td style="color:${m.dir>0?"var(--up)":m.dir<0?"var(--dn)":"var(--tx3)"}">${m.beat||"—"}</td></tr>`).join("")
+      +`</table>`):"";
+    const xpBlock=(xx.hasCons||xx.hasAct||mm.length)?(
       `<h4>共識 vs 實際</h4>`
-      +(xx.prev?`<div class="kv"><span class="k">前值</span><span class="v">${xx.prev}${xx.unit}</span></div>`:"")
-      +(xx.hasCons?`<div class="kv"><span class="k">市場共識</span><span class="v">${xx.cons}${xx.unit}</span></div>`:"")
-      +(xx.hasAct?`<div class="kv"><span class="k">實際公布</span><span class="v">${xx.act}${xx.unit}</span></div>`:"")
+      +mTab
+      +(xx.prev?`<div class="kv"><span class="k">前值</span><span class="v">${withUnit(xx.prev,xx.unit)}</span></div>`:"")
+      +(xx.hasCons?`<div class="kv"><span class="k">市場共識</span><span class="v">${withUnit(xx.cons,xx.unit)}</span></div>`:"")
+      +(xx.hasAct?`<div class="kv"><span class="k">實際公布</span><span class="v">${withUnit(xx.act,xx.unit)}</span></div>`:"")
       +(xx.z!==""?`<div class="kv"><span class="k">意外 z 分數</span><span class="v">${xx.z}</span></div>`:"")
       +(xx.verdict
         ?`<div class="kv"><span class="k">判定</span><span class="v" style="color:${vcol(xx.dir)}">${xx.verdict}</span></div>`
@@ -1455,6 +1594,8 @@ function openDay(ds,evs,focus){
         <div class="est">${CAT[e.cat]?c.label:`未知類型「${e.cat}」暫以 ${c.label} 計分`} · 基準 ${sc.B} · 環境 ×${sc.mult.toFixed(2)} → ${sc.raw}${sc.cal!==1?` · 校準 ×${sc.cal.toFixed(2)}`:""}${sc.disc<1?" · 推算日折 6%":""}</div></div></div>
       <div style="font-size:12.5px;color:var(--tx2);line-height:1.65;margin:8px 0 14px">${e.note||""}</div>
 
+      <h4>可能的走向</h4>${flowHTML(e)}
+
       ${xpBlock}
       <h4>時間與交易時段</h4>
       <div class="kv"><span class="k">${ss.et}</span><span class="v">${ss.tpe}</span></div>
@@ -1473,6 +1614,9 @@ function openDay(ds,evs,focus){
 
       <h4>推算的資產方向</h4><div class="assets">${ast}</div>
       <div class="note">相對強弱，不是預測漲跌幅。絕對值大的就是這個事件真正會打到的地方。</div>
+
+      ${chainHTML(e)}
+      ${readingHTML(e)}
 
       ${cks&&diff>=0?`<h4 style="margin-top:16px">當天怎麼判斷大不大</h4>${cks}`:""}
       ${diff<0?reviewForm(e):""}

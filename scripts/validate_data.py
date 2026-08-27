@@ -82,6 +82,31 @@ def titles_from_index():
     return out
 
 
+def check_metrics(f, title, metrics, need_act):
+    """財報這類有多個指標的事件：EPS、營收、分項各一列。
+    n 是指標名，cons/act 都要是純數值字串，單位放 unit。"""
+    if metrics in (None, ""):
+        return
+    if not isinstance(metrics, list):
+        err(f, "「%s」metrics 必須是陣列" % title)
+        return
+    seen = set()
+    for j, m in enumerate(metrics):
+        if not isinstance(m, dict) or not m.get("n"):
+            err(f, "「%s」metrics 第 %d 筆缺 n（指標名）" % (title, j + 1))
+            continue
+        if m["n"] in seen:
+            err(f, "「%s」metrics 有兩筆都叫 %r" % (title, m["n"]))
+        seen.add(m["n"])
+        for fld in ("cons", "act"):
+            v = str(m.get(fld, "")).strip()
+            if v and not NUM_RE.match(v):
+                err(f, "「%s」metrics 的 %s.%s 要是純數值字串（單位放 unit）：%r"
+                    % (title, m["n"], fld, m[fld]))
+        if need_act and not str(m.get("act", "")).strip():
+            err(f, "「%s」metrics 的 %s 缺 act" % (title, m["n"]))
+
+
 def valid_date(s):
     if not isinstance(s, str) or not DATE_RE.match(s):
         return False
@@ -193,6 +218,7 @@ def main():
                 err("priced.json", "「%s」prev 要是純數值字串：%r" % (t, it["prev"]))
             if it.get("unit") not in (None, "") and len(str(it["unit"])) > 6:
                 err("priced.json", "「%s」unit 太長，只放單位本身（%%、K、bp、USD）" % t)
+            check_metrics("priced.json", t, it.get("metrics"), need_act=False)
             if titles and t not in titles:
                 orphan += 1
                 warn("priced.json", "「%s」在 events/curated 裡找不到同名事件，這筆不會生效" % t)
@@ -213,6 +239,7 @@ def main():
                 err("reviews.json",
                     "「%s」缺 sigma（當天的一般波動基準），"
                     "校正沒有它就只能退回寫死的 0.9%%，等於白填" % t)
+            check_metrics("reviews.json", t, it.get("metrics"), need_act=False)
             for fld in ("spx", "ndx", "y10", "dxy", "gld", "sigma", "z"):
                 v = str(it.get(fld, "")).strip()
                 if v and not NUM_RE.match(v):
