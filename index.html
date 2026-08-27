@@ -226,6 +226,7 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
     <span><span class="dot" id="srcdot"></span> <span id="srctext">內建規則引擎</span></span>
     <span>·</span><span id="todaytxt"></span>
     <span>·</span><span id="regimetxt"></span>
+    <span id="refreshNote" style="width:100%;color:var(--tx3)"></span>
   </div>
 </header>
 
@@ -237,6 +238,7 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
     <button id="tabReview">複盤</button>
   </div>
   <div class="spacer"></div>
+  <button class="ghost" id="btnRefresh">更新</button>
   <button class="ghost" id="btnRegime">環境</button>
   <button class="ghost" id="btnCfg">資料</button>
 </div>
@@ -379,7 +381,29 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
   <div class="panelbox">
     <h4>校準結果</h4>
     <p>累積的複盤會回頭修正各事件類型的基準敏感度。實際反應會先除以當時的一般日波動（前 20 日已實現波動）換算成標準差倍數，再跟基準比——不這樣做的話，高波動月份每件事都會看起來「反應大」，跟環境設定裡的波動水位重複計算。樣本少時調整幅度自動收縮。</p>
+    <div class="calrow" style="border-bottom-color:var(--line2)">
+      <span style="color:var(--tx3);font-size:11.5px">事件類型</span>
+      <span class="v" style="color:var(--tx3)">次數</span>
+      <span class="v" style="color:var(--tx3)">實際 · σ</span>
+      <span class="v" style="color:var(--tx3)">係數</span>
+    </div>
     <div id="calibBody"></div>
+    <div class="log" style="margin-top:12px;line-height:1.75">
+      <b>這四欄怎麼讀</b><br>
+      <b>次數</b>　這個類型累積了幾筆複盤。<b>三筆以上才會開始調整</b>，之前一律 ×1.00。<br>
+      <b>實際 · σ</b>　前面是那幾次的平均單日絕對變動（%），後面是把它除以當天的一般波動
+      之後換算成幾個標準差。<b>真正拿來比較的是 σ 那個數字，不是 %。</b>
+      同樣是跌 1.5%，在平靜的月份是 2σ 的大事，在震盪的月份只是 0.9σ 的日常。<br>
+      <b>係數</b>　套用在該類型基準敏感度上的乘數。<span style="color:#FF5C5C">紅色</span>＝實際反應
+      比模型預期大，分數往上調；<span style="color:var(--den)">藍色</span>＝比預期小，往下調；
+      灰色＝差異不大。<br><br>
+      比較的基準是 <span class="est">B/50</span>——基準敏感度 70 的事件，預期會走約 1.4 個標準差。
+      實際持續高於這個數就往上調。調整幅度會依樣本數收縮 <span class="est">n/(n+8)</span>：
+      3 筆只吃 27% 的偏差、8 筆吃 50%、20 筆吃 71%，樣本越少越保守，
+      避免拿三筆去改一個長期參數。上下限鎖在 0.6 與 1.5，不會失控。<br><br>
+      複盤由每個交易日早上 8:00 的 routine 自動填，你不用手動輸入。
+      它會查共識預期、實際值、當天各資產的變動，以及那一天的一般波動基準（σ 的分母）。
+    </div>
     <div style="margin-top:10px">
       <button class="btn sec" id="btnExport">匯出複盤 JSON</button>
       <button class="btn sec" id="btnImport" style="margin-left:8px">匯入</button>
@@ -449,6 +473,10 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
 <script>
 "use strict";
 const HARDCODED_KEY = "";
+/* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
+   不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
+   兩邊走鐘的話煙霧測試會擋下來。 */
+const APP_VER = "evcal-v10";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -1548,6 +1576,7 @@ $("tabImpact").onclick=()=>switchView("impact");
 $("tabYear").onclick=()=>switchView("year");
 $("tabMonth").onclick=()=>switchView("month");
 $("tabReview").onclick=()=>switchView("review");
+$("btnRefresh").onclick=refreshAll;
 $("btnRegime").onclick=()=>switchView("regime");
 $("btnCfg").onclick=()=>switchView("cfg");
 $("btnMatrix").onclick=()=>switchView("matrix");
@@ -1597,6 +1626,60 @@ $("fileIn").onchange=async ev=>{
 
 window.addEventListener("scroll",hideTip,{passive:true});
 renderRegime();
+/* 「更新」按鈕：先確認網站本身是不是有新版，有的話清快取重載；
+   沒有的話就只重抓雲端資料並重畫，不打斷你正在看的畫面。 */
+async function refreshAll(){
+  const btn=$("btnRefresh"), note=$("refreshNote");
+  const setNote=t=>{if(note)note.textContent=t;};
+  if(btn){btn.disabled=true;btn.textContent="更新中…";}
+  setNote("檢查版本…");
+  let reloading=false;
+  try{
+    const r=await fetch("./sw.js?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){
+      const m=(await r.text()).match(/CACHE\s*=\s*"([^"]+)"/);
+      if(m&&m[1]!==APP_VER){
+        // 防無限重載：同一個版本只自動重載一次。清了快取還是對不上的話，
+        // 代表快取沒清乾淨或部署到一半，那就講實話而不是一直重整。
+        const RK="event-cal:reloadedFor";
+        let already=null;
+        try{already=sessionStorage.getItem(RK);}catch(e){}
+        if(already===m[1]){
+          setNote(`版本仍然對不上（這個分頁是 ${APP_VER}、伺服器是 ${m[1]}），`
+            +`重新載入過一次還是沒換成新版。請手動強制重新整理，`
+            +`或把主畫面圖示刪掉重加。`);
+          if(btn){btn.disabled=false;btn.textContent="更新";}
+          return;
+        }
+        try{sessionStorage.setItem(RK,m[1]);}catch(e){}
+        reloading=true;
+        setNote(`網站有新版本（${m[1]}），清快取並重新載入…`);
+        try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}catch(e){}
+        try{
+          if("serviceWorker" in navigator){
+            const reg=await navigator.serviceWorker.getRegistration();
+            if(reg)await reg.unregister();
+          }
+        }catch(e){}
+        setTimeout(()=>location.reload(),500);
+      }
+    }
+  }catch(e){}
+  if(!reloading){
+    setNote("重新抓取雲端資料…");
+    try{
+      await loadRemote();
+      applyCalib(); renderRegime(); updateRegimeText(); render();
+      if(view==="cfg")renderDataStat();
+      const n=new Date();
+      setNote(`已更新 ${pad(n.getHours())}:${pad(n.getMinutes())}`
+        +` · 事件 ${EVENTS.length} · 定價 ${PRICED.length} · 複盤 ${Object.keys(REVIEW).length}`
+        +(BUILD?` · 資料產於 ${String(BUILD).slice(0,10)}`:""));
+    }catch(e){ setNote("更新失敗："+((e&&e.message)||e)); }
+  }
+  if(btn){btn.disabled=false;btn.textContent="更新";}
+}
+
 function pxNote(ok){
   const el=$("yearNote"); if(!el)return;
   el.innerHTML="<b>最上面那條</b>是整年的總覽，打開時停在以今天為中心的位置，可以左右滑；"+

@@ -178,6 +178,16 @@ catKeys.forEach((k) => {
   T.setPX({});
 }
 
+/* ── 7. 版本字串：index.html 的 APP_VER 必須跟 sw.js 的 CACHE 一致 ── */
+{
+  const swSrc = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
+  const swVer = (swSrc.match(/CACHE\s*=\s*"([^"]+)"/) || [])[1];
+  const appVer = (html.match(/const APP_VER\s*=\s*"([^"]+)"/) || [])[1];
+  ok("sw.js 有 CACHE 版本字串", !!swVer, String(swVer));
+  ok("index.html 有 APP_VER", !!appVer, String(appVer));
+  eq("APP_VER 與 sw.js 的 CACHE 一致", appVer, swVer);
+}
+
 /* ── 報告 ── */
 console.log("");
 if (fails.length) {
