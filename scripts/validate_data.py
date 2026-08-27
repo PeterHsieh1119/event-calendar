@@ -181,6 +181,18 @@ def main():
                 err("priced.json", "「%s」pxd 必須是 0~1 的數字，拿到 %r" % (t, p))
             if not it.get("basis"):
                 err("priced.json", "「%s」缺 basis，沒有依據的定價數字不可信，寧可不要寫" % t)
+            # 事前共識：有寫就要能追溯來源，而且數值欄位要是純數字
+            if it.get("cons") not in (None, ""):
+                if not NUM_RE.match(str(it["cons"]).strip()):
+                    err("priced.json", "「%s」cons 要是純數值字串（單位放 unit）：%r"
+                        % (t, it["cons"]))
+                if not it.get("consSrc"):
+                    err("priced.json", "「%s」有 cons 就必須有 consSrc，"
+                                       "查不到出處的共識數字不要寫" % t)
+            if it.get("prev") not in (None, "") and not NUM_RE.match(str(it["prev"]).strip()):
+                err("priced.json", "「%s」prev 要是純數值字串：%r" % (t, it["prev"]))
+            if it.get("unit") not in (None, "") and len(str(it["unit"])) > 6:
+                err("priced.json", "「%s」unit 太長，只放單位本身（%%、K、bp、USD）" % t)
             if titles and t not in titles:
                 orphan += 1
                 warn("priced.json", "「%s」在 events/curated 裡找不到同名事件，這筆不會生效" % t)
@@ -229,10 +241,35 @@ def main():
 
     px = load("px.json", {})
     if isinstance(px, dict) and px.get("series"):
-        bad = [d for d in px["series"] if not valid_date(d)]
-        if bad:
-            err("px.json", "%d 個日期格式不合法，例如 %s" % (len(bad), bad[:3]))
-        print("  px.json：%d 筆" % len(px["series"]))
+        ser = px["series"]
+        first = next(iter(ser.values()), None)
+        if isinstance(first, dict):
+            # 多標的：{"QQQ": {"YYYY-MM-DD": 收盤}, ...}
+            units = {s.get("k"): s.get("unit") for s in (px.get("symbols") or [])
+                     if isinstance(s, dict)}
+            for k in ser:
+                if k not in units:
+                    warn("px.json", "序列 %r 不在 symbols 清單裡，選單不會出現它" % k)
+                elif units[k] not in ("pct", "bp"):
+                    err("px.json", "%s 的 unit 必須是 pct 或 bp，拿到 %r" % (k, units[k]))
+                bad = [d for d in ser[k] if not valid_date(d)]
+                if bad:
+                    err("px.json", "%s 有 %d 個日期不合法，例如 %s" % (k, len(bad), bad[:3]))
+            for k in units:
+                if k not in ser:
+                    err("px.json", "symbols 列了 %r 但 series 裡沒有這條" % k)
+            if px.get("default") and px["default"] not in ser:
+                err("px.json", "default 指向不存在的序列 %r" % px["default"])
+            if "QQQ" not in ser:
+                warn("px.json", "沒有 QQQ，校準會失去波動基準（會退回寫死的 0.9%）")
+            print("  px.json：%d 個標的，共 %d 個資料點"
+                  % (len(ser), sum(len(v) for v in ser.values())))
+        else:
+            # 舊格式：單一序列
+            bad = [d for d in ser if not valid_date(d)]
+            if bad:
+                err("px.json", "%d 個日期格式不合法，例如 %s" % (len(bad), bad[:3]))
+            print("  px.json：%d 筆（舊的單一序列格式）" % len(ser))
 
     cl = load("changelog.json", [])
     if isinstance(cl, list):

@@ -280,6 +280,7 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
     <button class="chip" data-lab="70">只看關鍵</button>
     <span class="spacer"></span>
     <button class="chip on" id="pxToggle">背景走勢</button>
+    <select id="pxPick" class="chip" style="padding:6px 9px;cursor:pointer"></select>
     <span style="font-family:var(--mono);font-size:10.5px;color:var(--tx3);margin:0 2px 0 8px">總覽</span>
     <button class="chip" data-ppd="5">年</button>
     <button class="chip on" data-ppd="9">季</button>
@@ -476,7 +477,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-v10";
+const APP_VER = "evcal-v11";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -543,7 +544,10 @@ const CAT={
  ecb      :{B:34,label:"歐洲央行決議",w:{pivot:.25,infl:.20},ch:{front:.35,real:.50,be:.15,erp:.25,eps:-.05}},
  opec     :{B:28,label:"OPEC+ 會議",w:{infl:.35},ch:{front:.30,real:.20,be:.65,erp:.25,eps:-.15}},
  tariff   :{B:40,label:"關稅／出口管制",w:{vol:.25},ch:{front:.15,real:.20,be:.45,erp:.70,eps:-.45}},
- product  :{B:18,label:"產品發表會",w:{conc:.25},ch:{front:0,real:0,be:0,erp:-.05,eps:.35}}
+ product  :{B:18,label:"產品發表會",w:{conc:.25},ch:{front:0,real:0,be:0,erp:-.05,eps:.35}},
+ // 突發：關稅發文、地緣衝突、監管開罰之類沒有排程的事。主要打風險溢酬，
+ // 而且依定義幾乎沒被 price in（PXD0 給 0.15）。
+ headline :{B:34,label:"突發新聞／發文",w:{vol:.35},ch:{front:.15,real:.15,be:.25,erp:.85,eps:-.25}}
 };
 
 /* 已定價程度的預設值：0＝市場完全沒定價，1＝結果已經被完全 price in。
@@ -551,13 +555,13 @@ const CAT={
 const PXD0={fomc:.80,fomc_sep:.70,cpi:.35,nfp:.35,pce:.45,gdp:.50,ppi:.45,ism:.45,retail:.40,
  jolts:.45,minutes:.55,jackson:.40,refund:.55,quad:.75,opex:.75,election:.35,
  earn3:.45,earn2:.50,earn1:.55,cloud:.45,twrev:.50,
- boj:.55,ecb:.65,opec:.55,tariff:.25,product:.60};
+ boj:.55,ecb:.65,opec:.55,tariff:.25,product:.60,headline:.15};
 
 /* 公布時間（美東）。AMC＝收盤後，BMO＝開盤前，TW＝台北時間下午公布。 */
 const TOD={fomc:"14:00",fomc_sep:"14:00",minutes:"14:00",cpi:"08:30",ppi:"08:30",nfp:"08:30",
  pce:"08:30",gdp:"08:30",retail:"08:30",refund:"08:30",jolts:"10:00",ism:"10:00",jackson:"10:00",
  quad:"09:30",opex:"09:30",election:"19:00",twrev:"TW",cloud:"AMC",earn1:"AMC",earn2:"AMC",earn3:"AMC",
- boj:"TPE:11:30",ecb:"08:15",opec:"BMO",tariff:"08:30",product:"13:00"};
+ boj:"TPE:11:30",ecb:"08:15",opec:"BMO",tariff:"08:30",product:"13:00",headline:"09:30"};
 
 /* ═══ 環境設定 ═══ */
 const REGIME_DEF=[
@@ -850,6 +854,33 @@ async function saveReviews(){
 function note(m){const el=$("storelog");if(el)el.textContent=m;}
 const rkey=e=>e.date+"|"+e.title;
 
+/* 把「事前共識」（priced.json）與「事後實際」（reviews.json）併成一份，
+   並判定有沒有超乎預期。優先用 z 分數——那是把意外除以歷史標準差之後的結果，
+   跨事件可比；沒有 z 才退回直接比共識與實際的相對差距。 */
+function expectOf(e){
+  const rv=REVIEW[rkey(e)]||{};
+  const cons=String(rv.cons||e.cons||"").trim();
+  const act=String(rv.act||"").trim();
+  const z=String(rv.z||"").trim();
+  const nz=parseFloat(z), nc=parseFloat(cons), na=parseFloat(act);
+  let verdict="", dir=0, how="";
+  if(isFinite(nz)){
+    dir=Math.abs(nz)<0.5?0:Math.sign(nz);
+    verdict=Math.abs(nz)<0.5?"符合預期":(nz>0?"高於預期":"低於預期");
+    how=`意外 ${nz>0?"+":""}${nz} 個標準差`;
+  }else if(isFinite(nc)&&isFinite(na)){
+    const d=na-nc;
+    const rel=Math.abs(nc)>1e-9?Math.abs(d/nc):Math.abs(d);
+    dir=rel<0.05?0:Math.sign(d);
+    verdict=rel<0.05?"符合預期":(d>0?"高於預期":"低於預期");
+    how=`實際 ${act} vs 共識 ${cons}`;
+  }
+  return {cons,act,z,verdict,dir,how,
+    prev:String(e.prev||""),unit:String(e.punit||""),src:String(e.consSrc||""),
+    hasCons:!!cons,hasAct:!!act};
+}
+const vcol=d=>d>0?"var(--dn)":d<0?"var(--den)":"var(--tx2)";
+
 /* 反應強度：把各資產變動折成一個標準化幅度 */
 function reactionMag(r){
   const a=Math.abs(parseFloat(r.spx)||0), b=Math.abs(parseFloat(r.ndx)||0);
@@ -883,9 +914,10 @@ function verdict(e,r){
 }
 /* 事件當時的「一般日」波動：前 20 個交易日的日報酬標準差（%）。 */
 function sigmaAt(ds){
-  const ks=Object.keys(PX).filter(k=>k<ds).sort();
+  const src=PXALL[VOLKEY]||PX;              // 永遠用股票算波動，不用當前選的標的
+  const ks=Object.keys(src).filter(k=>k<ds).sort();
   if(ks.length<21)return null;
-  const w=ks.slice(-21).map(k=>PX[k]);
+  const w=ks.slice(-21).map(k=>src[k]);
   const r=[];
   for(let i=1;i<w.length;i++){if(w[i]>0&&w[i-1]>0)r.push(Math.log(w[i]/w[i-1])*100);}
   if(r.length<10)return null;
@@ -922,8 +954,38 @@ function applyCalib(){CALIB=calib();}
 
 
 /* ═══ 那斯達克背景走勢 ═══ */
-let PX={};              // "YYYY-MM-DD" -> close
-let PXSRC="", PXON=true;
+let PXALL={}, PXSYMS=[], PXSEL="QQQ";
+let PX={};                       // 目前選到的那一條："YYYY-MM-DD" -> 收盤
+let PXSRC="", PXON=true, PXUNIT="pct";
+/* 校準的波動基準永遠用股票，不跟著使用者選的背景標的跑——
+   選了黃金就拿黃金的波動去除股市的事件反應，校正會整個歪掉。 */
+const VOLKEY="QQQ";
+
+function applyPx(j){
+  if(!j||!j.series)return;
+  const first=Object.values(j.series)[0];
+  if(typeof first==="number"){                       // 舊格式：只有一條序列
+    PXALL={QQQ:j.series};
+    PXSYMS=[{k:"QQQ",n:j.symbol||"QQQ",unit:"pct"}];
+  }else{
+    PXALL=j.series;
+    PXSYMS=(Array.isArray(j.symbols)&&j.symbols.length
+      ? j.symbols
+      : Object.keys(j.series).map(k=>({k,n:k,unit:"pct"}))).filter(x=>PXALL[x.k]);
+  }
+  if(!PXALL[PXSEL])PXSEL=(j.default&&PXALL[j.default])?j.default:((PXSYMS[0]||{}).k||"");
+  selectPx(PXSEL);
+}
+function selectPx(k){
+  if(!PXALL[k])return;
+  PXSEL=k; PX=PXALL[k];
+  const m=PXSYMS.find(x=>x.k===k)||{};
+  PXSRC=m.n||k; PXUNIT=m.unit||"pct";
+}
+/* 依標的單位算變化。殖利率用 % 會很誤導：4.00 走到 4.66 是「+16.5%」，
+   但市場講的是「+66bp」。 */
+const pxDelta=(v,base)=>PXUNIT==="bp"?(v-base)*100:(v/base-1)*100;
+const pxFmt=d=>(d>=0?"+":"")+(PXUNIT==="bp"?d.toFixed(0)+"bp":d.toFixed(1)+"%");
 async function loadPx(key){
   const from=(TODAY.getFullYear()-2)+"-01-01", to=iso(TODAY);
   // 1) FMP（有 key 時最穩）
@@ -949,7 +1011,7 @@ function ytdSeries(y){
   const base=prior.length?PX[prior[prior.length-1]]:PX[inY[0]];
   if(!base||!isFinite(base)||base<=0)return null;
   let mx=0;
-  const pts=inY.map(k=>{const v=(PX[k]/base-1)*100;if(Math.abs(v)>mx)mx=Math.abs(v);return {d:k,v};});
+  const pts=inY.map(k=>{const v=pxDelta(PX[k],base);if(Math.abs(v)>mx)mx=Math.abs(v);return {d:k,v};});
   return {pts,mx:Math.max(mx,1)};
 }
 /* 當月漲跌：前一個月最後收盤 → 本月最後收盤。當月尚未結束時就是月初至今。 */
@@ -962,7 +1024,7 @@ function monthPct(y,m){
   const base=prior.length?PX[prior[prior.length-1]]:PX[inM[0]];
   const end=PX[inM[inM.length-1]];
   if(!base||!end||!isFinite(base)||!isFinite(end)||base<=0)return null;
-  return (end/base-1)*100;
+  return pxDelta(end,base);
 }
 /* 當月每一天相對「月初基準」的漲跌 %。基準＝前一個月最後收盤，
    跟月標籤那個百分比同一把尺，所以曲線終點一定等於標籤的數字。 */
@@ -974,7 +1036,7 @@ function monthDailyPct(y,m){
   const prior=ks.filter(k=>k<inM[0]);
   const base=prior.length?PX[prior[prior.length-1]]:PX[inM[0]];
   if(!base||!isFinite(base)||base<=0)return [];
-  return inM.map(k=>({d:+k.slice(8,10),v:(PX[k]/base-1)*100}));
+  return inM.map(k=>({d:+k.slice(8,10),v:pxDelta(PX[k],base)}));
 }
 /* 全年共用一把尺：取所有日漲跌的最大絕對值，12 個月才比得起來 */
 function pctScale(y){
@@ -1041,8 +1103,8 @@ async function loadRemote(){
   }catch(e){stat("curated.json","策劃事件與日期更正",false,"",0,"讀取失敗");}
   try{
     const j=await grab("px.json");
-    const n=(j&&j.series)?Object.keys(j.series).length:0;
-    if(n){Object.assign(PX,j.series);PXSRC=j.symbol||"NDX";}
+    const n=(j&&j.series)?Object.keys(j.series).length:0;   // 多標的時 n 是標的數
+    if(n){applyPx(j);}
     stat("px.json","價格日線",n>0,j&&j.generated,n,j&&j.symbol);
   }catch(e){stat("px.json","價格日線",false,"",0,"讀取失敗");}
   try{
@@ -1116,7 +1178,10 @@ function applyPriced(items){
   PRICED=items.filter(x=>x&&x.title&&x.date&&x.pxd!=null&&isFinite(x.pxd));
   EVENTS.forEach(e=>{
     const hit=PRICED.find(x=>x.title===e.title&&Math.abs(parse(x.date)-parse(e.date))<=3*864e5);
-    if(hit){e.pxd=clamp(+hit.pxd,0,1);e.pxdBasis=hit.basis||"";e.pxdSrc=hit.src||"";e.pxdAsof=hit.asof||"";}
+    if(hit){
+      e.pxd=clamp(+hit.pxd,0,1);e.pxdBasis=hit.basis||"";e.pxdSrc=hit.src||"";e.pxdAsof=hit.asof||"";
+      e.cons=hit.cons||"";e.prev=hit.prev||"";e.punit=hit.unit||"";e.consSrc=hit.consSrc||"";
+    }
   });
 }
 /* 遠端事件覆蓋推算日：同名事件 ±10 天內視為同一件事 */
@@ -1161,10 +1226,15 @@ function evHTML(e){
   const diff=Math.round((d-TODAY)/864e5),ss=session(e);
   const when=diff===0?"今天":diff>0?`${diff} 天後`:`${-diff} 天前`;
   const alt=MET==="gap"?`衝擊 ${sc.s}`:`落差 ${sc.gap}`;
+  const x=expectOf(e);
+  const xp=x.verdict
+    ? `<span class="pill" style="color:${vcol(x.dir)};border-color:currentColor">${x.verdict}</span>`
+    : (x.hasCons&&diff>=0?'<span class="pill" style="color:var(--tx3);border-color:var(--line2)">已有共識</span>':"");
+  const xm=x.verdict?` · ${x.how}`:(x.hasCons?` · 共識 ${x.cons}`:"");
   return `<div class="ev" data-tip="${e.date}" data-d="${e.date}" data-t="${encodeURIComponent(e.title)}">
    <div class="when"><b>${d.getMonth()+1}/${d.getDate()}</b>週${w}</div>${ring(MET==="gap"?sc.gap:sc.s)}
-   <div><div class="ttl">${e.title}<span class="pill ${e.kind.toLowerCase()}">${e.kind==="N"?"分子":e.kind==="D"?"分母":"風險"}</span>${e.est?'<span class="est">≈</span>':""}</div>
-   <div class="meta">${when} · ${ss.tpe} · ${alt}</div></div></div>`;
+   <div><div class="ttl">${e.title}<span class="pill ${e.kind.toLowerCase()}">${e.kind==="N"?"分子":e.kind==="D"?"分母":"風險"}</span>${e.est?'<span class="est">≈</span>':""}${xp}</div>
+   <div class="meta">${when} · ${ss.tpe} · ${alt}${xm}</div></div></div>`;
 }
 function bind(root){root.querySelectorAll(".ev").forEach(el=>el.onclick=()=>
   openDay(el.dataset.d,vis().filter(x=>x.date===el.dataset.d),decodeURIComponent(el.dataset.t)));}
@@ -1224,7 +1294,7 @@ function renderTimeline(){
     const x=Math.round(((new Date(curY,m,1))-jan)/864e5*PPD);
     if(m>0)h+=`<div class="tlsep" style="left:${x}px"></div>`;
     const pct=monthPct(curY,m);
-    const ph=(pct==null)?"":`<span style="color:${pct>=0?"var(--up)":"var(--dn)"}">${pct>=0?"+":""}${pct.toFixed(1)}%</span>`;
+    const ph=(pct==null)?"":`<span style="color:${pct>=0?"var(--up)":"var(--dn)"}">${pxFmt(pct)}</span>`;
     const cur=(curY===TODAY.getFullYear()&&m===TODAY.getMonth())?" cur":"";
     h+=`<div class="tlmon${cur}" data-m="${m}" style="left:${x+4}px"><b>${MN[m]}</b>${ph}</div>`;
   }
@@ -1312,7 +1382,7 @@ function renderYear(){
     const pct=monthPct(curY,m);
     const pctHTML=(pct==null)
       ? '<small style="color:var(--tx3)">—</small>'
-      : `<small style="color:${pct>=0?"var(--up)":"var(--dn)"}">${pct>=0?"+":""}${pct.toFixed(1)}%</small>`;
+      : `<small style="color:${pct>=0?"var(--up)":"var(--dn)"}">${pxFmt(pct)}</small>`;
     row.innerHTML=`<div class="mlabel">${m+1}月${pctHTML}</div>
       <div><div class="axis">${past}<div class="mid"></div>${mk}</div><div class="mtags">${top}</div></div>`;
     row.onclick=()=>{curM=m;switchView("month");};
@@ -1353,6 +1423,19 @@ function openDay(ds,evs,focus){
   const order=evs.slice().sort((a,b)=>(b.title===focus)-(a.title===focus)||score(b).s-score(a).s);
   $("dBody").innerHTML=order.map(e=>{
     const sc=score(e),ai=assetImpact(e),c=CAT[e.cat]||CAT.ism,ss=session(e);
+    const xx=expectOf(e);
+    const xpBlock=(xx.hasCons||xx.hasAct)?(
+      `<h4>共識 vs 實際</h4>`
+      +(xx.prev?`<div class="kv"><span class="k">前值</span><span class="v">${xx.prev}${xx.unit}</span></div>`:"")
+      +(xx.hasCons?`<div class="kv"><span class="k">市場共識</span><span class="v">${xx.cons}${xx.unit}</span></div>`:"")
+      +(xx.hasAct?`<div class="kv"><span class="k">實際公布</span><span class="v">${xx.act}${xx.unit}</span></div>`:"")
+      +(xx.z!==""?`<div class="kv"><span class="k">意外 z 分數</span><span class="v">${xx.z}</span></div>`:"")
+      +(xx.verdict
+        ?`<div class="kv"><span class="k">判定</span><span class="v" style="color:${vcol(xx.dir)}">${xx.verdict}</span></div>`
+        :`<div class="note">還沒公布。實際值與意外判定會在盤後複盤的 routine 跑完之後出現。</div>`)
+      +(xx.src?`<div class="note" style="margin-bottom:12px">共識來源：${xx.src}</div>`
+             :`<div class="note" style="margin-bottom:12px">${xx.how||""}</div>`)
+    ):"";
     const pxdNote=e.pxdBasis
       ? `${e.pxdBasis}${e.pxdSrc?" · "+e.pxdSrc:""}${e.pxdAsof?" · 更新於 "+e.pxdAsof:""}`
       : `還沒有這個事件自己的定價資料，用的是「${c.label}」的類型先驗。每日 routine 會把 OIS 隱含機率或選擇權隱含變動寫進 data/priced.json 覆蓋它。`;
@@ -1372,6 +1455,7 @@ function openDay(ds,evs,focus){
         <div class="est">${CAT[e.cat]?c.label:`未知類型「${e.cat}」暫以 ${c.label} 計分`} · 基準 ${sc.B} · 環境 ×${sc.mult.toFixed(2)} → ${sc.raw}${sc.cal!==1?` · 校準 ×${sc.cal.toFixed(2)}`:""}${sc.disc<1?" · 推算日折 6%":""}</div></div></div>
       <div style="font-size:12.5px;color:var(--tx2);line-height:1.65;margin:8px 0 14px">${e.note||""}</div>
 
+      ${xpBlock}
       <h4>時間與交易時段</h4>
       <div class="kv"><span class="k">${ss.et}</span><span class="v">${ss.tpe}</span></div>
       <div class="kv"><span class="k">美股哪個交易日吸收</span><span class="v">${ss.us}</span></div>
@@ -1669,7 +1753,7 @@ async function refreshAll(){
     setNote("重新抓取雲端資料…");
     try{
       await loadRemote();
-      applyCalib(); renderRegime(); updateRegimeText(); render();
+      applyCalib(); renderRegime(); updateRegimeText(); renderPxPick(); render();
       if(view==="cfg")renderDataStat();
       const n=new Date();
       setNote(`已更新 ${pad(n.getHours())}:${pad(n.getMinutes())}`
@@ -1680,15 +1764,28 @@ async function refreshAll(){
   if(btn){btn.disabled=false;btn.textContent="更新";}
 }
 
+function renderPxPick(){
+  const el=$("pxPick"); if(!el)return;
+  if(!PXSYMS.length){el.classList.add("hide");return;}
+  el.classList.remove("hide");
+  el.innerHTML=PXSYMS.map(x=>
+    `<option value="${x.k}"${x.k===PXSEL?" selected":""}>${x.n}</option>`).join("");
+  el.onchange=()=>{selectPx(el.value);renderYear();pxNote(Object.keys(PX).length>0);};
+}
+
 function pxNote(ok){
   const el=$("yearNote"); if(!el)return;
   el.innerHTML="<b>最上面那條</b>是整年的總覽，打開時停在以今天為中心的位置，可以左右滑；"+
     "它只放事件標記與月份，不放日期和事件名，因為那些字在連續軸上一定會擠在一起。"+
     "點上面的月份會捲到下面對應的那一列，點任何一天直接開抽屜。"+
     "<b>下面每個月一列</b>才是看細節的地方：軸上方＝分子端，下方＝分母端與風險，長度＝衝擊分數。"+
-    (ok?`背景走勢都以分子／分母中線為零、上綠下紅，但兩邊基準不同：`
-       +`總覽軸畫的是<b>年初至今</b>的累積漲跌，月列畫的是<b>當月</b>累積漲跌，`
-       +`月份旁的百分比則是當月收盤漲跌，跟月列曲線的終點是同一個數字。資料來源 ${PXSRC}。`
+    (ok?`背景走勢目前畫的是 <b>${PXSRC}</b>，`
+       +`${PXUNIT==="bp"?"用 bp（基點）計——殖利率用 % 變化會誤導，4.00 走到 4.66 是「+16.5%」但市場講的是「+66bp」":"用 % 計"}。`
+       +`旁邊的選單可以換標的，換了之後上下兩層與月份旁的數字會一起跟著換。`
+       +`兩層都以分子／分母中線為零、上綠下紅，但基準不同：`
+       +`總覽軸畫<b>年初至今</b>的累積變化，月列畫<b>當月</b>累積變化，`
+       +`月份旁的數字是當月收盤變化，跟月列曲線的終點是同一個數字。`
+       +`（校準用的波動基準固定是那斯達克，不會跟著這裡的選擇改。）`
        :"背景走勢未載入——data/px.json 是空的。Actions 每天會用 Yahoo 更新它，"
        +"手動跑一次 Actions 的「每日更新事件資料」就會有。沒有價格資料的月份顯示 —。");
 }
@@ -1697,7 +1794,7 @@ function pxNote(ok){
   loadRegimeLocal();
   await loadReviews(); applyCalib();
   const remote=await loadRemote();
-  applyCalib(); renderRegime(); updateRegimeText();
+  applyCalib(); renderRegime(); updateRegimeText(); renderPxPick();
   render();
   if(!Object.keys(PX).length) await loadPx(HARDCODED_KEY);
   pxNote(Object.keys(PX).length>0);

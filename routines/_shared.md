@@ -16,7 +16,7 @@
 | 檔案 | 誰寫 | 內容 |
 |---|---|---|
 | `data/events.json` | GitHub Actions | 官方確認的事件。**routine 絕對不要手改** |
-| `data/px.json` | GitHub Actions | QQQ 日線。**不要手改** |
+| `data/px.json` | GitHub Actions | 七個標的的日線（那斯達克、費半、台股、10Y、黃金、原油、美元）。**不要手改** |
 | `data/curated.json` | 每日 07:00、當日校正、每週 | 新事件與日期更正 |
 | `data/priced.json` | 每日 07:00、當日校正 | 已定價程度 pxd |
 | `data/reviews.json` | 盤後複盤 | 複盤結果，校正的輸入 |
@@ -33,9 +33,14 @@
 ```
 總經與政策  fomc fomc_sep minutes cpi ppi pce gdp nfp ism retail jolts jackson refund
 非美與跨國  boj ecb opec
-風險溢酬    quad opex election tariff
+風險溢酬    quad opex election tariff headline
 分子端      earn1 earn2 earn3 cloud twrev product
 ```
+
+`headline` 是給**沒有排程的突發事件**用的：關稅發文、地緣衝突、監管開罰、
+出口管制、突發的政策談話。它的先驗定價程度只有 0.15——依定義，
+突發的東西不會被 price in，那正是它值得被記下來的原因。
+寫這類事件時 `t` 要填**實際發生的時間**（美東 HH:MM），不要用預設值。
 
 挑不出來就選最接近的，並在 note 寫清楚你的理由。不要自己發明代碼。
 

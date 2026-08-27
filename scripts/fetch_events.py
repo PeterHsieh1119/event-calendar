@@ -150,45 +150,68 @@ def fmp_earnings():
     return out
 
 
+# 背景走勢可以切換的標的。unit 決定漲跌怎麼算與怎麼標示：
+#   pct = 價格，用 (現值/基準-1)*100 顯示成 %
+#   bp  = 殖利率，Yahoo 回的就是百分比（4.66 代表 4.66%），
+#         用 (現值-基準)*100 顯示成 bp。殖利率用 % 變化會很誤導——
+#         4.00 走到 4.66 是「+16.5%」但市場講的是「+66bp」。
+PX_SYMBOLS = [
+    ("QQQ",        "那斯達克 100", "pct"),
+    ("^SOX",       "費城半導體",   "pct"),
+    ("^TWII",      "台灣加權",     "pct"),
+    ("^TNX",       "美 10 年期殖利率", "bp"),
+    ("GC=F",       "黃金",         "pct"),
+    ("CL=F",       "西德州原油",   "pct"),
+    ("DX-Y.NYB",   "美元指數",     "pct"),
+]
+
+
+def yahoo_series(symbol):
+    """回傳 {YYYY-MM-DD: 收盤}，抓不到就回 None。"""
+    from urllib.parse import quote
+    j = get_json("https://query1.finance.yahoo.com/v8/finance/chart/"
+                 + quote(symbol, safe="") + "?range=2y&interval=1d")
+    res = (j or {}).get("chart", {}).get("result") or []
+    if not res:
+        return None
+    r0 = res[0]
+    ts = r0.get("timestamp") or []
+    quote_blk = (r0.get("indicators", {}).get("quote") or [{}])[0]
+    closes = quote_blk.get("close") or []
+    out = {}
+    for t, v in zip(ts, closes):
+        if v is None:
+            continue
+        d = dt.datetime.fromtimestamp(t, dt.timezone.utc).date().isoformat()
+        out[d] = round(float(v), 4)
+    return out or None
+
+
 def prices():
-    """QQQ 日線，給年度軸當背景。存兩年。"""
-    if KEY:
-        start = (TODAY - dt.timedelta(days=760)).isoformat()
-        j = get_json(f"https://financialmodelingprep.com/stable/historical-price-eod/light"
-                     f"?symbol=QQQ&from={start}&to={TODAY.isoformat()}&apikey={KEY}")
-        if isinstance(j, list) and j:
-            series = {}
-            for r in j:
-                d = str(r.get("date", ""))[:10]
-                v = r.get("price", r.get("close"))
-                if d and v is not None:
-                    series[d] = round(float(v), 2)
-            print(f"  價格 {len(series)} 筆 (QQQ/FMP)")
-            return {"symbol": "QQQ · FMP", "series": series}
-    # Yahoo Finance chart API：免 key、純 HTTP，GitHub Actions 裡跑得動。
-    # 原本用的 Stooq CSV 已經改成要瀏覽器執行 JavaScript 才給資料，永遠會失敗。
-    try:
-        j = get_json("https://query1.finance.yahoo.com/v8/finance/chart/QQQ"
-                     "?range=2y&interval=1d")
-        res = (j or {}).get("chart", {}).get("result") or []
-        if res:
-            r0 = res[0]
-            ts = r0.get("timestamp") or []
-            quote = (r0.get("indicators", {}).get("quote") or [{}])[0]
-            closes = quote.get("close") or []
-            series = {}
-            for t, v in zip(ts, closes):
-                if v is None:
-                    continue
-                d = dt.datetime.fromtimestamp(t, dt.timezone.utc).date().isoformat()
-                series[d] = round(float(v), 2)
-            if series:
-                print(f"  價格 {len(series)} 筆 (QQQ/Yahoo)")
-                return {"symbol": "QQQ · Yahoo", "series": series}
-        print("  ! Yahoo 回傳格式不符", file=sys.stderr)
-    except Exception as e:
-        print(f"  ! 價格抓取失敗: {e}", file=sys.stderr)
-    return None
+    """七個標的的兩年日線，給年度軸當可切換的背景走勢。
+
+    QQQ 一定要有——校準把事件當天的變動除以它算出來的一般波動，
+    沒有它整個校正機制就只能退回寫死的 0.9%。其他標的缺了只是少一個選項。
+    """
+    series, symbols = {}, []
+    for sym, name, unit in PX_SYMBOLS:
+        try:
+            s = yahoo_series(sym)
+        except Exception as e:
+            s = None
+            print(f"  ! {sym} 抓取失敗: {e}", file=sys.stderr)
+        if s:
+            series[sym] = s
+            symbols.append({"k": sym, "n": name, "unit": unit})
+            print(f"  價格 {sym:<10} {len(s)} 筆")
+        else:
+            print(f"  ! {sym} 沒有資料，這個標的不會出現在選單裡", file=sys.stderr)
+    if "QQQ" not in series:
+        print("  ! QQQ 抓不到，校準會失去波動基準", file=sys.stderr)
+    if not series:
+        return None
+    return {"default": "QQQ" if "QQQ" in series else symbols[0]["k"],
+            "symbols": symbols, "series": series}
 
 
 def load(path, default):

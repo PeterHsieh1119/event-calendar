@@ -77,7 +77,10 @@ if (!m) { console.error("找不到 index.html 裡的 <script> 區塊"); process.
 
 const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_DEF,R:R," +
   "EVENTS:EVENTS,score:score,session:session,dayScore:dayScore,monthPct:monthPct," +
-  "isEDT:isEDT,iso:iso,parse:parse,clamp:clamp,setPX:function(o){PX=o;}};\n";
+  "isEDT:isEDT,iso:iso,parse:parse,clamp:clamp,expectOf:expectOf," +
+  "pxDelta:pxDelta,pxFmt:pxFmt,applyPx:applyPx,selectPx:selectPx," +
+  "getPxSel:function(){return PXSEL;},getPxUnit:function(){return PXUNIT;}," +
+  "setPX:function(o){PX=o;},setREVIEW:function(o){REVIEW=o;}};\n";
 
 try {
   vm.createContext(sandbox);
@@ -178,7 +181,69 @@ catKeys.forEach((k) => {
   T.setPX({});
 }
 
-/* ── 7. 版本字串：index.html 的 APP_VER 必須跟 sw.js 的 CACHE 一致 ── */
+/* ── 7. 共識 vs 實際的意外判定 ── */
+{
+  const ev = { date: "2026-08-12", title: "CPI", cat: "cpi", kind: "D" };
+  const set = (r) => T.setREVIEW(r ? { "2026-08-12|CPI": r } : {});
+
+  set({ cons: "0.2", act: "0.4", z: "2.1" });
+  let x = T.expectOf(ev);
+  eq("z 明顯為正 → 高於預期", x.verdict, "高於預期");
+  eq("方向為 +1", x.dir, 1);
+
+  set({ cons: "83", act: "-23", z: "-1.9" });
+  x = T.expectOf(ev);
+  eq("z 明顯為負 → 低於預期", x.verdict, "低於預期");
+  eq("方向為 -1", x.dir, -1);
+
+  set({ cons: "0.2", act: "0.21", z: "0.2" });
+  x = T.expectOf(ev);
+  eq("z 在 ±0.5 之內 → 符合預期", x.verdict, "符合預期");
+  eq("方向為 0", x.dir, 0);
+
+  set({ cons: "100", act: "110" });            // 沒有 z，退回直接比
+  x = T.expectOf(ev);
+  eq("沒有 z 時比相對差距 → 高於預期", x.verdict, "高於預期");
+  set({ cons: "100", act: "101" });
+  x = T.expectOf(ev);
+  eq("相對差距小於 5% → 符合預期", T.expectOf(ev).verdict, "符合預期");
+
+  set(null);
+  x = T.expectOf(ev);
+  eq("沒有任何資料就不下判定", x.verdict, "");
+  ok("沒有資料時 hasAct 為 false", x.hasAct === false);
+}
+
+/* ── 8. 多標的背景走勢：單位換算不能弄錯 ── */
+{
+  T.applyPx({
+    default: "QQQ",
+    symbols: [{ k: "QQQ", n: "那斯達克 100", unit: "pct" },
+              { k: "^TNX", n: "美 10 年期殖利率", unit: "bp" }],
+    series: {
+      QQQ: { "2026-01-02": 100, "2026-01-30": 110 },
+      "^TNX": { "2026-01-02": 4.00, "2026-01-30": 4.66 },
+    },
+  });
+  eq("預設選 QQQ", T.getPxSel(), "QQQ");
+  eq("QQQ 是價格單位", T.getPxUnit(), "pct");
+  ok("價格用百分比：100→110 是 +10%", Math.abs(T.pxDelta(110, 100) - 10) < 1e-9);
+  eq("價格格式化帶 %", T.pxFmt(10), "+10.0%");
+
+  T.selectPx("^TNX");
+  eq("切到殖利率", T.getPxUnit(), "bp");
+  ok("殖利率用 bp：4.00→4.66 是 +66bp", Math.abs(T.pxDelta(4.66, 4.00) - 66) < 1e-6,
+     String(T.pxDelta(4.66, 4.0)));
+  eq("殖利率格式化帶 bp", T.pxFmt(66), "+66bp");
+  ok("殖利率不會被算成 +16.5%", T.pxFmt(T.pxDelta(4.66, 4.0)).indexOf("%") < 0);
+
+  // 舊的單一序列格式要能繼續讀
+  T.applyPx({ symbol: "QQQ · Yahoo", series: { "2026-01-02": 100, "2026-01-30": 110 } });
+  eq("舊格式退回單一序列", T.getPxSel(), "QQQ");
+  eq("舊格式預設為價格單位", T.getPxUnit(), "pct");
+}
+
+/* ── 9. 版本字串：index.html 的 APP_VER 必須跟 sw.js 的 CACHE 一致 ── */
 {
   const swSrc = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
   const swVer = (swSrc.match(/CACHE\s*=\s*"([^"]+)"/) || [])[1];
