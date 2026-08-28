@@ -31,7 +31,8 @@
 不會報錯，只會讓分數悄悄錯掉。閘門會擋，但別讓它擋。
 
 ```
-總經與政策  fomc fomc_sep minutes cpi ppi pce gdp nfp ism retail jolts jackson refund
+總經與政策  fomc fomc_sep minutes cpi ppi pce gdp ism retail jackson refund
+就業        nfp adp claims jolts
 非美與跨國  boj ecb opec
 風險溢酬    quad opex election tariff headline
 分子端      earn1 earn2 earn3 cloud twrev product
@@ -41,6 +42,10 @@
 出口管制、突發的政策談話。它的先驗定價程度只有 0.15——依定義，
 突發的東西不會被 price in，那正是它值得被記下來的原因。
 寫這類事件時 `t` 要填**實際發生的時間**（美東 HH:MM），不要用預設值。
+
+就業那一組的分工：`nfp` 是非農（月，週五 08:30），`adp` 是非農前兩天的民間預覽，
+`claims` 是每週四的初領失業金，`jolts` 是職缺（月，落後約五到六週）。
+四個都由規則引擎自動產生，**不要重複寫進 curated.json**，除非官方日期跟推算不同。
 
 挑不出來就選最接近的，並在 note 寫清楚你的理由。不要自己發明代碼。
 
