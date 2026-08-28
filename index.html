@@ -1348,9 +1348,23 @@ function mergeRemote(list){
     t:e.t||"",pxd:(e.pxd!=null&&isFinite(e.pxd))?+e.pxd:null}));
   const keep=EVENTS.filter(e=>!(e.est&&e.date>=from&&
     clean.some(f=>f.title===e.title&&Math.abs(parse(f.date)-parse(e.date))<=10*864e5)));
-  const seen=new Set(),out=[];
+  /* 同名同日時「後來的覆蓋先前的」，不是直接丟掉。
+     clean 排在 keep 後面，所以 events.json 蓋得掉規則引擎、
+     curated.json 又蓋得掉 events.json——curated 是更正層，它必須贏。
+     原本是 seen.has 就 continue，於是 curated 想改 t 或 cat 都改不動：
+     日期跟標題一樣就整筆被丟棄，只有新日期的事件才進得來。 */
+  const seen=new Map(),out=[];
   for(const e of [...keep,...clean].sort((a,b)=>a.date.localeCompare(b.date))){
-    const k=e.date+"|"+e.title; if(seen.has(k))continue; seen.add(k);
+    const k=e.date+"|"+e.title;
+    const prev=seen.get(k);
+    if(prev){
+      ["kind","cat","t","note","src"].forEach(f=>{if(e[f])prev[f]=e[f];});
+      if(e.pxd!=null)prev.pxd=e.pxd;
+      if(Array.isArray(e.checks)&&e.checks.length)prev.checks=e.checks;
+      prev.est=e.est;
+      continue;
+    }
+    seen.set(k,e);
     if(!e.checks.length){const o=EVENTS.find(x=>x.title===e.title&&x.checks&&x.checks.length);
       if(o){e.checks=o.checks;e.note=e.note||o.note;}}
     out.push(e);

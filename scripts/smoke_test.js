@@ -81,7 +81,8 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "pxDelta:pxDelta,pxFmt:pxFmt,applyPx:applyPx,selectPx:selectPx," +
   "getPxSel:function(){return PXSEL;},getPxUnit:function(){return PXUNIT;}," +
   "metricsOf:metricsOf,withUnit:withUnit,flowHTML:flowHTML,chainHTML:chainHTML," +
-  "readingHTML:readingHTML," +
+  "readingHTML:readingHTML,mergeRemote:mergeRemote," +
+  "getEVENTS:function(){return EVENTS;},setEVENTS:function(o){EVENTS=o;}," +
   "setPX:function(o){PX=o;},setREVIEW:function(o){REVIEW=o;}};\n";
 
 try {
@@ -274,7 +275,22 @@ catKeys.forEach((k) => {
   T.setREVIEW({});
 }
 
-/* ── 10. 版本字串：index.html 的 APP_VER 必須跟 sw.js 的 CACHE 一致 ── */
+/* ── 10. curated 是更正層：同名同日要蓋得掉，不能被丟掉 ── */
+{
+  const base = T.getEVENTS();
+  T.setEVENTS([{ date: "2026-09-18", title: "日本央行利率決議", kind: "D", cat: "boj",
+    t: "TW", est: false, note: "舊的", checks: [], src: "events.json" }]);
+  T.mergeRemote([{ date: "2026-09-18", title: "日本央行利率決議", kind: "D", cat: "boj",
+    t: "TPE:11:30", est: false, note: "更正過的", src: "curated.json" }]);
+  const after = T.getEVENTS().filter((e) => e.title === "日本央行利率決議");
+  eq("同名同日不會變成兩筆", after.length, 1);
+  eq("curated 的 t 蓋掉舊的", after[0].t, "TPE:11:30");
+  eq("curated 的 note 也蓋掉", after[0].note, "更正過的");
+  eq("蓋掉之後台股算成盤中", T.session(after[0]).tw, "台股當日盤中");
+  T.setEVENTS(base);
+}
+
+/* ── 11. 版本字串：index.html 的 APP_VER 必須跟 sw.js 的 CACHE 一致 ── */
 {
   const swSrc = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
   const swVer = (swSrc.match(/CACHE\s*=\s*"([^"]+)"/) || [])[1];
