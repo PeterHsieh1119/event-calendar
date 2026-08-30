@@ -82,16 +82,30 @@ TW         台北時間**下午**公布，例如台積電月營收
 
 ## 六、雲端環境的網路限制
 
-egress proxy 會擋掉這些網域，`WebFetch` 一定失敗，不要浪費工具呼叫：
+**`WebFetch` 和 `curl` 在這個環境裡連不出去，一個網域都連不出去。**
+2026-08-30 實測，以下全部被 egress proxy 擋掉（`WebFetch` 回 EGRESS_BLOCKED，
+`curl` 回 `CONNECT tunnel failed, response 403`）：
 
 ```
-news.futunn.com   www.itiger.com   bls.gov
-tradingeconomics.com   ecb.europa.eu   forth.news
+federalreserve.gov  bea.gov  treasury.gov  sec.gov  bls.gov  kansascityfed.org
+boj.or.jp  opec.org  fred.stlouisfed.org  nasdaq.com  cnbc.com  reuters.com
+finance.yahoo.com  cnyes.com  macromicro.me  slickcharts.com  stockanalysis.com
+invesco.com  tipranks.com  sinotrade.com.tw  news.futunn.com  tradingeconomics.com
 ```
 
-這些改用 `WebSearch` 讀搜尋摘要，並在 `src` 註明「搜尋摘要，未讀原文」。
-`federalreserve.gov`、`bea.gov`、`treasury.gov`、`sec.gov`、`boj.or.jp`、`opec.org`
-與多數新聞網站可以直接 `WebFetch`。
+不要再花工具呼叫去試第一級官網，**它不會通**。實際能用的只有三條路：
+
+1. **`WebSearch`** — 讀得到搜尋摘要，讀不到原文。
+2. **Bigdata MCP（`bigdata_search`）** — 財經新聞、SEC filing、法說逐字稿、
+   公司自己發的新聞稿，附發布時間與出處，比純搜尋摘要精確得多。查事件日期優先用它。
+3. **市場數據 MCP** — FMP（`quote` 可取 ^VIX、指數、個股報價）、IBKR（選擇權鏈）。
+   注意 FMP 的 `indexes` 與 `etfAndMutualFunds` 需要更高方案，這個帳號沒有，會被拒。
+
+**這件事直接影響 `src` 怎麼寫。** 拿不到原文就不能把來源標成第一級官網——
+`src` 要寫「這個數字實際上是從哪裡看到的」，例如
+「Broadcom 官方新聞稿 2026-08-03（PRNewswire，經 Bigdata 檢索）」、
+「BEA 數字，搜尋摘要，未讀原文」。標成讀過 `bea.gov` 的 PDF 但其實沒讀，
+下一個人（也就是下週的你）會以為那筆有第一級佐證。
 
 ## 七、不准捏造
 

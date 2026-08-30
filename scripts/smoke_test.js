@@ -290,6 +290,47 @@ catKeys.forEach((k) => {
   T.setEVENTS(base);
 }
 
+/* ── 10b. 日期更正：±10 天內的同名事件要被「取代」，不是多長出一筆 ──
+   財報錨定日是 anchor+91 天推出來的，標成 est=false 但常跟公司公告差幾天
+   （AVGO 推算 9/10、官方公告 9/2）。這種更正如果只是新增一筆，日曆上會同名兩筆，
+   當日分數還被重複計算。以下四條把「誰蓋得掉誰」釘住。 */
+{
+  const base = T.getEVENTS();
+  const E = (date, est, extra) => Object.assign(
+    { date, title: "測試 財報", kind: "N", cat: "earn2", t: "AMC", est,
+      note: "", checks: [], src: "" }, extra || {});
+
+  // (1) 已確認的推算日，被另一個已確認的日期更正 → 取代，不是並存
+  T.setEVENTS([E("2026-09-10", false, { note: "推算的" })]);
+  T.mergeRemote([E("2026-09-02", false, { note: "官方公告的" })]);
+  let after = T.getEVENTS().filter((e) => e.title === "測試 財報");
+  eq("確認日被確認的更正取代後只剩一筆", after.length, 1);
+  eq("留下來的是更正後的日期", after[0].date, "2026-09-02");
+  eq("更正的 note 也跟著進來", after[0].note, "官方公告的");
+
+  // (2) 反向：est 的猜測日蓋不掉已確認的日期
+  T.setEVENTS([E("2026-09-10", false, { note: "官方確認的" })]);
+  T.mergeRemote([E("2026-09-02", true, { note: "猜的" })]);
+  after = T.getEVENTS().filter((e) => e.title === "測試 財報").sort(
+    (a, b) => a.date.localeCompare(b.date));
+  eq("猜測日不會取代已確認的日期", after.length, 2);
+  ok("已確認的那筆還在", after.some((e) => e.date === "2026-09-10" && !e.est));
+
+  // (3) 週期性重複的同名事件：只下架最接近的一筆，隔壁幾週不能被連坐
+  T.setEVENTS([E("2026-09-03", true), E("2026-09-10", true), E("2026-09-17", true)]);
+  T.mergeRemote([E("2026-09-11", false)]);
+  after = T.getEVENTS().filter((e) => e.title === "測試 財報").map((e) => e.date).sort();
+  eq("只取代最接近的那一筆", after.join(","), "2026-09-03,2026-09-11,2026-09-17");
+
+  // (4) 已經過去的事件是歷史紀錄，更正不去動它
+  T.setEVENTS([E("2026-01-05", true, { note: "去年初的" })]);
+  T.mergeRemote([E("2026-01-08", false, { note: "更正" })]);
+  after = T.getEVENTS().filter((e) => e.title === "測試 財報");
+  eq("過去的事件不會被更正掉", after.length, 2);
+
+  T.setEVENTS(base);
+}
+
 /* ── 11. 版本字串：index.html 的 APP_VER 必須跟 sw.js 的 CACHE 一致 ── */
 {
   const swSrc = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");

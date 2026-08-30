@@ -496,7 +496,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-v13";
+const APP_VER = "evcal-v14";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -1346,8 +1346,28 @@ function mergeRemote(list){
     date:e.date.slice(0,10),kind:e.kind,title:e.title,cat:e.cat||"ism",
     est:!!e.est,note:e.note||"",checks:Array.isArray(e.checks)?e.checks:[],src:e.src||"",
     t:e.t||"",pxd:(e.pxd!=null&&isFinite(e.pxd))?+e.pxd:null}));
-  const keep=EVENTS.filter(e=>!(e.est&&e.date>=from&&
-    clean.some(f=>f.title===e.title&&Math.abs(parse(f.date)-parse(e.date))<=10*864e5)));
+  /* 日期更正：同名事件落在 ±10 天內就當成同一件事，保留 curated 給的日期、下架舊的那筆。
+     兩個限制是刻意的：
+     1. 只下架「最接近的那一筆」。同名事件會週期性重複（初領失業金每 7 天一筆，
+        整串都落在 ±10 天內），一次掃掉全部會把隔壁那幾週一起連坐刪掉。
+     2. 推測日（est）誰都能蓋；已確認的日期只有另一個「已確認」的更正蓋得動。
+        沒有第 2 條的話，官方公布日會被某個 est 的猜測日推翻。
+     反過來說，確認日必須能被確認日更正——財報錨定日是 anchor+91 天推出來的，
+     標成 est=false 但常常跟公司自己公告的日期差幾天（AVGO 推 9/10、官方 9/2）。
+     舊版只肯下架 est 的那些，於是這種更正會變成日曆上同名的兩筆，當日分數還被重複計算。 */
+  const drop=new Set();
+  clean.forEach(f=>{
+    let best=null,bd=Infinity;
+    for(const e of EVENTS){
+      if(e.title!==f.title||e.date===f.date||drop.has(e))continue;
+      if(e.date<from)continue;              // 已經過去的不動，那是歷史紀錄
+      if(!e.est&&f.est)continue;            // 猜測蓋不掉已確認的日期
+      const d=Math.abs(parse(f.date)-parse(e.date));
+      if(d<=10*864e5&&d<bd){bd=d;best=e;}
+    }
+    if(best)drop.add(best);
+  });
+  const keep=EVENTS.filter(e=>!drop.has(e));
   /* 同名同日時「後來的覆蓋先前的」，不是直接丟掉。
      clean 排在 keep 後面，所以 events.json 蓋得掉規則引擎、
      curated.json 又蓋得掉 events.json——curated 是更正層，它必須贏。
