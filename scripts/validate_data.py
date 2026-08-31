@@ -315,6 +315,34 @@ def main():
                 err("px.json", "%d 個日期格式不合法，例如 %s" % (len(bad), bad[:3]))
             print("  px.json：%d 筆（舊的單一序列格式）" % len(ser))
 
+    bt = load("betas.json", {})
+    if isinstance(bt, dict) and bt.get("assets"):
+        chans = ("front", "real", "be", "erp")
+        ok_assets = 0
+        for k, r in bt["assets"].items():
+            if not isinstance(r, dict):
+                err("betas.json", "%s 不是物件" % k)
+                continue
+            for c in chans:
+                v = r.get(c)
+                if v is None:
+                    continue
+                if not isinstance(v, (int, float)) or isinstance(v, bool):
+                    err("betas.json", "%s.%s 必須是數字，拿到 %r" % (k, c, v))
+                elif abs(v) > 3:
+                    err("betas.json", "%s.%s = %s 超出合理範圍（標準化後應在 ±3 內），"
+                                      "迴歸可能爆掉了" % (k, c, v))
+            r2 = r.get("r2")
+            if not isinstance(r2, (int, float)) or not (-1 <= r2 <= 1):
+                err("betas.json", "%s 的 r2 不合法：%r" % (k, r2))
+            if not isinstance(r.get("n"), int) or r["n"] < 20:
+                err("betas.json", "%s 的樣本數 %r 太少" % (k, r.get("n")))
+            if not r.get("weak"):
+                ok_assets += 1
+        if not ok_assets:
+            warn("betas.json", "沒有任何資產通過品質門檻，前端會整組退回先驗")
+        print("  betas.json：%d 個資產，%d 個採用" % (len(bt["assets"]), ok_assets))
+
     cl = load("changelog.json", [])
     if isinstance(cl, list):
         for i, c in enumerate(cl):

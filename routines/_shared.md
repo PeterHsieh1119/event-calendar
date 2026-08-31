@@ -69,6 +69,7 @@
 |---|---|---|
 | `data/events.json` | GitHub Actions | 官方確認的事件。**routine 絕對不要手改** |
 | `data/px.json` | GitHub Actions | 七個標的的日線（那斯達克、費半、台股、10Y、黃金、原油、美元）。**不要手改** |
+| `data/betas.json` | GitHub Actions | 60 日滾動嶺迴歸的資產曝險係數。**不要手改**，要改的是 `scripts/rolling_beta.py` |
 | `data/curated.json` | 每日 07:00、當日校正、每週 | 新事件與日期更正 |
 | `data/priced.json` | 每日 07:00、當日校正 | 已定價程度 pxd |
 | `data/reviews.json` | 盤後複盤 | 複盤結果，校正的輸入 |

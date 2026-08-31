@@ -352,7 +352,8 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
   <div class="panelbox">
     <h4>資產對管道的曝險</h4>
     <div style="overflow-x:auto"><table class="tm" id="betaTable"></table></div>
-    <div class="note">數字是相對彈性，不是精確的迴歸係數。長天期成長股在實質利率與風險溢酬上的絕對值最大，這就是為什麼分母端事件對那斯達克的殺傷力遠高於對價值股。</div>
+    <div class="note" id="betaNote"></div>
+    <div class="note">長天期成長股在實質利率與風險溢酬上的絕對值最大，這就是為什麼分母端事件對那斯達克的殺傷力遠高於對價值股。</div>
   </div>
 </section>
 
@@ -496,7 +497,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-v14";
+const APP_VER = "evcal-v15";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -524,6 +525,10 @@ const CPI26=["01-13","02-13","03-11","04-10","05-12","06-10","07-14","08-12","09
 
 /* ═══ 管道與資產 ═══ */
 const CH=[["front","前端利率"],["real","長端實質"],["be","通膨預期"],["erp","風險溢酬"],["eps","盈餘預期"]];
+/* 曝險係數有兩個來源：下面 ASSETS 裡寫死的先驗，與 data/betas.json 的 60 日滾動估計。
+   估計值蓋掉先驗，但只蓋它估得動的那四條——eps 不是日頻可觀測的東西，永遠用先驗。
+   解釋力不足（weak）或定義上循環（circular）的格子也退回先驗。 */
+let BETAS=null, BETAPRIOR=null;
 const ASSETS=[
  {k:"ndx",n:"那斯達克",b:{front:-.9,real:-1.0,be:-.2,erp:-1.0,eps:1.0}},
  {k:"spx",n:"標普500",b:{front:-.7,real:-.8,be:-.1,erp:-.9,eps:.9}},
@@ -534,6 +539,24 @@ const ASSETS=[
  {k:"twse",n:"台股半導",b:{front:-.8,real:-.9,be:-.1,erp:-1.1,eps:1.2}},
  {k:"hyg",n:"高收益債",b:{front:-.3,real:-.4,be:-.2,erp:-1.0,eps:.5}}
 ];
+
+function applyBetas(j){
+  if(!BETAPRIOR)BETAPRIOR=ASSETS.map(a=>({...a.b}));      // 第一次先把先驗留一份
+  ASSETS.forEach((a,i)=>{a.b={...BETAPRIOR[i]};a.est=null;});
+  if(!j||!j.assets)return;
+  BETAS=j;
+  ASSETS.forEach(a=>{
+    const r=j.assets[a.k];
+    if(!r||r.weak)return;                                  // 解釋力不足就整個不用
+    const circ=Array.isArray(r.circular)?r.circular:[];
+    const used=[];
+    ["front","real","be","erp"].forEach(k=>{
+      if(circ.includes(k))return;
+      if(typeof r[k]==="number"&&isFinite(r[k])){a.b[k]=r[k];used.push(k);}
+    });
+    if(used.length)a.est={ch:used,r2:r.r2,n:r.n,lagged:!!r.lagged};
+  });
+}
 
 /* ═══ 事件類型：基準敏感度 B、環境權重 w、管道向量（上行意外）═══ */
 const CAT={
@@ -1353,6 +1376,12 @@ async function loadRemote(){
       Array.isArray(list)?list.length:0);
   }catch(e){stat("reviews.json","routine 複盤",false,"",0,"讀取失敗");}
   try{
+    const j=await grab("betas.json");
+    applyBetas(j);
+    const n=(j&&j.assets)?Object.values(j.assets).filter(x=>!x.weak).length:0;
+    stat("betas.json","滾動曝險係數",n>0,j&&j.generated,n);
+  }catch(e){applyBetas(null);stat("betas.json","滾動曝險係數",false,"",0,"讀取失敗，用先驗");}
+  try{
     const j=await grab("regime.json");
     applyRegime(j);
     const n=(j&&j.values)?Object.keys(j.values).length:0;
@@ -1804,8 +1833,22 @@ function renderMatrix(){
     return `<tr><td>${c.label}</td>${CH.map(([ch])=>{const v=c.ch[ch]||0;
       return `<td style="color:${v>.15?"var(--dn)":v<-.15?"var(--up)":"var(--tx3)"}">${v?(v>0?"+":"")+v.toFixed(2):"·"}</td>`;}).join("")}</tr>`;}).join("");
   $("betaTable").innerHTML=`<tr><th>資產</th>${CH.map(([,n])=>`<th>${n}</th>`).join("")}</tr>`+
-   ASSETS.map(a=>`<tr><td>${a.n}</td>${CH.map(([k])=>{const v=a.b[k];
-     return `<td style="color:${v>.15?"var(--up)":v<-.15?"var(--dn)":"var(--tx3)"}">${v>0?"+":""}${v.toFixed(1)}</td>`;}).join("")}</tr>`).join("");
+   ASSETS.map(a=>`<tr><td>${a.n}${a.est?` <span class="est" style="font-size:9px">估 R²${a.est.r2.toFixed(2)}</span>`:""}</td>`
+     +CH.map(([k])=>{const v=a.b[k];
+       const isEst=a.est&&a.est.ch.includes(k);
+       return `<td style="${isEst?"":"opacity:.5;"}color:${v>.15?"var(--up)":v<-.15?"var(--dn)":"var(--tx3)"}">`
+         +`${v>0?"+":""}${v.toFixed(2)}</td>`;}).join("")
+     +`</tr>`).join("");
+  const est=ASSETS.filter(a=>a.est), lag=est.filter(a=>a.est.lagged);
+  $("betaNote").innerHTML=BETAS
+    ? `<b>不透明的格子</b>是 ${BETAS.window||60} 日滾動嶺迴歸的實測係數（${BETAS.asof||"—"}，`
+      +`${est.length}/${ASSETS.length} 個資產通過 R² 門檻）：把該資產的日報酬對四個管道的日變動一起迴歸，`
+      +`兩邊都標準化，所以數字是「管道動一個標準差、資產跟著動幾個標準差」。`
+      +`<b>半透明的格子</b>是退回先驗——該資產整體解釋力不足、或該管道與這個資產機械共線（例如信用價差之於高收益債），`
+      +`估出來只是同義反覆。盈餘預期沒有日頻代理變數，永遠是先驗。`
+      +(lag.length?`${lag.map(a=>a.n).join("、")}用的是<b>落後一日</b>的美國因子，因為亞洲時段先收盤。`:"")
+      +`R² 只有 0.1～0.3 是正常的：單日報酬本來就大半是雜訊，這裡要的是方向與相對大小，不是預測力。`
+    : `目前顯示的是先驗係數（相對彈性，非迴歸結果）。data/betas.json 還沒載入或全部未通過品質門檻。`;
 }
 
 

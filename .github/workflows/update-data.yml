@@ -24,6 +24,9 @@ jobs:
           FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
         run: python scripts/fetch_events.py
 
+      - name: 滾動曝險係數
+        run: python scripts/rolling_beta.py
+
       - name: 資料驗證（沒過就不要把壞資料 commit 進去）
         run: python scripts/validate_data.py
 

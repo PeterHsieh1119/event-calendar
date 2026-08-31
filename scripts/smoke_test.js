@@ -83,7 +83,9 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "metricsOf:metricsOf,withUnit:withUnit,flowHTML:flowHTML,chainHTML:chainHTML," +
   "readingHTML:readingHTML,mergeRemote:mergeRemote," +
   "getEVENTS:function(){return EVENTS;},setEVENTS:function(o){EVENTS=o;}," +
-  "setPX:function(o){PX=o;},setREVIEW:function(o){REVIEW=o;}};\n";
+  "setPX:function(o){PX=o;},setREVIEW:function(o){REVIEW=o;},"+
+  "ASSETS:ASSETS,applyBetas:applyBetas,assetImpact:assetImpact," +
+  "getBETAS:function(){return BETAS;}};\n";
 
 try {
   vm.createContext(sandbox);
@@ -339,6 +341,84 @@ catKeys.forEach((k) => {
   ok("sw.js 有 CACHE 版本字串", !!swVer, String(swVer));
   ok("index.html 有 APP_VER", !!appVer, String(appVer));
   eq("APP_VER 與 sw.js 的 CACHE 一致", appVer, swVer);
+}
+
+/* ── 12. 滾動曝險係數 applyBetas：估不準的時候一定要退回先驗 ── */
+{
+  const snap = () => JSON.stringify(T.ASSETS.map((a) => a.b));
+  const A = (k) => T.ASSETS.find((a) => a.k === k);
+  const pri = (k) => JSON.stringify(A(k).b);
+
+  T.applyBetas(null);
+  const prior = snap();
+  const priorNdx = pri("ndx"), priorFin = pri("fin"), priorHyg = pri("hyg"), priorGld = pri("gld");
+  const priorHygErp = A("hyg").b.erp, priorGldFront = A("gld").b.front;
+  ok("ASSETS 有先驗係數", T.ASSETS.length > 0, String(T.ASSETS.length));
+
+  // betas.json 拓不到（fetch 失敗、或檔案還沒生出來）時必須完整退回先驗
+  eq("betas.json 拓不到時係數維持先驗", snap(), prior);
+  ok("betas.json 拓不到時沒有資產標成估計", T.ASSETS.every((a) => !a.est));
+
+  // 通過門檻：四個管道換成實測值
+  T.applyBetas({
+    asof: "2026-08-31", window: 60,
+    assets: { ndx: { front: 0.06, real: -0.43, be: -0.22, erp: -0.44, r2: 0.24, n: 60 } },
+  });
+  eq("通過門檻的資產換成實測 real", A("ndx").b.real, -0.43);
+  eq("通過門檻的資產換成實測 erp", A("ndx").b.erp, -0.44);
+  ok("通過門檻的資產標成估計", !!A("ndx").est);
+  eq("估計標記帶出 R2", A("ndx").est.r2, 0.24);
+  ok("eps 永遠不在估計清單裡（沒有日頻代理變數）",
+    T.ASSETS.every((a) => !a.est || !a.est.ch.includes("eps")));
+  eq("沒出現在 betas.json 裡的資產維持先驗", pri("gld"), priorGld);
+
+  // weak：解釋力不足的整組退回先驗，一個管道都不准採用
+  T.applyBetas({
+    assets: { fin: { front: 0.9, real: -0.9, be: 0.9, erp: -0.9, r2: 0.05, n: 60, weak: true } },
+  });
+  eq("weak 的資產整組退回先驗", pri("fin"), priorFin);
+  ok("weak 的資產不標成估計", !A("fin").est);
+  eq("上一輪估過的資產在這一輪沒資料時退回先驗", pri("ndx"), priorNdx);
+  ok("上一輪的估計標記也要清掉", !A("ndx").est);
+
+  // circular：機械共線的那個管道跳過，其餘照用
+  T.applyBetas({
+    assets: { hyg: { front: -0.08, real: -0.78, be: -0.32, erp: -0.36, r2: 0.63, n: 60,
+                     circular: ["erp"] } },
+  });
+  eq("circular 的管道退回先驗", A("hyg").b.erp, priorHygErp);
+  eq("同一筆的其他管道照樣採用", A("hyg").b.real, -0.78);
+  ok("circular 的管道不列進估計清單", !A("hyg").est.ch.includes("erp"),
+    JSON.stringify(A("hyg").est.ch));
+
+  // 髒資料不准進來：字串、null、NaN 都當作沒給
+  T.applyBetas({ assets: { ndx: { real: "很負", be: null, erp: NaN, front: 0.11,
+                                  r2: 0.3, n: 60 } } });
+  eq("字串的係數被忽略", A("ndx").b.real, JSON.parse(priorNdx).real);
+  eq("NaN 的係數被忽略", A("ndx").b.erp, JSON.parse(priorNdx).erp);
+  eq("同一筆裡合法的那個還是要採用", A("ndx").b.front, 0.11);
+
+  // 只給一個管道的時候，其餘維持先驗
+  T.applyBetas({ assets: { gld: { real: -0.23, r2: 0.12, n: 60 } } });
+  eq("只換有給的那一個", A("gld").b.real, -0.23);
+  eq("沒給的欄位維持先驗", A("gld").b.front, priorGldFront);
+
+  // lagged 標記要傳到前端（亞洲時段用落後一日的美國因子）
+  T.applyBetas({ assets: { twse: { real: -0.26, erp: -0.33, r2: 0.12, n: 60, lagged: true } } });
+  ok("lagged 標記傳到前端", A("twse").est.lagged === true);
+
+  // 換了曝險係數之後，傳導鏈的數字要跟著變，不然估了也沒用
+  T.applyBetas(null);
+  const ev = { date: "2026-09-10", title: "CPI", cat: "cpi", kind: "D" };
+  const impPri = T.assetImpact(ev).out.ndx;
+  T.applyBetas({ assets: { ndx: { front: 0.06, real: -2.0, be: -0.22, erp: -0.44,
+                                  r2: 0.24, n: 60 } } });
+  const impEst = T.assetImpact(ev).out.ndx;
+  ok("換了曝險係數之後，資產衝擊跟著變",
+    Math.abs(impEst - impPri) > 1e-9, impPri + " -> " + impEst);
+
+  T.applyBetas(null);
+  eq("測試結束後回到先驗", snap(), prior);
 }
 
 /* ── 報告 ── */
