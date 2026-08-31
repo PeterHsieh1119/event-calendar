@@ -240,6 +240,23 @@ def main():
                     "「%s」缺 sigma（當天的一般波動基準），"
                     "校正沒有它就只能退回寫死的 0.9%%，等於白填" % t)
             check_metrics("reviews.json", t, it.get("metrics"), need_act=False)
+            vs = it.get("views")
+            if vs not in (None, ""):
+                if not isinstance(vs, list):
+                    err("reviews.json", "「%s」views 必須是陣列" % t)
+                else:
+                    for j, v in enumerate(vs):
+                        if not isinstance(v, dict) or not v.get("t"):
+                            err("reviews.json", "「%s」views 第 %d 筆缺 t（說法本身）"
+                                % (t, j + 1))
+                            continue
+                        if not v.get("who"):
+                            err("reviews.json", "「%s」views 第 %d 筆缺 who，"
+                                                "沒有出處的市場說法不要收" % (t, j + 1))
+                        if v.get("tone") not in (None, "", "鷹", "鴿", "偏多", "偏空", "中性"):
+                            err("reviews.json", "「%s」views 的 tone 只能是 "
+                                                "鷹／鴿／偏多／偏空／中性，拿到 %r"
+                                % (t, v.get("tone")))
             for fld in ("spx", "ndx", "y10", "dxy", "gld", "sigma", "z"):
                 v = str(it.get(fld, "")).strip()
                 if v and not NUM_RE.match(v):

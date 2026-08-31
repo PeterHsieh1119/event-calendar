@@ -986,6 +986,60 @@ function flowHTML(e){
   <div class="note">數字是相對彈性不是漲跌幅預測，絕對值最大的那個才是這件事真正打到的地方。</div>`;
 }
 
+/* 歷史反應：同一個事件過去每次公布時，各資產隔一天走了多少。
+   這是從 px.json 直接算的事件研究，不是去網路上抄來的——
+   盤前數據看當日收盤 vs 前一日，盤後財報看次一交易日。 */
+const HISTSYMS=["QQQ","^SOX","^TNX","GC=F"];
+function histOf(e,n){
+  n=n||6;
+  const shiftOf=x=>session(x).us==="美股隔一交易日"?1:0;
+  const past=EVENTS.filter(x=>x.title===e.title&&x.date<iso(TODAY))
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  const rows=[];
+  for(const x of past){
+    const shift=shiftOf(x), r={date:x.date}; let any=false;
+    HISTSYMS.forEach(k=>{
+      const ser=PXALL[k]; if(!ser)return;
+      const ks=Object.keys(ser).sort();
+      let i=ks.findIndex(d=>d>=x.date);
+      if(i<0)return;
+      i+=shift;
+      if(i<1||i>=ks.length)return;
+      const cur=ser[ks[i]], prev=ser[ks[i-1]];
+      if(!(cur>0&&prev>0))return;
+      const unit=(PXSYMS.find(v=>v.k===k)||{}).unit||"pct";
+      r[k]=unit==="bp"?(cur-prev)*100:(cur/prev-1)*100;
+      any=true;
+    });
+    if(any)rows.push(r);
+    if(rows.length>=n)break;
+  }
+  return rows;
+}
+function median(a){
+  const v=a.filter(x=>isFinite(x)).sort((p,q)=>p-q);
+  if(!v.length)return null;
+  const m=Math.floor(v.length/2);
+  return v.length%2?v[m]:(v[m-1]+v[m])/2;
+}
+function histHTML(e){
+  const rows=histOf(e,6);
+  if(rows.length<2)return "";
+  const name=k=>(PXSYMS.find(v=>v.k===k)||{}).n||k;
+  const unit=k=>(PXSYMS.find(v=>v.k===k)||{}).unit||"pct";
+  const fmt=(v,k)=>v==null?"—":(v>=0?"+":"")+(unit(k)==="bp"?v.toFixed(0)+"bp":v.toFixed(1)+"%");
+  const cell=(v,k)=>`<td style="color:${v==null?"var(--tx3)":v>0?"var(--up)":v<0?"var(--dn)":"var(--tx3)"}">${fmt(v,k)}</td>`;
+  const head=HISTSYMS.map(k=>`<th>${name(k)}</th>`).join("");
+  const body=rows.map(r=>`<tr><td>${r.date.slice(5)}</td>`
+    +HISTSYMS.map(k=>cell(r[k],k)).join("")+`</tr>`).join("");
+  const med=HISTSYMS.map(k=>cell(median(rows.map(r=>r[k])),k)).join("");
+  return `<h4 style="margin-top:16px">歷史反應（過去 ${rows.length} 次）</h4>`
+    +`<table class="mtab"><tr><th>日期</th>${head}</tr>${body}`
+    +`<tr style="border-top:1px solid var(--line2)"><td style="color:var(--tx2)">中位數</td>${med}</tr></table>`
+    +`<div class="note">事件當天（盤後財報則為次一交易日）相對前一交易日的變動，`
+    +`直接由 data/px.json 計算。樣本只有兩年，次數少的事件參考價值有限。</div>`;
+}
+
 /* 傳導鏈：把「為什麼是這個數字」逐項攤開，可以自己核對 */
 function chainHTML(e){
   const ai=assetImpact(e);
@@ -1009,6 +1063,30 @@ function chainHTML(e){
 
 /* 讀法：從模型算出來的東西講「這代表什麼、該看哪裡」。
    這是模型讀法，不是進出場建議。 */
+/* 關鍵驅動分項＋事件當下市場怎麼解讀。由盤後複盤 routine 寫入。 */
+function viewsHTML(e){
+  const r=REVIEW[rkey(e)]||{};
+  const drv=String(r.driver||"").trim();
+  const vs=Array.isArray(r.views)?r.views.filter(v=>v&&v.t):[];
+  if(!drv&&!vs.length)return "";
+  let h=`<h4 style="margin-top:16px">當時市場怎麼讀</h4>`;
+  if(drv)h+=`<div class="kv"><span class="k">關鍵驅動分項</span><span class="v">${drv}</span></div>`;
+  if(vs.length){
+    h+=`<div class="chain" style="margin-top:8px">`+vs.map(v=>{
+      const tone=v.tone==="鷹"||v.tone==="偏空"?"var(--dn)":
+                 v.tone==="鴿"||v.tone==="偏多"?"var(--up)":"var(--tx2)";
+      return `<div style="margin-bottom:7px">`
+        +`<span style="color:${tone}">${v.tone?"【"+v.tone+"】":""}</span>`
+        +`${v.t}`
+        +(v.who?`<div class="note" style="margin-top:2px">— ${v.who}${v.src?`，${v.src}`:""}</div>`:"")
+        +`</div>`;
+    }).join("")+`</div>`;
+  }
+  h+=`<div class="note">這些是事件當下市場上的說法，不是事實也不是共識，`
+    +`收進來是為了讓你事後能對照「當時大家怎麼想」與「後來怎麼走」。</div>`;
+  return h;
+}
+
 function readingHTML(e){
   const sc=score(e), ai=assetImpact(e), x=expectOf(e);
   const top=ASSETS.map(a=>({n:a.n,v:ai.out[a.k]}))
@@ -1319,6 +1397,7 @@ function applyRemoteReviews(items){
     REVIEW[k]={cons:it.cons||"",act:it.act||"",z:it.z||"",spx:it.spx||"",ndx:it.ndx||"",
       y10:it.y10||"",dxy:it.dxy||"",gld:it.gld||"",memo:it.memo||"",
       sigma:it.sigma||"",metrics:Array.isArray(it.metrics)?it.metrics:[],
+      driver:it.driver||"",views:Array.isArray(it.views)?it.views:[],
       ts:it.asof||it.date,by:"routine"};
     n++;
   });
@@ -1674,6 +1753,8 @@ function openDay(ds,evs,focus){
       <div class="note">相對強弱，不是預測漲跌幅。絕對值大的就是這個事件真正會打到的地方。</div>
 
       ${chainHTML(e)}
+      ${histHTML(e)}
+      ${viewsHTML(e)}
       ${readingHTML(e)}
 
       ${cks&&diff>=0?`<h4 style="margin-top:16px">當天怎麼判斷大不大</h4>${cks}`:""}
