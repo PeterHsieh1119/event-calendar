@@ -86,6 +86,7 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "setPX:function(o){PX=o;},setREVIEW:function(o){REVIEW=o;},"+
   "ASSETS:ASSETS,applyBetas:applyBetas,assetImpact:assetImpact," +
   "esc:esc,viewsHTML:viewsHTML,getREVIEW:function(){return REVIEW;}," +
+  "ageDays:ageDays,STALE:STALE," +
   "getBETAS:function(){return BETAS;}};\n";
 
 try {
@@ -493,6 +494,34 @@ catKeys.forEach((k) => {
   eq("更正層自己列的日期不會被當成舊日期", dates(), weeks.join(","));
 
   T.setEVENTS(base);
+}
+
+/* ── 15. 資料新鮮度：排程掛掉的時候，資料頁要自己講出來 ── */
+{
+  const iso = T.iso;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const back = (n) => { const d = new Date(today); d.setDate(d.getDate() - n); return iso(d); };
+
+  eq("今天寫的檔案算 0 天", T.ageDays(back(0)), 0);
+  eq("昨天寫的算 1 天", T.ageDays(back(1)), 1);
+  eq("帶時間戳的也讀得出來", T.ageDays(back(3) + "T04:05:06Z"), 3);
+  eq("沒有 generated 就不判斷新鮮度", T.ageDays(""), null);
+  eq("格式不對也不判斷", T.ageDays("上週"), null);
+  eq("undefined 不會爆", T.ageDays(undefined), null);
+
+  // 門檻本身：每天寫的檔案不能設得比每週寫的還鬆
+  ok("每日檔案的門檻比每週的嚴",
+    T.STALE["events.json"] < T.STALE["regime.json"],
+    T.STALE["events.json"] + " vs " + T.STALE["regime.json"]);
+  ok("不定期的檔案不判斷新鮮度（複盤不是每天都有事件）",
+    T.STALE["reviews.json"] === null && T.STALE["curated.json"] === null);
+  // 每一個 STALE 的 key 都要真的是 loadRemote 會抓的檔案，不然設了也沒用
+  const FILES = ["events.json", "curated.json", "px.json", "priced.json",
+                 "reviews.json", "betas.json", "regime.json", "changelog.json"];
+  eq("STALE 涵蓋所有雲端檔案",
+    FILES.filter((f) => !(f in T.STALE)).join(","), "");
+  eq("STALE 沒有多餘的 key",
+    Object.keys(T.STALE).filter((f) => FILES.indexOf(f) < 0).join(","), "");
 }
 
 /* ── 報告 ── */

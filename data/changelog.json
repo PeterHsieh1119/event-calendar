@@ -1,7 +1,7 @@
 [
  {
   "date": "2026-08-31",
-  "text": "全盤稽核：雲端字串一律跳脫（views/driver/note 是從搜尋摘要抄回來的）、修掉更正層會連坐刪掉隔壁那一週的 bug、存入複盤不再清掉 routine 填的 sigma/metrics/driver/views、閘門加上 routine 與 index.html 的 cat 清單對照"
+  "text": "全盤稽核：雲端字串一律跳脫（views/driver/note 是從搜尋摘要抄回來的）、修掉更正層會連坐刪掉隔壁那一週的 bug、存入複盤不再清掉 routine 填的 sigma/metrics/driver/views、閘門加上 routine 與 index.html 的 cat 清單對照、資料頁顯示每個雲端檔「幾天沒更新」並在超過預期間隔時標紅"
  },
  {
   "date": "2026-08-31",

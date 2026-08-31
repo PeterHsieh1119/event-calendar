@@ -142,9 +142,13 @@ CME FedWatch 或 Fed Funds 期貨的隱含機率。單一結果機率 90% 以上
 ### 寫入格式
 
 ```json
-{"date":"YYYY-MM-DD","kind":"N 或 D 或 R","cat":"合法代碼","title":"事件名",
- "est":false,"t":"合法格式","note":"一句話說明為什麼重要","src":"來源"}
+{"generated":"YYYY-MM-DDTHH:MM:SSZ","items":[
+ {"date":"YYYY-MM-DD","kind":"N 或 D 或 R","cat":"合法代碼","title":"事件名",
+  "est":false,"t":"合法格式","note":"一句話說明為什麼重要","src":"來源"}]}
 ```
+
+舊格式（最外層直接是陣列）網站也讀得懂，但**請改用上面這種帶 `generated` 的包法**——
+資料頁靠 `generated` 顯示「這個檔案幾天沒動了」，少了它就看不出這個任務是不是掛了。
 
 分類原則：改變未來現金流判斷的是 `N`；改變折現率的是 `D`；主要動風險溢酬的是 `R`。
 

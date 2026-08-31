@@ -497,7 +497,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-v15";
+const APP_VER = "evcal-v16";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -1400,22 +1400,41 @@ async function loadRemote(){
   }catch(e){stat("changelog.json","更新日誌",false,"",0,"讀取失敗");}
   return got;
 }
+/* 每個檔案「多久沒更新就該懷疑」的天數。沒有人在旁邊看四個 routine 有沒有在跑，
+   所以資料頁必須自己講出「這個檔案已經三天沒動了」——不然某個排程默默掛掉，
+   網站看起來還是好好的，只是數字停在上禮拜。null＝本來就不是定期更新的。 */
+const STALE={"events.json":3,"px.json":4,"betas.json":4,"priced.json":3,
+             "regime.json":10,"reviews.json":null,"curated.json":null,"changelog.json":null};
+function ageDays(gen){
+  const s=String(gen||"").slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return null;
+  return Math.round((TODAY-parse(s))/864e5);
+}
 function renderDataStat(){
   const el=$("dataStat"); if(!el)return;
+  let stale=0;
   const rows=Object.entries(DATASTAT).map(([f,d])=>{
     const c=d.ok?"var(--up)":"var(--tx3)";
-    const when=d.gen?String(d.gen).slice(0,16).replace("T"," "):"—";
+    const age=ageDays(d.gen), lim=STALE[f];
+    const bad=(age!=null&&lim!=null&&age>lim);
+    if(bad)stale++;
+    const when=age==null?(d.gen?esc(String(d.gen).slice(0,16).replace("T"," ")):"—")
+      :(age<=0?"今天":age===1?"昨天":age+" 天前");
     return `<div class="calrow"><span style="font-family:var(--mono);font-size:11px">${esc(f)}</span>`
       +`<span class="v">${esc(d.label)}</span>`
       +`<span class="v" style="color:${c}">${d.ok?d.n+" 筆":esc(d.note||"尚無資料")}</span>`
-      +`<span class="v">${esc(when)}</span></div>`;
+      +`<span class="v" style="color:${bad?"#FF5C5C":"var(--tx2)"}">${when}${bad?" ⚠":""}</span></div>`;
   }).join("");
   const local=[];
   local.push(`本機複盤 ${Object.values(REVIEW).filter(r=>r.by!=="routine").length} 筆`);
   local.push(REGIME_LOCAL?`環境已被你手動覆蓋（${esc(REGIME_LOCAL.ts)}）`:"環境用雲端的版本");
   el.innerHTML=rows+`<div class="log" style="margin-top:10px">`
+    +(stale?`<b style="color:#FF5C5C">有 ${stale} 個檔案超過預期的更新間隔沒動了（標 ⚠ 的那幾個）。</b>`
+        +`那通常代表對應的排程任務掛了或沒被觸發，去 GitHub 的 Actions 頁看最近幾次 run。`
+        +`過期期間網站不會壞，只是那部分的數字停在上次成功寫入的時候。<br>`:"")
     +`上面這些檔案都在 repo 裡，每次打開網站都會重新抓一次（不吃快取），`
     +`所以你換手機、換瀏覽器看到的都是 routine 最新寫進去的版本。`
+    +`複盤與策劃事件本來就不是每天都有，所以不列更新間隔。`
     +`<br>只存在這台裝置上的：${local.join("、")}。</div>`;
 }
 let CHANGELOG=null, CURATED=0, RREV=0;
