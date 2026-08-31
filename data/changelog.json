@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-08-31",
+  "text": "全盤稽核：雲端字串一律跳脫（views/driver/note 是從搜尋摘要抄回來的）、修掉更正層會連坐刪掉隔壁那一週的 bug、存入複盤不再清掉 routine 填的 sigma/metrics/driver/views、閘門加上 routine 與 index.html 的 cat 清單對照"
+ },
+ {
+  "date": "2026-08-31",
   "text": "盤後複盤：非農基準修正初步預估（實際下修79K、遠不如共識上修183K預期，方向背離——反應偏鷹但與Warsh Jackson Hole演說同時公布，主因難以拆分，不再次調整regime；priced.json無此筆pxd可供檢討）。"
  },
  {

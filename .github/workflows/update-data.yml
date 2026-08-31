@@ -24,7 +24,11 @@ jobs:
           FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
         run: python scripts/fetch_events.py
 
-      - name: 滾動曝險係數
+      # 這一支是加值不是必要：Yahoo 抓不到某個因子時它會回非零，
+      # 但那不該連帶讓當天的事件與價格更新整包 commit 不出去。
+      # 失敗就沿用前一天的 betas.json，前端本來就會退回先驗。
+      - name: 滾動曝險係數（失敗不擋當日資料更新）
+        continue-on-error: true
         run: python scripts/rolling_beta.py
 
       - name: 資料驗證（沒過就不要把壞資料 commit 進去）

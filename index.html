@@ -543,7 +543,7 @@ const ASSETS=[
 function applyBetas(j){
   if(!BETAPRIOR)BETAPRIOR=ASSETS.map(a=>({...a.b}));      // 第一次先把先驗留一份
   ASSETS.forEach((a,i)=>{a.b={...BETAPRIOR[i]};a.est=null;});
-  if(!j||!j.assets)return;
+  if(!j||!j.assets){BETAS=null;return;}   // 不清掉的話說明文字會謊稱有實測值
   BETAS=j;
   ASSETS.forEach(a=>{
     const r=j.assets[a.k];
@@ -672,6 +672,11 @@ const nthWd=(y,m,wd,n)=>{const f=new Date(y,m,1);return new Date(y,m,1+((wd-f.ge
 const lastBiz=(y,m)=>{let d=new Date(y,m+1,0);while(d.getDay()%6===0)d.setDate(d.getDate()-1);return d;};
 const nextBiz=d=>{const x=new Date(d);while(x.getDay()%6===0)x.setDate(x.getDate()+1);return x;};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+/* 雲端 JSON 的字串內容有一部分是 routine 從網路搜尋結果抄回來的（views、driver、note、
+   共識來源）。那些字最終會進 innerHTML，所以一律要跳脫——不然一段被搜尋摘要夾帶進來的
+   標籤就會在這個網域裡執行。屬性值也走同一支（單雙引號都跳）。 */
+const ESCMAP={"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"};
+const esc=v=>(v==null?"":String(v)).replace(/[&<>"']/g,c=>ESCMAP[c]);
 const $=i=>document.getElementById(i);
 
 /* ═══ 時區與交易時段 ═══ */
@@ -937,7 +942,7 @@ function expectOf(e){
     const rel=Math.abs(nc)>1e-9?Math.abs(d/nc):Math.abs(d);
     dir=rel<0.05?0:Math.sign(d);
     verdict=rel<0.05?"符合預期":(d>0?"高於預期":"低於預期");
-    how=`實際 ${act} vs 共識 ${cons}`;
+    how=`實際 ${esc(act)} vs 共識 ${esc(cons)}`;
   }
   return {cons,act,z,verdict,dir,how,
     prev:String(e.prev||""),unit:String(e.punit||""),src:String(e.consSrc||""),
@@ -945,7 +950,7 @@ function expectOf(e){
 }
 const vcol=d=>d>0?"var(--dn)":d<0?"var(--den)":"var(--tx2)";
 /* USD 這種字母單位要空一格，% 這種符號單位不用 */
-const withUnit=(v,u)=>!v?"":(!u?String(v):(/^[A-Za-z]/.test(u)?v+" "+u:v+u));
+const withUnit=(v,u)=>!v?"":esc(!u?String(v):(/^[A-Za-z]/.test(u)?v+" "+u:v+u));
 
 /* 多指標（財報的 EPS 與營收之類）：事前共識放 priced.json 的 metrics，
    事後實際由複盤寫進 reviews.json 的同名 metrics，這裡併起來。 */
@@ -992,9 +997,9 @@ function flowHTML(e){
     return `<div class="fasset"><i>${a.n}</i><span style="color:${v>0?"var(--up)":v<0?"var(--dn)":"var(--tx3)"}">`
       +`${v>0?"+":""}${v.toFixed(1)}</span></div>`;}).join("");
   const x=expectOf(e);
-  const sub=x.hasCons?`共識 ${withUnit(x.cons,x.unit)}`:(c.label||"");
+  const sub=x.hasCons?`共識 ${withUnit(x.cons,x.unit)}`:esc(c.label||"");
   return `<div class="flow">
-    <div class="fnode"><b>${e.title}</b><small>${sub}</small></div>
+    <div class="fnode"><b>${esc(e.title)}</b><small>${sub}</small></div>
     <div class="farrow">→</div>
     <div class="fstack">
       <div class="fnode up"><b>高於預期</b><small>${chTxt}</small></div>
@@ -1093,15 +1098,15 @@ function viewsHTML(e){
   const vs=Array.isArray(r.views)?r.views.filter(v=>v&&v.t):[];
   if(!drv&&!vs.length)return "";
   let h=`<h4 style="margin-top:16px">當時市場怎麼讀</h4>`;
-  if(drv)h+=`<div class="kv"><span class="k">關鍵驅動分項</span><span class="v">${drv}</span></div>`;
+  if(drv)h+=`<div class="kv"><span class="k">關鍵驅動分項</span><span class="v">${esc(drv)}</span></div>`;
   if(vs.length){
     h+=`<div class="chain" style="margin-top:8px">`+vs.map(v=>{
       const tone=v.tone==="鷹"||v.tone==="偏空"?"var(--dn)":
                  v.tone==="鴿"||v.tone==="偏多"?"var(--up)":"var(--tx2)";
       return `<div style="margin-bottom:7px">`
-        +`<span style="color:${tone}">${v.tone?"【"+v.tone+"】":""}</span>`
-        +`${v.t}`
-        +(v.who?`<div class="note" style="margin-top:2px">— ${v.who}${v.src?`，${v.src}`:""}</div>`:"")
+        +`<span style="color:${tone}">${v.tone?"【"+esc(v.tone)+"】":""}</span>`
+        +`${esc(v.t)}`
+        +(v.who?`<div class="note" style="margin-top:2px">— ${esc(v.who)}${v.src?`，${esc(v.src)}`:""}</div>`:"")
         +`</div>`;
     }).join("")+`</div>`;
   }
@@ -1126,7 +1131,7 @@ function readingHTML(e){
       +`不是你直覺想到的那個指數——看錯標的的話方向對了也賺不到。`);
   if(x.verdict)out.push(`結果<b>${x.verdict}</b>${x.how?`（${x.how}）`:""}。`
     +`回頭比對實際反應與這裡的推算，就是複盤在做的事。`);
-  else if(x.hasCons)out.push(`共識已經有了（${withUnit(x.cons,x.unit)}${x.src?`，${x.src}`:""}），`
+  else if(x.hasCons)out.push(`共識已經有了（${withUnit(x.cons,x.unit)}${x.src?`，${esc(x.src)}`:""}），`
     +`公布後這裡會自動標出有沒有超乎預期。`);
   if(e.est)out.push(`日期還是推算的，分數已經打了折。確認日出來之前不要把它當硬排程。`);
   return `<h4 style="margin-top:16px">怎麼讀</h4><div class="chain">`
@@ -1400,16 +1405,16 @@ function renderDataStat(){
   const rows=Object.entries(DATASTAT).map(([f,d])=>{
     const c=d.ok?"var(--up)":"var(--tx3)";
     const when=d.gen?String(d.gen).slice(0,16).replace("T"," "):"—";
-    return `<div class="calrow"><span style="font-family:var(--mono);font-size:11px">${f}</span>`
-      +`<span class="v">${d.label}</span>`
-      +`<span class="v" style="color:${c}">${d.ok?d.n+" 筆":(d.note||"尚無資料")}</span>`
-      +`<span class="v">${when}</span></div>`;
+    return `<div class="calrow"><span style="font-family:var(--mono);font-size:11px">${esc(f)}</span>`
+      +`<span class="v">${esc(d.label)}</span>`
+      +`<span class="v" style="color:${c}">${d.ok?d.n+" 筆":esc(d.note||"尚無資料")}</span>`
+      +`<span class="v">${esc(when)}</span></div>`;
   }).join("");
   const local=[];
   local.push(`本機複盤 ${Object.values(REVIEW).filter(r=>r.by!=="routine").length} 筆`);
-  local.push(REGIME_LOCAL?`環境已被你手動覆蓋（${REGIME_LOCAL.ts}）`:"環境用雲端的版本");
+  local.push(REGIME_LOCAL?`環境已被你手動覆蓋（${esc(REGIME_LOCAL.ts)}）`:"環境用雲端的版本");
   el.innerHTML=rows+`<div class="log" style="margin-top:10px">`
-    +`上面七個檔案都在 repo 裡，每次打開網站都會重新抓一次（不吃快取），`
+    +`上面這些檔案都在 repo 裡，每次打開網站都會重新抓一次（不吃快取），`
     +`所以你換手機、換瀏覽器看到的都是 routine 最新寫進去的版本。`
     +`<br>只存在這台裝置上的：${local.join("、")}。</div>`;
 }
@@ -1463,13 +1468,21 @@ function mergeRemote(list){
      反過來說，確認日必須能被確認日更正——財報錨定日是 anchor+91 天推出來的，
      標成 est=false 但常常跟公司自己公告的日期差幾天（AVGO 推 9/10、官方 9/2）。
      舊版只肯下架 est 的那些，於是這種更正會變成日曆上同名的兩筆，當日分數還被重複計算。 */
+  /* 3. 更正層自己就列在那一天的事件，永遠不算「被移走的舊日期」。
+        少了這一條，週期性事件（初領失業金每 7 天一筆）只要被確認一次，
+        就會連坐刪掉隔壁那一週：f=09-10 找不到別的同名同日，退而求其次挑了 09-03。
+        2026-08-31 實測重現，前一週整筆消失。 */
+  const exact=new Set(clean.map(f=>f.date+"|"+f.title));
   const drop=new Set();
   clean.forEach(f=>{
+    // 同名同日已經存在＝這是「確認」不是「改期」，不該下架任何東西
+    if(EVENTS.some(e=>e.title===f.title&&e.date===f.date))return;
     let best=null,bd=Infinity;
     for(const e of EVENTS){
       if(e.title!==f.title||e.date===f.date||drop.has(e))continue;
       if(e.date<from)continue;              // 已經過去的不動，那是歷史紀錄
       if(!e.est&&f.est)continue;            // 猜測蓋不掉已確認的日期
+      if(exact.has(e.date+"|"+e.title))continue;   // 更正層自己也列了這一天
       const d=Math.abs(parse(f.date)-parse(e.date));
       if(d<=10*864e5&&d<bd){bd=d;best=e;}
     }
@@ -1528,9 +1541,9 @@ function evHTML(e){
     ? `<span class="pill" style="color:${vcol(x.dir)};border-color:currentColor">${x.verdict}</span>`
     : (x.hasCons&&diff>=0?'<span class="pill" style="color:var(--tx3);border-color:var(--line2)">已有共識</span>':"");
   const xm=x.verdict?` · ${x.how}`:(x.hasCons?` · 共識 ${withUnit(x.cons,x.unit)}`:"");
-  return `<div class="ev" data-tip="${e.date}" data-d="${e.date}" data-t="${encodeURIComponent(e.title)}">
+  return `<div class="ev" data-tip="${esc(e.date)}" data-d="${esc(e.date)}" data-t="${encodeURIComponent(e.title)}">
    <div class="when"><b>${d.getMonth()+1}/${d.getDate()}</b>週${w}</div>${ring(MET==="gap"?sc.gap:sc.s)}
-   <div><div class="ttl">${e.title}<span class="pill ${e.kind.toLowerCase()}">${e.kind==="N"?"分子":e.kind==="D"?"分母":"風險"}</span>${e.est?'<span class="est">≈</span>':""}${xp}</div>
+   <div><div class="ttl">${esc(e.title)}<span class="pill ${esc(e.kind.toLowerCase())}">${e.kind==="N"?"分子":e.kind==="D"?"分母":"風險"}</span>${e.est?'<span class="est">≈</span>':""}${xp}</div>
    <div class="meta">${when} · ${ss.tpe} · ${alt}${xm}</div></div></div>`;
 }
 function bind(root){root.querySelectorAll(".ev").forEach(el=>el.onclick=()=>
@@ -1675,7 +1688,7 @@ function renderYear(){
     else if(curY===TODAY.getFullYear()&&m===TODAY.getMonth()){const x=(TODAY.getDate()/days*100).toFixed(2);
       past=`<div class="past" style="width:${x}%"></div><div class="todaymark" style="left:${x}%"></div>`;}
     const top=evs.map(e=>({e,s:score(e).s})).sort((a,b)=>b.s-a.s).slice(0,3)
-      .map(x=>`<span class="tag ${x.e.kind.toLowerCase()}">${parse(x.e.date).getDate()}日 ${x.e.title} ${x.s}</span>`).join("");
+      .map(x=>`<span class="tag ${esc(x.e.kind.toLowerCase())}">${parse(x.e.date).getDate()}日 ${esc(x.e.title)} ${x.s}</span>`).join("");
     const row=document.createElement("div");
     row.className="mrow"+(curY===TODAY.getFullYear()&&m===TODAY.getMonth()?" cur":"");
     const pct=monthPct(curY,m);
@@ -1724,7 +1737,7 @@ function openDay(ds,evs,focus){
     const sc=score(e),ai=assetImpact(e),c=CAT[e.cat]||CAT.ism,ss=session(e);
     const xx=expectOf(e), mm=metricsOf(e);
     const mTab=mm.length?(`<table class="mtab"><tr><th>指標</th><th>市場預期</th><th>實際</th><th>差異</th></tr>`
-      +mm.map(m=>`<tr><td>${m.n}</td><td>${m.cons?withUnit(m.cons,m.unit):"—"}</td>`
+      +mm.map(m=>`<tr><td>${esc(m.n)}</td><td>${m.cons?withUnit(m.cons,m.unit):"—"}</td>`
         +`<td>${m.act?withUnit(m.act,m.unit):"未公布"}</td>`
         +`<td style="color:${m.dir>0?"var(--up)":m.dir<0?"var(--dn)":"var(--tx3)"}">${m.beat||"—"}</td></tr>`).join("")
       +`</table>`):"";
@@ -1734,15 +1747,15 @@ function openDay(ds,evs,focus){
       +(xx.prev?`<div class="kv"><span class="k">前值</span><span class="v">${withUnit(xx.prev,xx.unit)}</span></div>`:"")
       +(xx.hasCons?`<div class="kv"><span class="k">市場共識</span><span class="v">${withUnit(xx.cons,xx.unit)}</span></div>`:"")
       +(xx.hasAct?`<div class="kv"><span class="k">實際公布</span><span class="v">${withUnit(xx.act,xx.unit)}</span></div>`:"")
-      +(xx.z!==""?`<div class="kv"><span class="k">意外 z 分數</span><span class="v">${xx.z}</span></div>`:"")
+      +(xx.z!==""?`<div class="kv"><span class="k">意外 z 分數</span><span class="v">${esc(xx.z)}</span></div>`:"")
       +(xx.verdict
         ?`<div class="kv"><span class="k">判定</span><span class="v" style="color:${vcol(xx.dir)}">${xx.verdict}</span></div>`
         :`<div class="note">還沒公布。實際值與意外判定會在盤後複盤的 routine 跑完之後出現。</div>`)
-      +(xx.src?`<div class="note" style="margin-bottom:12px">共識來源：${xx.src}</div>`
+      +(xx.src?`<div class="note" style="margin-bottom:12px">共識來源：${esc(xx.src)}</div>`
              :`<div class="note" style="margin-bottom:12px">${xx.how||""}</div>`)
     ):"";
     const pxdNote=e.pxdBasis
-      ? `${e.pxdBasis}${e.pxdSrc?" · "+e.pxdSrc:""}${e.pxdAsof?" · 更新於 "+e.pxdAsof:""}`
+      ? esc(`${e.pxdBasis}${e.pxdSrc?" · "+e.pxdSrc:""}${e.pxdAsof?" · 更新於 "+e.pxdAsof:""}`)
       : `還沒有這個事件自己的定價資料，用的是「${c.label}」的類型先驗。每日 routine 會把 OIS 隱含機率或選擇權隱含變動寫進 data/priced.json 覆蓋它。`;
     const mults=sc.parts.map(([k,w,r,add])=>
       `<div class="kv"><span class="k">${RK[k]||k}</span><span class="v" style="color:${add>.25?"#FFB84D":"var(--tx2)"}">×${(1+add).toFixed(2)}</span></div>`).join("")
@@ -1753,12 +1766,12 @@ function openDay(ds,evs,focus){
       <i style="${v>=0?`left:50%;width:${wd}%`:`right:50%;width:${wd}%`};background:${v>=0?"var(--dn)":"var(--up)"}"></i></div></div>`;}).join("");
     const ast=ASSETS.map(a=>{const v=ai.out[a.k];
       return `<div class="acell"><div class="an">${a.n}</div><div class="av" style="color:${v>.15?"var(--up)":v<-.15?"var(--dn)":"var(--tx3)"}">${v>0?"+":""}${v.toFixed(1)}</div></div>`;}).join("");
-    const cks=(e.checks||[]).map(c=>`<div class="chk"><b>${c[0]}</b><br><span class="src">${c[1]}</span></div>`).join("");
+    const cks=(e.checks||[]).map(c=>`<div class="chk"><b>${esc(c[0])}</b><br><span class="src">${esc(c[1])}</span></div>`).join("");
     return `<div class="block">
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:6px">${ring(sc.s)}
-        <div><div style="font-size:16px;font-weight:600">${e.title} ${e.est?'<span class="est">≈</span>':""}</div>
-        <div class="est">${CAT[e.cat]?c.label:`未知類型「${e.cat}」暫以 ${c.label} 計分`} · 基準 ${sc.B} · 環境 ×${sc.mult.toFixed(2)} → ${sc.raw}${sc.cal!==1?` · 校準 ×${sc.cal.toFixed(2)}`:""}${sc.disc<1?" · 推算日折 6%":""}</div></div></div>
-      <div style="font-size:12.5px;color:var(--tx2);line-height:1.65;margin:8px 0 14px">${e.note||""}</div>
+        <div><div style="font-size:16px;font-weight:600">${esc(e.title)} ${e.est?'<span class="est">≈</span>':""}</div>
+        <div class="est">${CAT[e.cat]?c.label:`未知類型「${esc(e.cat)}」暫以 ${c.label} 計分`} · 基準 ${sc.B} · 環境 ×${sc.mult.toFixed(2)} → ${sc.raw}${sc.cal!==1?` · 校準 ×${sc.cal.toFixed(2)}`:""}${sc.disc<1?" · 推算日折 6%":""}</div></div></div>
+      <div style="font-size:12.5px;color:var(--tx2);line-height:1.65;margin:8px 0 14px">${esc(e.note||"")}</div>
 
       <h4>可能的走向</h4>${flowHTML(e)}
 
@@ -1792,7 +1805,12 @@ function openDay(ds,evs,focus){
   }).join("");
   $("dBody").querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{
     const k=decodeURIComponent(b.dataset.save),g=i=>{const el=$("rv_"+i);return el?el.value.trim():"";};
-    REVIEW[k]={cons:g("cons"),act:g("act"),z:g("z"),spx:g("spx"),ndx:g("ndx"),y10:g("y10"),dxy:g("dxy"),gld:g("gld"),memo:g("memo"),ts:iso(TODAY)};
+    // 表單只有九格，但 routine 還寫了 sigma、metrics、driver、views。
+    // 直接整筆覆蓋的話，使用者按一下「存入複盤」就會把那些靜默清掉——
+    // 尤其 sigma 沒了校準會退回寫死的 0.9%，而且畫面上完全看不出來。
+    const old=REVIEW[k]||{};
+    REVIEW[k]={...old,cons:g("cons"),act:g("act"),z:g("z"),spx:g("spx"),ndx:g("ndx"),
+      y10:g("y10"),dxy:g("dxy"),gld:g("gld"),memo:g("memo"),ts:iso(TODAY),by:"local"};
     await saveReviews();applyCalib();
     const e2=EVENTS.find(x=>rkey(x)===k);
     openDay(e2.date,vis().filter(x=>x.date===e2.date),e2.title);
@@ -1811,14 +1829,14 @@ function renderRegime(){
     renderRegime();updateRegimeText();render();});
   const meta=$("regimeMeta"); if(!meta)return;
   const src=REGIME_META
-    ?`routine 於 ${REGIME_META.asof||REGIME_META.generated} 設定：${REGIME_META.basis||"（沒有附說明）"}`
+    ?`routine 於 ${esc(REGIME_META.asof||REGIME_META.generated)} 設定：${esc(REGIME_META.basis||"（沒有附說明）")}`
     :"routine 還沒設過環境（data/regime.json 是空的），目前用的是程式內建的預設值。每週日的任務會依市場結構重設它。";
   meta.innerHTML=REGIME_LOCAL
-    ? `<b>你手動覆蓋了這組設定</b>（${REGIME_LOCAL.ts}）。這個覆蓋只擋到 routine 下一次重設為止，`
+    ? `<b>你手動覆蓋了這組設定</b>（${esc(REGIME_LOCAL.ts)}）。這個覆蓋只擋到 routine 下一次重設為止，`
       +`之後會自動換回雲端的版本，不會把環境永遠凍在今天。${src}`
       +`<div style="margin-top:8px"><button class="btn sec" id="btnRegimeReset">現在就回到 routine 設定</button></div>`
     : (REGIME_SUPERSEDED
-        ? `你在 ${REGIME_SUPERSEDED} 手動改過，但 routine 之後重設了環境，已經改用新的那組。${src}`
+        ? `你在 ${esc(REGIME_SUPERSEDED)} 手動改過，但 routine 之後重設了環境，已經改用新的那組。${src}`
         : src);
   const rb=$("btnRegimeReset"); if(rb)rb.onclick=clearRegimeLocal;
 }
@@ -1841,7 +1859,7 @@ function renderMatrix(){
      +`</tr>`).join("");
   const est=ASSETS.filter(a=>a.est), lag=est.filter(a=>a.est.lagged);
   $("betaNote").innerHTML=BETAS
-    ? `<b>不透明的格子</b>是 ${BETAS.window||60} 日滾動嶺迴歸的實測係數（${BETAS.asof||"—"}，`
+    ? `<b>不透明的格子</b>是 ${BETAS.window||60} 日滾動嶺迴歸的實測係數（${esc(BETAS.asof||String(BETAS.generated||"").slice(0,10)||"—")}，`
       +`${est.length}/${ASSETS.length} 個資產通過 R² 門檻）：把該資產的日報酬對四個管道的日變動一起迴歸，`
       +`兩邊都標準化，所以數字是「管道動一個標準差、資產跟著動幾個標準差」。`
       +`<b>半透明的格子</b>是退回先驗——該資產整體解釋力不足、或該管道與這個資產機械共線（例如信用價差之於高收益債），`
@@ -1886,10 +1904,10 @@ function renderReview(){
     .sort((a,b)=>b.date.localeCompare(a.date));
   $("reviewBody").innerHTML=evs.map(e=>{
     const r=REVIEW[rkey(e)],sc=score(e).s,d=parse(e.date);
-    return `<div class="ev" data-tip="${e.date}" data-d="${e.date}" data-t="${encodeURIComponent(e.title)}">
+    return `<div class="ev" data-tip="${esc(e.date)}" data-d="${esc(e.date)}" data-t="${encodeURIComponent(e.title)}">
       <div class="when"><b>${d.getMonth()+1}/${d.getDate()}</b></div>${ring(sc)}
-      <div><div class="ttl">${e.title}${r?`<span class="done">${r.by==="routine"?"routine 已填":"已複盤"}</span>`:""}</div>
-      <div class="meta">${r?verdict(e,r).t:"點開填入實際值與市場反應"}</div></div></div>`;
+      <div><div class="ttl">${esc(e.title)}${r?`<span class="done">${r.by==="routine"?"routine 已填":"已複盤"}</span>`:""}</div>
+      <div class="meta">${r?esc(verdict(e,r).t):"點開填入實際值與市場反應"}</div></div></div>`;
   }).join("")||'<div class="log">這 60 天沒有值得複盤的事件。</div>';
   bind($("reviewBody"));bindTips($("reviewBody"));
   applyCalib();
@@ -1902,13 +1920,13 @@ function renderReview(){
 }
 function reviewForm(e){
   const k=rkey(e),r=REVIEW[k]||{};
-  const f=(id,lab,ph,v)=>`<div class="fld"><label>${lab}</label><input id="rv_${id}" placeholder="${ph}" value="${v||""}"></div>`;
+  const f=(id,lab,ph,v)=>`<div class="fld"><label>${lab}</label><input id="rv_${id}" placeholder="${ph}" value="${esc(v||"")}"></div>`;
   let out=`<h4 style="margin-top:18px">複盤：實際 vs 預期</h4><div class="frm">
    ${f("cons","共識預期","例 0.2%",r.cons)}${f("act","實際公布","例 0.4%",r.act)}
    ${f("z","意外 z 分數","正=高於預期",r.z)}${f("spx","標普當日 %","例 -0.8",r.spx)}
    ${f("ndx","那斯達克 %","例 -1.3",r.ndx)}${f("y10","10Y 變動 bp","例 +7",r.y10)}
    ${f("dxy","美元 %","",r.dxy)}${f("gld","黃金 %","",r.gld)}
-   </div><div style="grid-column:1/-1;margin-top:8px"><div class="fld"><label>備註（法說重點、盤中轉折）</label><input id="rv_memo" value="${(r.memo||"").replace(/"/g,"&quot;")}"></div></div>
+   </div><div style="grid-column:1/-1;margin-top:8px"><div class="fld"><label>備註（法說重點、盤中轉折）</label><input id="rv_memo" value="${esc(r.memo||"")}"></div></div>
    <button class="btn" data-save="${encodeURIComponent(k)}" style="margin-top:12px">存入複盤</button>`;
   if(r.act||r.spx){
     const v=verdict(e,r);
@@ -1928,11 +1946,11 @@ function tipHTML(ds){
   const diff=Math.round((d-TODAY)/864e5);
   const rows=evs.slice(0,5).map(x=>`<div class="ti">
     <span class="s" style="color:${col(x.s)}">${x.s}</span>
-    <span class="n">${x.e.title}${x.e.est?' <span class="est">≈</span>':""}</span>
-    <span class="pill ${x.e.kind.toLowerCase()}">${KN[x.e.kind]}</span></div>`).join("");
+    <span class="n">${esc(x.e.title)}${x.e.est?' <span class="est">≈</span>':""}</span>
+    <span class="pill ${esc(x.e.kind.toLowerCase())}">${KN[x.e.kind]||""}</span></div>`).join("");
   const more=evs.length>5?`<div class="tp">另有 ${evs.length-5} 筆</div>`:"";
   const top=evs[0].e;
-  const path=(CAT[top.cat]||{}).label?`<div class="tp">${top.title}：${(assetImpact(top).out.ndx<0?"上行意外壓那斯達克":"上行意外撐那斯達克")} · 點開看完整傳導</div>`:"";
+  const path=(CAT[top.cat]||{}).label?`<div class="tp">${esc(top.title)}：${(assetImpact(top).out.ndx<0?"上行意外壓那斯達克":"上行意外撐那斯達克")} · 點開看完整傳導</div>`:"";
   return `<div class="td">${d.getMonth()+1}/${d.getDate()} 週${w} · ${diff===0?"今天":diff>0?diff+" 天後":-diff+" 天前"}</div>${rows}${more}${path}`;
 }
 let tipEl=null;
@@ -2095,7 +2113,7 @@ function renderPxPick(){
   if(!PXSYMS.length){el.classList.add("hide");return;}
   el.classList.remove("hide");
   el.innerHTML=PXSYMS.map(x=>
-    `<option value="${x.k}"${x.k===PXSEL?" selected":""}>${x.n}</option>`).join("");
+    `<option value="${esc(x.k)}"${x.k===PXSEL?" selected":""}>${esc(x.n)}</option>`).join("");
   el.onchange=()=>{selectPx(el.value);renderYear();pxNote(Object.keys(PX).length>0);};
 }
 
@@ -2107,7 +2125,7 @@ function pxNote(ok){
     "上面那排的 45+／70+ 門檻同時作用在標記上——初領失業金這種每週都有的低分事件，"+
     "設個門檻就會整批消失，軸線立刻乾淨。"+
     "<b>下面每個月一列</b>才是看細節的地方：軸上方＝分子端，下方＝分母端與風險，長度＝衝擊分數。"+
-    (ok?`背景走勢目前畫的是 <b>${PXSRC}</b>，`
+    (ok?`背景走勢目前畫的是 <b>${esc(PXSRC)}</b>，`
        +`${PXUNIT==="bp"?"用 bp（基點）計——殖利率用 % 變化會誤導，4.00 走到 4.66 是「+16.5%」但市場講的是「+66bp」":"用 % 計"}。`
        +`旁邊的選單可以換標的，換了之後上下兩層與月份旁的數字會一起跟著換。`
        +`兩層都以分子／分母中線為零、上綠下紅，但基準不同：`

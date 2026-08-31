@@ -143,6 +143,52 @@ def check_event(f, e, i, cats, require_t):
     return title
 
 
+def check_routines(cats):
+    """routine 檔本身也要被閘門顧到。
+
+    兩件事都屬於「不會報錯、只會靜默走鐘」：
+    _shared.md 的合法 cat 清單跟 index.html 的 CAT 對不上時，routine 會照著文件寫出
+    網站不認得的代碼，前端靜默當成 ISM 計分；index.html 的 SEEDS 指到不存在的檔名時，
+    「每日排程」那頁只顯示「讀取失敗」，沒有人會發現。"""
+    root = os.path.join(ROOT, "routines")
+    try:
+        with open(os.path.join(root, "_shared.md"), encoding="utf-8") as fh:
+            sh = fh.read()
+    except OSError:
+        err("routines/_shared.md", "找不到共用規範，四個任務都會少讀一份")
+        return
+
+    m = re.search(r"```\n(總經與政策.*?)\n```", sh, re.S)
+    if not m:
+        warn("routines/_shared.md", "找不到合法 cat 代碼的區塊，跳過對照")
+    elif cats:
+        listed = set(re.findall(r"\b([a-z][a-z0-9_]+)\b", m.group(1)))
+        missing = sorted(cats - listed)
+        extra = sorted(listed - cats)
+        if missing:
+            err("routines/_shared.md",
+                "index.html 的 CAT 有這些代碼但共用規範沒列，routine 不會知道可以用："
+                + "、".join(missing))
+        if extra:
+            err("routines/_shared.md",
+                "共用規範列了 index.html 沒有的代碼，routine 照著寫會被前端當成 ISM 計分："
+                + "、".join(extra))
+        if not missing and not extra:
+            print("  routines/_shared.md：cat 清單與 index.html 一致（%d 種）" % len(cats))
+
+    try:
+        with open(INDEX, encoding="utf-8") as fh:
+            src = fh.read()
+    except OSError:
+        return
+    ms = re.search(r"const SEEDS=\{(.*?)\};", src, re.S)
+    if not ms:
+        return
+    for fn in re.findall(r'f:"([^"]+)"', ms.group(1)):
+        if not os.path.exists(os.path.join(root, fn)):
+            err("index.html", "SEEDS 指到 routines/%s，但這個檔不存在" % fn)
+
+
 def main():
     cats = cats_from_index()
     if cats is None:
@@ -342,6 +388,8 @@ def main():
         if not ok_assets:
             warn("betas.json", "沒有任何資產通過品質門檻，前端會整組退回先驗")
         print("  betas.json：%d 個資產，%d 個採用" % (len(bt["assets"]), ok_assets))
+
+    check_routines(cats)
 
     cl = load("changelog.json", [])
     if isinstance(cl, list):

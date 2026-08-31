@@ -263,6 +263,7 @@ def main():
 
     payload = {
         "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+        "asof": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d"),
         "window": WINDOW,
         "ridge": RIDGE,
         "note": ("四條管道的曝險係數由 60 日滾動嶺迴歸估計，因子與資產都標準化，"

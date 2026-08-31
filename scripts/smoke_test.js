@@ -85,6 +85,7 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "getEVENTS:function(){return EVENTS;},setEVENTS:function(o){EVENTS=o;}," +
   "setPX:function(o){PX=o;},setREVIEW:function(o){REVIEW=o;},"+
   "ASSETS:ASSETS,applyBetas:applyBetas,assetImpact:assetImpact," +
+  "esc:esc,viewsHTML:viewsHTML,getREVIEW:function(){return REVIEW;}," +
   "getBETAS:function(){return BETAS;}};\n";
 
 try {
@@ -419,6 +420,79 @@ catKeys.forEach((k) => {
 
   T.applyBetas(null);
   eq("測試結束後回到先驗", snap(), prior);
+}
+
+/* ── 13. 雲端字串一律跳脫：routine 抄回來的搜尋摘要不可以變成可執行的標記 ── */
+{
+  const MAL = String.fromCharCode(60) + "img src=x onerror=alert(1)" + String.fromCharCode(62);
+  const LT = String.fromCharCode(60);
+
+  ok("esc 把角括號換掉", T.esc(MAL).indexOf(LT) === -1, T.esc(MAL));
+  ok("esc 把雙引號換掉", T.esc('a"b').indexOf('"') === -1, T.esc('a"b'));
+  ok("esc 把單引號換掉", T.esc("a'b").indexOf("'") === -1, T.esc("a'b"));
+  eq("esc 先處理 & 才不會二次轉義", T.esc("&lt;"), "&amp;lt;");
+  eq("esc 對 null 回空字串", T.esc(null), "");
+
+  // views 與 driver 是複盤 routine 從搜尋結果整理出來的，最不可信的一段
+  const ev = { date: "2026-01-05", title: "測試事件", cat: "cpi", kind: "D" };
+  const REV = T.getREVIEW();
+  const key = ev.date + "|" + ev.title;
+  const keep = REV[key];
+  REV[key] = { driver: MAL, views: [{ tone: "鷹", t: MAL, who: MAL, src: MAL }] };
+  const vh = T.viewsHTML(ev);
+  ok("views 有渲染出來", vh.length > 0);
+  ok("driver 裡的標記被跳脫", vh.indexOf(LT + "img") === -1);
+  ok("views 內文與出處都被跳脫（三處都不留原始標記）",
+    vh.split(LT + "img").length === 1 && vh.split("&lt;img").length >= 5,
+    vh.slice(0, 240));
+  if (keep === undefined) delete REV[key]; else REV[key] = keep;
+
+  // 事件標題本身也可能被寫壞（curated.json 是 routine 寫的）
+  const bad = { date: "2026-01-05", title: MAL, cat: "cpi", kind: "D" };
+  const fh = T.flowHTML(bad);
+  ok("事件標題裡的標記被跳脫", fh.indexOf(LT + "img") === -1, fh.slice(0, 160));
+  ok("readingHTML 不吐出未跳脫的標記",
+    T.readingHTML(bad).indexOf(LT + "img") === -1);
+}
+
+/* ── 14. 更正層：確認同一天不算改期，不可以連坐刪掉隔壁那一週 ── */
+{
+  const base = T.getEVENTS();
+  const W = (d) => ({ date: d, kind: "D", title: "初領失業金", cat: "claims",
+                      est: true, note: "", checks: [], t: "08:30" });
+  const weeks = ["2026-09-03", "2026-09-10", "2026-09-17", "2026-09-24"];
+  const dates = () => T.getEVENTS().filter((e) => e.title === "初領失業金")
+    .map((e) => e.date).sort().join(",");
+
+  // (1) routine 只是把某一週標成已確認，日期沒變
+  T.setEVENTS(weeks.map(W));
+  T.mergeRemote([{ date: "2026-09-10", kind: "D", title: "初領失業金", cat: "claims",
+                   est: false, note: "官方確認" }]);
+  eq("確認同一天不會刪掉隔壁那一週", dates(), weeks.join(","));
+  ok("確認的那一筆不再是推算日",
+    T.getEVENTS().filter((e) => e.date === "2026-09-10")[0].est === false);
+
+  // (2) 一次確認整串，也不能互相刪
+  T.setEVENTS(weeks.map(W));
+  T.mergeRemote(weeks.map((d) => Object.assign(W(d), { est: false })));
+  eq("整串一起確認也不會互相刪", dates(), weeks.join(","));
+
+  // (3) 真的改期時，還是要下架最接近的舊日期
+  T.setEVENTS(weeks.map(W));
+  T.mergeRemote([{ date: "2026-09-11", kind: "D", title: "初領失業金", cat: "claims",
+                   est: false, note: "官方延後一天" }]);
+  eq("真的改期時舊日期要下架",
+    dates(), "2026-09-03,2026-09-11,2026-09-17,2026-09-24");
+
+  // (4) 改期的目標日剛好是另一週時，那一週不可以被當成舊日期刪掉
+  T.setEVENTS(weeks.map(W));
+  T.mergeRemote([{ date: "2026-09-17", kind: "D", title: "初領失業金", cat: "claims",
+                   est: false, note: "更正" },
+                 { date: "2026-09-24", kind: "D", title: "初領失業金", cat: "claims",
+                   est: false, note: "更正" }]);
+  eq("更正層自己列的日期不會被當成舊日期", dates(), weeks.join(","));
+
+  T.setEVENTS(base);
 }
 
 /* ── 報告 ── */
