@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-08-31",
+  "text": "盤後複盤：非農基準修正初步預估（實際下修79K、遠不如共識上修183K預期，方向背離——反應偏鷹但與Warsh Jackson Hole演說同時公布，主因難以拆分，不再次調整regime；priced.json無此筆pxd可供檢討）。"
+ },
+ {
   "date": "2026-08-30",
   "text": "daily: 更新定價 3 筆（AVGO 財報、非農就業、CPI，皆用 IBKR 選擇權量化重估）；curated.json 掃過無需清理；Waller 談話時間仍未公布，維持待確認。"
  },
