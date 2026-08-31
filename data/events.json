@@ -1,7 +1,7 @@
 {
- "generated": "2026-08-29T23:51:08+00:00",
+ "generated": "2026-08-31T00:10:08+00:00",
  "source": "官方排程（未設 FMP_API_KEY）",
- "count": 25,
+ "count": 28,
  "events": [
   {
    "date": "2026-08-26",
@@ -34,6 +34,26 @@
    "src": "bls.gov 官方排程公告"
   },
   {
+   "date": "2026-09-02",
+   "kind": "N",
+   "cat": "earn2",
+   "title": "AVGO 財報",
+   "est": false,
+   "t": "AMC",
+   "note": "日期更正：規則引擎以上次實際日 +91 天推到 9/10，但博通 8/3 官方新聞稿已確認 FY26 第三季財報於 9/2（週三）美股收盤後公布、法說 14:00 PT，差 8 天。街頭共識 EPS 3.24、營收約 294 億美元（年增約 84%），管理層對本季 AI 半導體營收指引 160 億是重點，另看 FY27「超過 1000 億」目標有無上調；選擇權定價的單日隱含變動約 ±9.9%，上一季財報後單日跌 12.6%。",
+   "src": "Broadcom 官方新聞稿 2026-08-03（PRNewswire，第一級）／MT Newswires、Benzinga、The Fly 交叉驗證（第三級）"
+  },
+  {
+   "date": "2026-09-03",
+   "kind": "D",
+   "cat": "minutes",
+   "title": "Fed 理事 Waller 談通膨展望",
+   "est": false,
+   "t": "10:00",
+   "note": "9/5 起進入 FOMC 噤聲期，這是會前最後一個實質的官方發言窗口，主題直接就是通膨展望與政策反應函數。Waller 今年 7 月曾把主席的模糊立場翻譯成可交易的訊號（明言核心通膨再熱就要考慮近期升息），在 9/16 升息機率已升到近 六成的當下，市場會拿他的措辭校準路徑。cat 取 minutes——合法清單裡沒有「官員演說」，Fed 內部溝通文件是最接近的一類（同樣主要作用在 pivot 與前端利率），但 B=22 對這場的份量可能偏低。**發言時間官方未公布，t 暫填美東 10:00（比照 Fed 官員演說慣例），確認後由每日任務更正。**",
+   "src": "Bloomberg 報導，經 Wallstreetcn、Sohu、Chinatimes 轉述（第三級，搜尋摘要，未讀原文）"
+  },
+  {
    "date": "2026-09-04",
    "kind": "D",
    "cat": "nfp",
@@ -62,6 +82,16 @@
    "t": "BMO",
    "note": "加拿大對276億美元美國商品課徵最高50%關稅（鋼鐵、乳製品、家電、農機具、紙漿造紙、電子等），為報復美國8/22對加拿大商品課徵50%關稅之對等反制；為貿易戰持續升溫的具體可查證指標。cat原誤標為election，已更正為tariff。",
    "src": "canada.ca 官方公告 Department of Finance（第一級）／Washington Post、NPR（第三級）"
+  },
+  {
+   "date": "2026-09-09",
+   "kind": "N",
+   "cat": "product",
+   "title": "Apple 秋季發表會",
+   "est": false,
+   "t": "13:00",
+   "note": "Apple 8/26 發出邀請函，主題「Surprise and shine」，9/9 上午 10:00 PT（美東 13:00）於 Apple Park 的 Steve Jobs Theater 舉行，是新任執行長 John Ternus 的第一場發表會。首款折疊機 iPhone Fold／Ultra 與 iPhone 18 Pro 亮相，搭載首顆 2nm 手機 SoC A20 Pro；折疊機首季產能傳僅 50–100 萬支，良率與備貨節奏會直接牽動台系供應鏈與費半。",
+   "src": "Apple 官方邀請函，經 Numerama、Deccan Herald、Wccftech 等多家同步轉述（第三級，未直接讀 apple.com）"
   },
   {
    "date": "2026-09-10",
