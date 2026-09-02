@@ -86,7 +86,9 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "setPX:function(o){PX=o;},setREVIEW:function(o){REVIEW=o;},"+
   "ASSETS:ASSETS,applyBetas:applyBetas,assetImpact:assetImpact," +
   "esc:esc,viewsHTML:viewsHTML,getREVIEW:function(){return REVIEW;}," +
-  "ageDays:ageDays,STALE:STALE," +
+  "ageDays:ageDays,STALE:STALE,applyPolicy:applyPolicy,policyHTML:policyHTML," +
+  "policyLine:policyLine,polOdds:polOdds,POLCAT:POLCAT,checksOf:checksOf," +
+  "polMoveBp:polMoveBp,verdict:verdict,reviewForm:reviewForm," +
   "getBETAS:function(){return BETAS;}};\n";
 
 try {
@@ -517,11 +519,183 @@ catKeys.forEach((k) => {
     T.STALE["reviews.json"] === null && T.STALE["curated.json"] === null);
   // 每一個 STALE 的 key 都要真的是 loadRemote 會抓的檔案，不然設了也沒用
   const FILES = ["events.json", "curated.json", "px.json", "priced.json",
-                 "reviews.json", "betas.json", "regime.json", "changelog.json"];
+                 "reviews.json", "betas.json", "policy.json", "regime.json",
+                 "changelog.json"];
   eq("STALE 涵蓋所有雲端檔案",
     FILES.filter((f) => !(f in T.STALE)).join(","), "");
   eq("STALE 沒有多餘的 key",
     Object.keys(T.STALE).filter((f) => FILES.indexOf(f) < 0).join(","), "");
+}
+
+/* ── 16. 政策路徑：升降息定價，以及事件當天把它推了多少 ── */
+{
+  const LT = String.fromCharCode(60);
+  const POL = {
+    asof: "2026-08-31", histFrom: "2026-08-03", effr: 3.63,
+    source: "CME 30 天聯邦資金期貨",
+    meetings: [
+      { date: "2026-09-16", rate: 3.775, chgBp: 14.5, cumBp: 14.5 },
+      { date: "2026-10-28", rate: 3.845, chgBp: 7.0, cumBp: 21.5 },
+      { date: "2026-12-09", rate: 3.993, chgBp: 14.8, cumBp: 36.3 },
+    ],
+    hist: {
+      "2026-08-27": { effr: 3.63, m: { "2026-09-16": 3.7157, "2026-12-09": 3.8593 } },
+      "2026-08-28": { effr: 3.63, m: { "2026-09-16": 3.7746, "2026-12-09": 3.9930 } },
+    },
+  };
+
+  // 機率換算：一碼以內講機率，超過一碼講碼數
+  eq("+14.5bp ≈ 升息 58%", T.polOdds(14.5), "升息 58%");
+  eq("−12.5bp ≈ 降息 50%", T.polOdds(-12.5), "降息 50%");
+  eq("幾乎沒動就是按兵不動", T.polOdds(0.1), "按兵不動");
+  eq("超過一碼改講碼數", T.polOdds(37.5), "升息 1.50 碼");
+  eq("超過一碼（降息方向）也講碼數", T.polOdds(-40), "降息 1.60 碼");
+
+  // 哪些事件會撼動政策路徑：看前端利率那條管道
+  ok("CPI 會撼動政策路徑", T.POLCAT({ cat: "cpi" }));
+  ok("FOMC 會撼動政策路徑", T.POLCAT({ cat: "fomc" }));
+  ok("Jackson Hole 會撼動政策路徑", T.POLCAT({ cat: "jackson" }));
+  ok("權值財報不會（它走分子端）", !T.POLCAT({ cat: "earn3" }));
+  ok("四巫日不會", !T.POLCAT({ cat: "quad" }));
+  ok("未知類型退回 ISM 也不會爆", typeof T.POLCAT({ cat: "不存在" }) === "boolean");
+
+  // 沒有 policy.json 時整段消失，不是顯示壞掉的表
+  T.applyPolicy(null);
+  eq("沒有政策資料時不顯示這一段", T.policyHTML({ date: "2026-09-11", cat: "cpi" }), "");
+  eq("沒有政策資料時頂部那行也是空的", T.policyLine(), "");
+  T.applyPolicy({ meetings: [], hist: {} });
+  eq("空的 hist 等於沒有資料", T.policyHTML({ date: "2026-09-11", cat: "cpi" }), "");
+
+  T.applyPolicy(POL);
+  ok("頂部那行講得出目前定價", T.policyLine().indexOf("3.63%") >= 0, T.policyLine());
+
+  // 未來事件：顯示現在定價到哪
+  const fut = T.policyHTML({ date: "2027-01-11", cat: "cpi", title: "CPI" });
+  ok("未來事件顯示目前的路徑", fut.indexOf("09/16") >= 0, fut.slice(0, 120));
+  ok("未來事件顯示有效利率", fut.indexOf("3.63%") >= 0);
+
+  // 過去事件：顯示當天把路徑推了多少（Jackson Hole 8/28，盤中吸收）
+  const jh = T.policyHTML({ date: "2026-08-28", cat: "jackson", title: "Jackson Hole",
+                            t: "10:00" });
+  ok("過去事件算得出當日變動", jh.indexOf("當日變動") >= 0, jh.slice(0, 140));
+  ok("8/28 那天是鷹派重定價", jh.indexOf("鷹派") >= 0, jh.slice(-260));
+  ok("當日變動算的是相對有效利率的累計", jh.indexOf("+13.4bp") >= 0 || jh.indexOf("+5.9bp") >= 0,
+    jh);
+
+  // 序列還沒涵蓋到的舊事件：講清楚為什麼沒有，而不是顯示空表
+  const old = T.policyHTML({ date: "2026-06-10", cat: "cpi", title: "CPI" });
+  ok("序列涵蓋不到的舊事件講清楚原因", old.indexOf("補不回來") >= 0, old.slice(0, 160));
+
+  // 不走利率管道的事件不顯示這一段
+  eq("財報不顯示政策路徑",
+    T.policyHTML({ date: "2026-09-11", cat: "earn3", title: "NVDA 財報" }), "");
+
+  // 雲端字串照樣要跳脫
+  T.applyPolicy(Object.assign({}, POL, { source: LT + "img src=x onerror=alert(1)" }));
+  ok("policy.json 的字串也跳脫",
+    T.policyHTML({ date: "2027-01-11", cat: "cpi" }).indexOf(LT + "img") === -1);
+  T.applyPolicy(null);
+}
+
+/* ── 17. 每一種事件類型都要有自己的判讀重點 ── */
+{
+  const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  const ckSrc = (html.split("const CK={")[1] || "").split("\n};")[0];
+  const ck = new Set((ckSrc.match(/^ {2}(\w+):\[/gm) || [])
+    .map((x) => x.trim().replace(":[", "")));
+  ok("抓得到 CK 表", ck.size > 0, String(ck.size));
+  const missing = Object.keys(T.CAT).filter((k) => !ck.has(k));
+  eq("每一種事件類型都有專屬的判讀重點（不然會落到通用預設，等於沒寫）",
+    missing.join(","), "");
+  ok("仍然保留通用預設當保險", ck.has("default"));
+
+  // routine 寫進 curated.json 的事件沒有 checks 欄位，必須依類型退回 CK，
+  // 不然那些事件（突發新聞、央行演說）永遠只有標題沒有判讀重點
+  const own = T.checksOf({ cat: "cpi", checks: [["自己的", "說明"]] });
+  eq("事件自己有 checks 就用自己的", own[0][0], "自己的");
+  const fb = T.checksOf({ cat: "jackson", checks: [] });
+  ok("沒有 checks 時依類型退回", fb.length > 0 && fb[0][0].length > 0, JSON.stringify(fb[0]));
+  ok("Jackson Hole 退回的是它自己那一組，不是通用預設",
+    JSON.stringify(fb) !== JSON.stringify(T.checksOf({ cat: "不存在的類型" })));
+  ok("checks 欄位整個沒有也不會爆", T.checksOf({ cat: "cpi" }).length > 0);
+  ok("未知類型退回通用預設", T.checksOf({ cat: "亂寫" }).length > 0);
+  // 每一種類型退回來的內容都必須是 [標題, 說明] 的成對陣列
+  const badShape = Object.keys(T.CAT).filter((k) => {
+    const r = T.checksOf({ cat: k });
+    return !Array.isArray(r) || !r.length
+      || r.some((x) => !Array.isArray(x) || x.length !== 2 || !x[0] || !x[1]);
+  });
+  eq("每一種類型的判讀重點都是成對的 [標題, 說明]", badShape.join(","), "");
+}
+
+/* ── 18. 政策事件的判讀：沒有 z 分數時，意外程度＝政策路徑被推了多少 ── */
+{
+  const POL = {
+    asof: "2026-08-31", histFrom: "2026-08-03", effr: 3.63, source: "測試",
+    meetings: [{ date: "2026-09-16", rate: 3.775, chgBp: 14.5, cumBp: 14.5 }],
+    hist: {
+      "2026-08-27": { effr: 3.63, m: { "2026-09-16": 3.7157, "2026-12-09": 3.8593 } },
+      "2026-08-28": { effr: 3.63, m: { "2026-09-16": 3.7746, "2026-12-09": 3.9930 } },
+      "2026-08-31": { effr: 3.63, m: { "2026-09-16": 3.7750, "2026-12-09": 3.9935 } },
+    },
+  };
+  const jh = { date: "2026-08-28", title: "Jackson Hole", cat: "jackson", kind: "D",
+               t: "10:00" };
+  // 演說當天沒有共識數字，所以 z 一定是空的——這正是原本會被判成「非事件」的情境
+  const react = { spx: "-0.25", ndx: "-0.65", y10: "+4.8", z: "", sigma: "1.13" };
+
+  T.applyPolicy(null);
+  eq("沒有政策資料時算不出路徑移動", T.polMoveBp(jh), null);
+  const noPol = T.verdict(jh, react);
+  eq("沒有政策資料時退回原本的四象限", noPol.k, 2);
+
+  T.applyPolicy(POL);
+  const mv = T.polMoveBp(jh);
+  ok("算得出當天的平均路徑移動", mv > 8 && mv < 10, String(mv));
+  ok("鷹派方向是正值", mv > 0);
+
+  const v = T.verdict(jh, react);
+  eq("政策路徑大動但大盤沒跟上＝第五種判讀", v.k, 5);
+  ok("標題講得出移動幾 bp", v.t.indexOf("9.6bp") >= 0, v.t);
+  ok("不會被誤判成「非事件」", v.t.indexOf("非事件") < 0);
+  ok("不會被誤判成「已被定價」", v.t.indexOf("已被定價") < 0);
+  ok("有三條可執行的建議", Array.isArray(v.a) && v.a.length === 3);
+
+  // 大盤也大動時，回到「環境確認」，不要停在第五種
+  const bigReact = { spx: "-2.4", ndx: "-3.1", y10: "+4.8", z: "", sigma: "1.13" };
+  eq("大盤也跟上時是環境確認", T.verdict(jh, bigReact).k, 1);
+
+  // 路徑沒動的日子不套用這一條
+  const quiet = { date: "2026-08-31", title: "CPI", cat: "cpi", kind: "D", t: "08:30" };
+  const qmv = T.polMoveBp(quiet);
+  ok("平靜的日子路徑幾乎不動", Math.abs(qmv) < 1, String(qmv));
+  eq("路徑沒動就不是第五種", T.verdict(quiet, react).k, 2);
+
+  // 不走利率管道的事件不看政策路徑
+  eq("財報不看政策路徑",
+    T.polMoveBp({ date: "2026-08-28", cat: "earn3", title: "財報", t: "AMC" }), null);
+
+  // 有 z 分數時以 z 為準，方向背離仍然要判得出來
+  const div = { spx: "+1.2", ndx: "+1.5", y10: "+4.8", z: "2.1", sigma: "1.13" };
+  eq("有 z 且方向背離時仍判背離", T.verdict(jh, div).k, 4);
+
+  T.applyPolicy(null);
+}
+
+/* ── 19. 同一天多個事件：複盤表單的欄位不可以撞名 ── */
+{
+  const e1 = { date: "2026-08-28", title: "甲事件", cat: "jackson", kind: "D" };
+  const e2 = { date: "2026-08-28", title: "乙事件", cat: "nfp", kind: "D" };
+  const h0 = T.reviewForm(e1, 0), h1 = T.reviewForm(e2, 1);
+  const ids = (h) => (h.match(/id="rv[^"]*"/g) || []).sort();
+  ok("表單有欄位", ids(h0).length >= 8, String(ids(h0).length));
+  eq("兩個區塊的欄位數一樣", ids(h0).length, ids(h1).length);
+  const overlap = ids(h0).filter((x) => ids(h1).indexOf(x) >= 0);
+  eq("同一天兩個事件的欄位 id 完全不重疊（撞名會把甲的數字存進乙）",
+    overlap.join(","), "");
+  ok("存檔按鈕帶著自己的區塊序號", h1.indexOf('data-bi="1"') >= 0);
+  ok("存檔按鈕帶著自己的事件 key",
+    h1.indexOf(encodeURIComponent("2026-08-28|乙事件")) >= 0);
 }
 
 /* ── 報告 ── */

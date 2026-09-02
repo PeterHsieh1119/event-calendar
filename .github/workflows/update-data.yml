@@ -31,6 +31,13 @@ jobs:
         continue-on-error: true
         run: python scripts/rolling_beta.py
 
+      # policy.json 的每日序列是累積出來的，到期的期貨合約 Yahoo 不給歷史價，
+      # 斷掉就補不回來。所以這一步失敗時要保留既有檔案，不能讓整個 job 掛掉
+      # 導致什麼都沒 commit——那樣反而不會有事，但下一次跑仍然接得上。
+      - name: 政策路徑（失敗不擋當日資料更新）
+        continue-on-error: true
+        run: python scripts/policy_path.py
+
       - name: 資料驗證（沒過就不要把壞資料 commit 進去）
         run: python scripts/validate_data.py
 

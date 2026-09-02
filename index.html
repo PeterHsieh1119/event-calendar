@@ -227,6 +227,7 @@ table.tm td:first-child,table.tm th:first-child{text-align:left;color:var(--tx2)
 .v2{border-color:#FFB84D50;background:#FFB84D0D;color:var(--tx)}
 .v3{border-color:#C77DFF50;background:#C77DFF0D;color:var(--tx)}
 .v4{border-color:#FF5C5C50;background:#FF5C5C0D;color:var(--tx)}
+.v5{border-color:#4CC2E050;background:#4CC2E00D;color:var(--tx)}
 .done{font-size:9.5px;font-family:var(--mono);color:#3FD68C;border:1px solid #3FD68C40;border-radius:20px;padding:1.5px 6px}
 .calrow{display:grid;grid-template-columns:1fr 60px 60px 52px;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px;align-items:center}
 .calrow .v{font-family:var(--mono);font-size:12px;text-align:right;color:var(--tx2)}
@@ -245,6 +246,7 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
     <span><span class="dot" id="srcdot"></span> <span id="srctext">內建規則引擎</span></span>
     <span>·</span><span id="todaytxt"></span>
     <span>·</span><span id="regimetxt"></span>
+    <span class="hide" id="polsep">·</span><span class="hide" id="poltxt"></span>
     <span id="refreshNote" style="width:100%;color:var(--tx3)"></span>
   </div>
 </header>
@@ -497,7 +499,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-v16";
+const APP_VER = "evcal-v17";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -757,33 +759,86 @@ function assetImpact(e){
 }
 
 /* ═══ 排程產生 ═══ */
+/* 每一種事件類型「當天真正該看的是哪幾項」。規則引擎產生的事件會把它抄進 checks，
+   但 routine 寫進 curated.json 的事件（突發新聞、央行演說、臨時排定的數據）沒有這一欄——
+   所以顯示的時候要能依類型退回這張表，不然那些事件永遠只有標題沒有判讀重點。 */
+const CK={
+  fomc:[["聲明稿與上次的逐字差異","對照 Fed 官網前後兩份聲明，改掉的形容詞就是訊號"],
+        ["會前的 OIS／Fed Funds 期貨隱含機率","已經 90% 定價的結果不會造成衝擊，40/60 才會"],
+        ["記者會而非聲明","歷史上會後 30 分鐘的變動常大於聲明當下"]],
+  fomc_sep:[["點陣圖中位數移動幾碼","比利率決定本身重要得多"],
+        ["長期中性利率 (longer run) 有沒有移動","那是重定價整條曲線的變數"],
+        ["會前 OIS 對明年路徑的定價","點陣圖跟市場定價的落差就是衝擊空間"]],
+  cpi:[["克里夫蘭 Fed 的 CPI Nowcast 跟共識差多少","差距大＝意外空間大。Cleveland Fed Inflation Nowcasting"],
+       ["核心服務除房租 (supercore)","這一段才是 Fed 判斷通膨黏性的依據"],
+       ["當天 SPX 平價跨式報價 vs 平常日","報價明顯高於平常＝市場已經在等大變動；報價平淡而數據意外＝殺傷力最大"]],
+  nfp:[["ADP、初領失業金、JOLTS 的方向是否一致","三個都同向時非農的意外空間變小"],
+       ["時薪年增率而非新增人數","薪資才是通往通膨的那條線"],
+       ["前兩個月的修正值","近年修正幅度常大於當月意外"]],
+  earn3:[["會前隱含波動 vs 過去四次實際變動","隱含低於歷史實際＝定價不足"],
+       ["指引與資本支出，不是本季 EPS","本季數字是分子的過去式，指引才是未來式"],
+       ["同業已公布的訂單與庫存","上游設備商的數字通常先洩題"]],
+  cloud:[["四家的資本支出指引加總年增","那是整條 AI 供應鏈分子端的源頭"],
+       ["折舊年限有沒有調整","會直接改寫未來幾年的 EPS 軌跡"]],
+  quad:[["未平倉集中在哪些履約價","到期後 gamma 消失，價格可能立刻脫離原本被釘住的區間"]],
+  election:[["選前的博弈盤定價","已經定價的結果不構成意外"],
+       ["分立政府 vs 一黨獨大","決定財政擴張規模，進而決定公債供給"]],
+  gdp:[["個人消費 (PCE) 分項，不是總數","GDP 總數常被存貨與淨出口這種會回吐的項目灌水，最終銷售才是需求的真實動能"],
+       ["GDP 平減指數","那是比 CPI 更廣的物價口徑，超預期時分母端的殺傷力大於總數本身"],
+       ["修正值方向（初值→次值→終值）","初值的意外常在次值被抹掉，連續同向修正才代表趨勢真的變了"]],
+  pce:[["核心月增的三個月年化率","年增率是後照鏡，三個月年化才看得出當下的動能"],
+       ["核心服務除房租","跟 CPI 看同一件事，但 PCE 的權重結構才是 Fed 真正盯的那一份"],
+       ["同月 CPI 公布後的預期值","PCE 大部分分項來自已公布的 CPI 與 PPI，所以意外空間本來就比 CPI 小得多"]],
+  ppi:[["會流進 PCE 的那幾個分項","投資組合管理費、機票、醫療——這些是 PPI 轉 PCE 的橋，其餘分項對 Fed 沒有意義"],
+       ["核心 PPI 年增與商品／服務的拆分","商品端是關稅與供應鏈，服務端才是通膨黏性"]],
+  ism:[["新訂單減客戶端存貨","這個差是製造業循環最領先的一項，比總指數早兩到三個月"],
+       ["支付價格分項","它跟 CPI 商品端的相關性高，而且早一個月公布"],
+       ["就業分項","非農公布前唯一的製造業就業線索"]],
+  retail:[["控制組（control group）","扣掉汽車、汽油、建材、餐飲之後那一項才進 GDP 的消費計算，總數會被油價噪音蓋掉"],
+       ["前月修正幅度","零售的修正幅度常大於當月意外"]],
+  adp:[["跟非農的近期落差","兩者方法不同，ADP 只有在跟非農連續同向偏離時才有預測力"],
+       ["中小企業的就業變化","大型企業的數字被少數幾家主導，中小企業才反映景氣廣度"]],
+  claims:[["四週移動平均而非單週","單週會被假期、罷工、天災與州別的行政因素扭曲"],
+       ["續領人數 (continuing claims)","初領看解僱、續領看再就業難度，後者才是勞動市場鬆緊"]],
+  jolts:[["職缺對失業人數的比值","Fed 明確講過這個比值是勞動市場過熱與否的判準"],
+       ["主動離職率 (quits rate)","勞工敢不敢跳槽，是薪資通膨最領先的指標"],
+       ["資料落後五到六週","它描述的是上上個月，跟其他就業數據不同步，不要拿來對照當週的行情"]],
+  minutes:[["「several」「many」「most」這幾個字的分布","Fed 用這組詞表達內部分歧的規模，這是紀要唯一的量化資訊"],
+       ["會議之後公布的數據有沒有推翻紀要的前提","紀要描述的是三週前的想法，中間有大數據的話它就過期了"],
+       ["對縮表與準備金水位的討論","那是流動性面的訊號，常被忽略但直接影響風險資產"]],
+  jackson:[["主席演說的通膨與就業孰先","這是整場唯一有政策訊息量的部分，其餘是學術議程"],
+       ["會後聯邦資金期貨的重定價","講稿怎麼寫不重要，市場把路徑改了多少才重要——看抽屜裡的政策路徑那一段"],
+       ["長端實質利率的反應方向","鷹派而長端跌＝市場讀成政策失誤與衰退，那跟單純的鷹派完全不同"]],
+  refund:[["長天期（10 年與 30 年）的標售規模增減","期限結構的變化才影響長端，總量增減影響的是短端"],
+       ["得標倍數與間接投標人比例","需求端的實況，弱標會直接推高殖利率"]],
+  boj:[["殖利率曲線控制與購債規模的措辭","日本的政策傳導在數量面，不在利率面"],
+       ["對日圓的立場","套利交易平倉是全球風險資產的正回饋來源，2024/08 那次就是"]],
+  ecb:[["對美歐利差的隱含指引","歐洲央行的決議透過利差改變美元，再透過美元打到新興市場與原物料"],
+       ["歐元區核心通膨與薪資成長","它的反應函數比 Fed 更看薪資"]],
+  opec:[["實際減產執行率而非宣布的配額","公告的配額與實際產量長期背離，市場看的是後者"],
+       ["油價變動對通膨預期的傳導","原油走的是通膨預期那條管道，不是分子端"]],
+  tariff:[["生效日與豁免清單","宣布與生效之間常有數月，而豁免清單決定真正的曝險名單"],
+       ["受影響商品占進口的比重","比稅率本身重要，2% 的品項課 100% 影響有限"],
+       ["對方的反制措施","反制才是把單向的成本衝擊變成雙向的需求衝擊"]],
+  twrev:[["月增與去年同期的雙重比較","台積電月營收季節性極強，只看月增會被季底出貨扭曲"],
+       ["累計年增對法說會財測的達成率","單月是噪音，達成率才決定要不要修正全年預期"]],
+  product:[["有沒有給出貨量或定價的具體數字","沒有數字的發表會不改變任何人的模型，那是行銷不是事件"],
+       ["供應鏈的受惠名單","發表會對品牌廠是舊聞，對上游零組件常常是新資訊"]],
+  opex:[["未平倉最大的那幾個履約價","到期前價格常被釘在那裡，到期後釘子拔掉"],
+       ["跟四巫日的差別","月選擇權到期沒有期貨與指數期權同時結算，規模小一個量級，不要用四巫日的預期去看它"]],
+  headline:[["有沒有可辨識的價格反應","找不到某個資產在某個時點動起來的話，那是新聞不是事件"],
+       ["是政策宣示還是已經生效的行動","宣示可以被推翻，行動不行——後者才會改變基本面"]],
+  earn2:[["指引而非本季 EPS","本季數字是分子的過去式"],
+       ["會前的隱含變動 vs 過去四次實際變動","隱含低於歷史實際＝定價不足，那才是值得動手的組合"]],
+  earn1:[["它在供應鏈上的位置","小型公司的財報價值多半在於它洩漏了誰的訂單，不在自己的數字"]],
+  default:[["共識預期是多少","沒有共識就沒有意外，沒有意外就沒有衝擊"],
+       ["這個數字最近三次的意外方向","連續同向意外代表模型系統性偏誤，第四次通常還會偏同一邊"]]
+};
+const checksOf=e=>(Array.isArray(e.checks)&&e.checks.length)?e.checks:(CK[e.cat]||CK.default);
+
 function buildBaseline(y0,y1){
   const E=[];
   const P=(date,kind,title,cat,est,note,checks,t)=>E.push({date,kind,title,cat,est:!!est,note,checks:checks||[],t:t||TOD[cat]||"08:30"});
-  const CK={
-    fomc:[["聲明稿與上次的逐字差異","對照 Fed 官網前後兩份聲明，改掉的形容詞就是訊號"],
-          ["會前的 OIS／Fed Funds 期貨隱含機率","已經 90% 定價的結果不會造成衝擊，40/60 才會"],
-          ["記者會而非聲明","歷史上會後 30 分鐘的變動常大於聲明當下"]],
-    fomc_sep:[["點陣圖中位數移動幾碼","比利率決定本身重要得多"],
-          ["長期中性利率 (longer run) 有沒有移動","那是重定價整條曲線的變數"],
-          ["會前 OIS 對明年路徑的定價","點陣圖跟市場定價的落差就是衝擊空間"]],
-    cpi:[["克里夫蘭 Fed 的 CPI Nowcast 跟共識差多少","差距大＝意外空間大。Cleveland Fed Inflation Nowcasting"],
-         ["核心服務除房租 (supercore)","這一段才是 Fed 判斷通膨黏性的依據"],
-         ["當天 SPX 平價跨式報價 vs 平常日","報價明顯高於平常＝市場已經在等大變動；報價平淡而數據意外＝殺傷力最大"]],
-    nfp:[["ADP、初領失業金、JOLTS 的方向是否一致","三個都同向時非農的意外空間變小"],
-         ["時薪年增率而非新增人數","薪資才是通往通膨的那條線"],
-         ["前兩個月的修正值","近年修正幅度常大於當月意外"]],
-    earn3:[["會前隱含波動 vs 過去四次實際變動","隱含低於歷史實際＝定價不足"],
-         ["指引與資本支出，不是本季 EPS","本季數字是分子的過去式，指引才是未來式"],
-         ["同業已公布的訂單與庫存","上游設備商的數字通常先洩題"]],
-    cloud:[["四家的資本支出指引加總年增","那是整條 AI 供應鏈分子端的源頭"],
-         ["折舊年限有沒有調整","會直接改寫未來幾年的 EPS 軌跡"]],
-    quad:[["未平倉集中在哪些履約價","到期後 gamma 消失，價格可能立刻脫離原本被釘住的區間"]],
-    election:[["選前的博弈盤定價","已經定價的結果不構成意外"],
-         ["分立政府 vs 一黨獨大","決定財政擴張規模，進而決定公債供給"]],
-    default:[["共識預期是多少","沒有共識就沒有意外，沒有意外就沒有衝擊"],
-         ["這個數字最近三次的意外方向","連續同向意外代表模型系統性偏誤，第四次通常還會偏同一邊"]]
-  };
   const ck=k=>CK[k]||CK.default;
 
   for(let y=y0;y<=y1;y++){
@@ -1068,6 +1123,105 @@ function histHTML(e){
     +`直接由 data/px.json 計算。樣本只有兩年，次數少的事件參考價值有限。</div>`;
 }
 
+/* ═══ 政策路徑：市場對升降息定價到哪 ═══ */
+/* data/policy.json 由 scripts/policy_path.py 每天從聯邦資金期貨反推。
+   「Jackson Hole 之後升息機率上升」這種話網路上到處都有，但沒有人附數字，
+   而且事後回頭看根本查不到當天移動了多少——FedWatch 只給現在，不給歷史。
+   這一段就是為了把那個數字補上：事件當天，整條政策路徑被重新定價了幾 bp。 */
+let POLICY=null;
+function applyPolicy(j){
+  POLICY=(j&&j.hist&&Object.keys(j.hist).length)?j:null;
+}
+/* 這個事件會不會撼動政策路徑：看它在前端利率那條管道上的推力 */
+const POLCAT=e=>Math.abs(((CAT[e.cat]||CAT.ism).ch||{}).front||0)>=0.25;
+/* 事件被美股哪個交易日吸收——盤後的東西打到的是次一交易日 */
+const polShift=e=>session(e).us==="美股隔一交易日"?1:0;
+/* 回傳 hist 裡不晚於 ds 的最後一天 */
+function polOn(ds){
+  if(!POLICY)return null;
+  const ks=Object.keys(POLICY.hist).sort();
+  let hit=null;
+  for(const k of ks){if(k<=ds)hit=k;else break;}
+  return hit;
+}
+function polPrev(day){
+  if(!POLICY)return null;
+  const ks=Object.keys(POLICY.hist).sort();
+  const i=ks.indexOf(day);
+  return i>0?ks[i-1]:null;
+}
+/* 一次會議的隱含變動換算成一碼的機率。超過一碼講機率沒有意義，改講碼數。 */
+function polOdds(bp){
+  const n=bp/25;
+  if(Math.abs(n)>1)return (n>0?"升息 ":"降息 ")+Math.abs(n).toFixed(2)+" 碼";
+  if(Math.abs(n)<0.005)return "按兵不動";
+  return (n>0?"升息 ":"降息 ")+Math.round(Math.abs(n)*100)+"%";
+}
+const bpFmt=v=>(v>0?"+":"")+v.toFixed(1)+"bp";
+const bpCol=v=>v>0.5?"var(--dn)":v<-0.5?"var(--up)":"var(--tx3)";
+
+/* 目前定價的路徑，給頂部與環境頁用的一句話 */
+function policyLine(){
+  if(!POLICY||!POLICY.meetings||!POLICY.meetings.length)return "";
+  const m=POLICY.meetings[0];
+  const yearEnd=POLICY.meetings.filter(x=>x.date.slice(0,4)===String(TODAY.getFullYear())).pop()
+    ||POLICY.meetings[POLICY.meetings.length-1];
+  return `政策定價 ${POLICY.effr.toFixed(2)}%／${m.date.slice(5).replace("-","/")} ${polOdds(m.chgBp)}`
+    +`／到 ${yearEnd.date.slice(5).replace("-","/")} 累計 ${bpFmt(yearEnd.cumBp)}`;
+}
+
+/* 事件抽屜裡的政策路徑區塊 */
+function policyHTML(e){
+  if(!POLICY||!POLCAT(e))return "";
+  const past=e.date<iso(TODAY);
+  const rows=(POLICY.meetings||[]).slice(0,4);
+  const head=`<h4 style="margin-top:16px">政策路徑（市場定價的升降息）</h4>`;
+
+  if(past){
+    // 事件被吸收的那個交易日，整條路徑動了多少。這才是「這件事到底改變了什麼」。
+    const day=polOn(addD(e.date,polShift(e)));
+    const prev=day?polPrev(day):null;
+    if(!day||!prev)
+      return head+`<div class="note">這個事件發生在 ${esc(POLICY.histFrom||"序列起點")} 之前，`
+        +`政策路徑的每日序列還沒涵蓋到。到期的期貨合約抓不到歷史價，這一段補不回來，`
+        +`只能從序列起點開始往後累積。</div>`;
+    const a=POLICY.hist[prev], b=POLICY.hist[day];
+    const ms=Object.keys(b.m).filter(k=>k in a.m).slice(0,4);
+    if(!ms.length)return "";
+    const body=ms.map(k=>{
+      const pa=(a.m[k]-a.effr)*100, pb=(b.m[k]-b.effr)*100, d=pb-pa;
+      return `<tr><td>${esc(k.slice(5).replace("-","/"))}</td>`
+        +`<td>${polOdds(pa)}</td><td>${polOdds(pb)}</td>`
+        +`<td style="color:${bpCol(d)}">${bpFmt(d)}</td></tr>`;}).join("");
+    const tot=ms.reduce((s,k)=>s+Math.abs((b.m[k]-b.effr)-(a.m[k]-a.effr)),0)*100/ms.length;
+    const dir=((b.m[ms[ms.length-1]]-b.effr)-(a.m[ms[ms.length-1]]-a.effr))>0?"鷹派":"鴿派";
+    return head
+      +`<table class="mtab"><tr><th>會議</th><th>${esc(prev.slice(5))} 累計</th>`
+      +`<th>${esc(day.slice(5))} 累計</th><th>當日變動</th></tr>${body}</table>`
+      +`<div class="note">「累計」是相對於當時的有效聯邦資金利率，`
+      +`所以看的是<b>整條路徑</b>被推了多少，不是單次會議的機率跳動。`
+      +(tot>=2?`這一天平均移動 ${tot.toFixed(1)}bp，方向是<b>${dir}</b>——`
+              +`對一個交易日來說這是明確的重定價，不是雜訊。`
+             :`這一天平均只移動 ${tot.toFixed(1)}bp，政策路徑基本上沒被改寫。`)
+      +`</div>`;
+  }
+
+  const body=rows.map(r=>
+    `<tr><td>${esc(r.date.slice(5).replace("-","/"))}</td>`
+    +`<td>${r.rate.toFixed(2)}%</td>`
+    +`<td style="color:${bpCol(r.cumBp)}">${bpFmt(r.cumBp)}</td>`
+    +`<td>${polOdds(r.chgBp)}</td></tr>`).join("");
+  return head
+    +`<div class="kv"><span class="k">目前的有效聯邦資金利率</span>`
+    +`<span class="v">${POLICY.effr.toFixed(2)}%</span></div>`
+    +`<table class="mtab"><tr><th>會議</th><th>會後隱含</th><th>累計</th><th>該次動作</th></tr>`
+    +`${body}</table>`
+    +`<div class="note">已經定價進去的東西不會造成衝擊——這張表就是「已定價程度」`
+    +`在利率這一端的原始資料。這個事件如果把某一列往上或往下推，那才是它的殺傷力所在。`
+    +`資料來源：${esc(POLICY.source||"聯邦資金期貨")}，${esc(POLICY.asof||"")} 收盤。`
+    +`人要自己核對的話看 CME FedWatch Tool，原料是同一組期貨價格。</div>`;
+}
+
 /* 傳導鏈：把「為什麼是這個數字」逐項攤開，可以自己核對 */
 function chainHTML(e){
   const ai=assetImpact(e);
@@ -1146,18 +1300,52 @@ function reactionMag(r){
   const y=Math.abs(parseFloat(r.y10)||0)/10;      // 10bp ≈ 1%
   return Math.max(a,b*0.75,y);
 }
+/* 事件當天政策路徑的平均移動（bp，正值＝鷹派）。抓不到資料回 null。
+   這個數字對政策事件來說就是「意外」本身——演說與 FOMC 沒有共識數字可以算 z 分數，
+   市場被迫改變預期多少，才是它的意外程度。 */
+function polMoveBp(e){
+  if(!POLICY||!POLCAT(e))return null;
+  const day=polOn(addD(e.date,polShift(e)));
+  const prev=day?polPrev(day):null;
+  if(!day||!prev)return null;
+  const a=POLICY.hist[prev], b=POLICY.hist[day];
+  const ks=Object.keys(b.m).filter(k=>k in a.m).slice(0,4);
+  if(!ks.length)return null;
+  let s=0;
+  ks.forEach(k=>{s+=((b.m[k]-b.effr)-(a.m[k]-a.effr))*100;});
+  return s/ks.length;
+}
 /* 四象限判讀 */
 function verdict(e,r){
   const sc=score(e).s;
   const sz=parseFloat(r.z); const mag=reactionMag(r);
   const ai=assetImpact(e);
-  const expSign=Math.sign(ai.out.spx||0)*Math.sign(sz||0);   // 預期的股市方向
+  // 沒有 z 分數時（演說、FOMC、紀要都沒有共識數字），用政策路徑被推了多少當意外程度。
+  // 少了這一段，Jackson Hole 這種把整條利率曲線推上去的事件會被判成「非事件」——
+  // 因為 reactionMag 只看標普、那斯達克與 10Y，而大盤那天只動了 0.6 個標準差。
+  const pol=polMoveBp(e);
+  const polBig=(pol!=null&&Math.abs(pol)>=4);
+  const sgn=sz||(pol!=null?Math.sign(pol):0);
+  const expSign=Math.sign(ai.out.spx||0)*Math.sign(sgn||0);   // 預期的股市方向
   const gotSign=Math.sign(parseFloat(r.spx)||0);
-  const bigS=Math.abs(sz)>=1, bigM=mag>= (sc>=60?0.9:0.6);
-  if(sz&&gotSign&&expSign&&expSign!==gotSign)
+  const bigS=Math.abs(sz)>=1||polBig, bigM=mag>= (sc>=60?0.9:0.6);
+  if(sgn&&gotSign&&expSign&&expSign!==gotSign)
     return {k:4,t:"方向背離 — 環境可能已經切換",
       d:"意外的方向跟價格反應對不上。最常見的兩個原因：市場已經定價到反方向的極端（意外反而是解除不確定性），或者主導的衝擊來源換了——例如壞數據不再被讀成盈餘下修，而是被讀成降息提前。這是所有訊號裡資訊量最高的一種。",
       a:["回「環境」那頁檢查衝擊來源是不是該從通膨主導改成成長主導（或反過來）","把這個判讀套到接下來兩週的同類事件，看是不是重複出現——連兩次才算換檔，一次可能只是噪音","如果你有部位是建立在舊環境的假設上，這是最早的減碼訊號"]};
+  // 利率端動了、股票沒跟上。這跟「已被定價」完全不同——那是市場沒反應，
+  // 這是市場反應了，只是還沒傳到股票。把兩者混為一談會做出相反的決定。
+  if(polBig&&!bigM)
+    return {k:5,t:`利率端重定價 ${pol>0?"＋":"−"}${Math.abs(pol).toFixed(1)}bp、股票還沒跟上`,
+      d:`這一天市場對政策路徑的定價平均移動了 ${pol.toFixed(1)}bp（${pol>0?"鷹派":"鴿派"}方向），`
+        +`但大盤的變動只有 ${mag.toFixed(2)}%，在這個分數的門檻之下。`
+        +`意外是真的、傳導也啟動了，只是還卡在利率端。`
+        +`最常見的三個原因：折現率的變化要等下一次盈餘預期更新才會被算進估值；`
+        +`當週還有更大的事件壓著，資金不願意先動；`
+        +`或者股票本來就在別的敘事上（例如 AI 資本支出），暫時對利率不敏感。`,
+      a:["先看長天期成長股與黃金有沒有動——它們對實質利率最敏感，通常比大盤早反應",
+         "這種狀態常在幾天內收斂：不是股票補跌（利率主導），就是利率回吐（股票主導）。看接下來兩三天哪一邊讓步",
+         "在收斂之前不要用大盤的平靜當作「沒事」的證據，那是最容易被套的一種讀法"]};
   if(bigS&&bigM) return {k:1,t:"意外大、反應大 — 環境確認",
       d:"傳導鏈按預期運作，市場的反應函數跟你的模型一致。這代表接下來同類事件的評分是可信的。",
       a:["這條傳導鏈目前有效，同類事件可以照分數配置曝險","趨勢型跟隨的勝率在這種環境下較高，但要注意反應大之後短期通常有回吐","記錄下當時的環境設定，那組參數目前是對的"]};
@@ -1171,6 +1359,7 @@ function verdict(e,r){
       d:"照劇本走，沒有新資訊。這類事件在目前環境下可以降到只做記錄。",
       a:["把這個類型的基準敏感度往下調，別再為它預留曝險","如果連續三次都是非事件，可以從關注清單移除"]};
 }
+
 /* 事件當時的「一般日」波動：前 20 個交易日的日報酬標準差（%）。 */
 function sigmaAt(ds){
   const src=PXALL[VOLKEY]||PX;              // 永遠用股票算波動，不用當前選的標的
@@ -1387,6 +1576,12 @@ async function loadRemote(){
     stat("betas.json","滾動曝險係數",n>0,j&&j.generated,n);
   }catch(e){applyBetas(null);stat("betas.json","滾動曝險係數",false,"",0,"讀取失敗，用先驗");}
   try{
+    const j=await grab("policy.json");
+    applyPolicy(j);
+    const n=(j&&j.meetings)?j.meetings.length:0;
+    stat("policy.json","政策路徑（升降息定價）",n>0,(j&&(j.asof||j.generated))||"",n);
+  }catch(e){applyPolicy(null);stat("policy.json","政策路徑（升降息定價）",false,"",0,"讀取失敗");}
+  try{
     const j=await grab("regime.json");
     applyRegime(j);
     const n=(j&&j.values)?Object.keys(j.values).length:0;
@@ -1403,7 +1598,7 @@ async function loadRemote(){
 /* 每個檔案「多久沒更新就該懷疑」的天數。沒有人在旁邊看四個 routine 有沒有在跑，
    所以資料頁必須自己講出「這個檔案已經三天沒動了」——不然某個排程默默掛掉，
    網站看起來還是好好的，只是數字停在上禮拜。null＝本來就不是定期更新的。 */
-const STALE={"events.json":3,"px.json":4,"betas.json":4,"priced.json":3,
+const STALE={"events.json":3,"px.json":4,"betas.json":4,"priced.json":3,"policy.json":4,
              "regime.json":10,"reviews.json":null,"curated.json":null,"changelog.json":null};
 function ageDays(gen){
   const s=String(gen||"").slice(0,10);
@@ -1752,7 +1947,7 @@ function openDay(ds,evs,focus){
   $("dTitle").textContent=`${d.getMonth()+1} 月 ${d.getDate()} 日`;
   $("dSub").textContent=`${d.getFullYear()} · 週${w} · ${diff===0?"今天":diff>0?`還有 ${diff} 天`:`${-diff} 天前`}`;
   const order=evs.slice().sort((a,b)=>(b.title===focus)-(a.title===focus)||score(b).s-score(a).s);
-  $("dBody").innerHTML=order.map(e=>{
+  $("dBody").innerHTML=order.map((e,bi)=>{
     const sc=score(e),ai=assetImpact(e),c=CAT[e.cat]||CAT.ism,ss=session(e);
     const xx=expectOf(e), mm=metricsOf(e);
     const mTab=mm.length?(`<table class="mtab"><tr><th>指標</th><th>市場預期</th><th>實際</th><th>差異</th></tr>`
@@ -1785,7 +1980,7 @@ function openDay(ds,evs,focus){
       <i style="${v>=0?`left:50%;width:${wd}%`:`right:50%;width:${wd}%`};background:${v>=0?"var(--dn)":"var(--up)"}"></i></div></div>`;}).join("");
     const ast=ASSETS.map(a=>{const v=ai.out[a.k];
       return `<div class="acell"><div class="an">${a.n}</div><div class="av" style="color:${v>.15?"var(--up)":v<-.15?"var(--dn)":"var(--tx3)"}">${v>0?"+":""}${v.toFixed(1)}</div></div>`;}).join("");
-    const cks=(e.checks||[]).map(c=>`<div class="chk"><b>${esc(c[0])}</b><br><span class="src">${esc(c[1])}</span></div>`).join("");
+    const cks=checksOf(e).map(c=>`<div class="chk"><b>${esc(c[0])}</b><br><span class="src">${esc(c[1])}</span></div>`).join("");
     return `<div class="block">
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:6px">${ring(sc.s)}
         <div><div style="font-size:16px;font-weight:600">${esc(e.title)} ${e.est?'<span class="est">≈</span>':""}</div>
@@ -1814,16 +2009,20 @@ function openDay(ds,evs,focus){
       <div class="note">相對強弱，不是預測漲跌幅。絕對值大的就是這個事件真正會打到的地方。</div>
 
       ${chainHTML(e)}
+      ${policyHTML(e)}
       ${histHTML(e)}
       ${viewsHTML(e)}
       ${readingHTML(e)}
 
-      ${cks&&diff>=0?`<h4 style="margin-top:16px">當天怎麼判斷大不大</h4>${cks}`:""}
-      ${diff<0?reviewForm(e):""}
+      ${cks?`<h4 style="margin-top:16px">${diff>=0?"當天怎麼判斷大不大":"當時該看的是這幾項"}</h4>${cks}`
+        +(diff<0?`<div class="note">事後看這幾項，是為了檢查自己當時有沒有讀對地方——`
+          +`數據對了但看錯分項，方向對了也賺不到。</div>`:""):""}
+      ${diff<0?reviewForm(e,bi):""}
     </div>`;
   }).join("");
   $("dBody").querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{
-    const k=decodeURIComponent(b.dataset.save),g=i=>{const el=$("rv_"+i);return el?el.value.trim():"";};
+    const k=decodeURIComponent(b.dataset.save),bi=b.dataset.bi||"0";
+    const g=i=>{const el=$("rv"+bi+"_"+i);return el?el.value.trim():"";};
     // 表單只有九格，但 routine 還寫了 sigma、metrics、driver、views。
     // 直接整筆覆蓋的話，使用者按一下「存入複盤」就會把那些靜默清掉——
     // 尤其 sigma 沒了校準會退回寫死的 0.9%，而且畫面上完全看不出來。
@@ -1862,6 +2061,8 @@ function renderRegime(){
 function updateRegimeText(){
   const s=R.shock>0?"通膨主導":R.shock<0?"成長主導":"混合衝擊";
   $("regimetxt").textContent=`${s}／波動${R.vol>=1?"低分位":R.vol>=.4?"中位":"高分位"}`;
+  const pl=$("poltxt"); if(pl){const t=policyLine();pl.textContent=t;
+    pl.classList.toggle("hide",!t);$("polsep").classList.toggle("hide",!t);}
 }
 function renderMatrix(){
   const rows=["fomc_sep","cpi","nfp","gdp","earn3","cloud","refund","election","quad"];
@@ -1937,16 +2138,20 @@ function renderReview(){
      <span class="v" style="color:${a.adj>1.05?"#FF5C5C":a.adj<0.95?"#4CC2E0":"var(--tx3)"}">×${a.adj.toFixed(2)}</span></div>`).join("")
     :'<div class="log">還沒有複盤資料。累積三筆以上，該類型的分數才會開始被校準，而且樣本越少調整幅度越保守。</div>';
 }
-function reviewForm(e){
+/* 同一天可能有好幾個事件，抽屜會把它們一個接一個畫出來。
+   欄位 id 如果只寫 rv_cons，第二個事件的表單就會跟第一個撞名，
+   而 getElementById 永遠回傳第一個——按第二個事件的「存入複盤」會把第一個事件的
+   數字存進第二個事件的紀錄裡。所以每個區塊要帶自己的序號。 */
+function reviewForm(e,bi){
   const k=rkey(e),r=REVIEW[k]||{};
-  const f=(id,lab,ph,v)=>`<div class="fld"><label>${lab}</label><input id="rv_${id}" placeholder="${ph}" value="${esc(v||"")}"></div>`;
+  const f=(id,lab,ph,v)=>`<div class="fld"><label>${lab}</label><input id="rv${bi}_${id}" placeholder="${ph}" value="${esc(v||"")}"></div>`;
   let out=`<h4 style="margin-top:18px">複盤：實際 vs 預期</h4><div class="frm">
    ${f("cons","共識預期","例 0.2%",r.cons)}${f("act","實際公布","例 0.4%",r.act)}
    ${f("z","意外 z 分數","正=高於預期",r.z)}${f("spx","標普當日 %","例 -0.8",r.spx)}
    ${f("ndx","那斯達克 %","例 -1.3",r.ndx)}${f("y10","10Y 變動 bp","例 +7",r.y10)}
    ${f("dxy","美元 %","",r.dxy)}${f("gld","黃金 %","",r.gld)}
-   </div><div style="grid-column:1/-1;margin-top:8px"><div class="fld"><label>備註（法說重點、盤中轉折）</label><input id="rv_memo" value="${esc(r.memo||"")}"></div></div>
-   <button class="btn" data-save="${encodeURIComponent(k)}" style="margin-top:12px">存入複盤</button>`;
+   </div><div style="grid-column:1/-1;margin-top:8px"><div class="fld"><label>備註（法說重點、盤中轉折）</label><input id="rv${bi}_memo" value="${esc(r.memo||"")}"></div></div>
+   <button class="btn" data-save="${encodeURIComponent(k)}" data-bi="${bi}" style="margin-top:12px">存入複盤</button>`;
   if(r.act||r.spx){
     const v=verdict(e,r);
     out+=`<div class="verdict v${v.k}"><span class="vt">${v.t}</span>${v.d}

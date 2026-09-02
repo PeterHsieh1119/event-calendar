@@ -12,6 +12,7 @@ import os
 import re
 import sys
 import datetime as dt
+import difflib
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
@@ -141,6 +142,81 @@ def check_event(f, e, i, cats, require_t):
         err(f, "「%s」t 格式不合法：%r，只接受 HH:MM / AMC / BMO / TW / TPE:HH:MM"
             % (title, t))
     return title
+
+
+def check_policy():
+    """政策路徑：數字錯了看不出來，只會變成一個很有說服力的錯誤答案。
+
+    這裡擋三件事：FOMC 排程兩邊走鐘（機率整個算錯）、隱含利率跑到不合理的區間、
+    以及每日序列斷掉（斷了就補不回來，到期合約 Yahoo 不給歷史價）。"""
+    pol = load("policy.json", {})
+    if not isinstance(pol, dict) or not pol.get("hist"):
+        warn("policy.json", "還沒有政策路徑資料（Actions 還沒跑過的話是正常的）")
+        return
+
+    # FOMC 排程必須跟 index.html 的 FOMC 表一致
+    try:
+        with open(INDEX, encoding="utf-8") as fh:
+            src = fh.read()
+    except OSError:
+        src = ""
+    def years(block):
+        """{年: [...]} 的區塊裡，每個年份底下的所有 MM-DD。
+        不能用 (.*?)\\] 去圈年份的陣列——裡面還有一層 [...]，非貪婪會停在第一個 ]。
+        改成用年份鍵本身切段。"""
+        out = set()
+        keys = [(mm.start(), mm.group(1)) for mm in re.finditer(r"(\d{4})\s*:\s*\[", block)]
+        for i, (pos, yr) in enumerate(keys):
+            end = keys[i + 1][0] if i + 1 < len(keys) else len(block)
+            for md in re.findall(r'"(\d{2}-\d{2})"', block[pos:end]):
+                out.add("%s-%s" % (yr, md))
+        return out
+
+    m = re.search(r"const FOMC=\{(.*?)\};", src, re.S)
+    web = years(m.group(1)) if m else set()
+    try:
+        with open(os.path.join(ROOT, "scripts", "policy_path.py"), encoding="utf-8") as fh:
+            psrc = fh.read()
+    except OSError:
+        psrc = ""
+    mp = re.search(r"FOMC = \{(.*?)\n\}", psrc, re.S)
+    py = years(mp.group(1)) if mp else set()
+    if not web or not py:
+        warn("policy.json", "抓不到其中一邊的 FOMC 排程，這一輪跳過對照")
+    if web and py:
+        if web != py:
+            err("scripts/policy_path.py",
+                "FOMC 排程跟 index.html 的 FOMC 表對不上，升降息機率會整個算錯。"
+                "只在 py：%s；只在 html：%s"
+                % ("、".join(sorted(py - web)) or "無", "、".join(sorted(web - py)) or "無"))
+        else:
+            print("  policy.json：FOMC 排程兩邊一致（%d 次會議）" % len(py))
+
+    effr = pol.get("effr")
+    if not isinstance(effr, (int, float)) or not (0 <= effr <= 15):
+        err("policy.json", "有效聯邦資金利率 %r 不在 0~15%% 的合理區間" % effr)
+    for r in pol.get("meetings") or []:
+        if not valid_date(r.get("date")):
+            err("policy.json", "會議日期不合法：%r" % r.get("date"))
+        rate = r.get("rate")
+        if not isinstance(rate, (int, float)) or not (0 <= rate <= 15):
+            err("policy.json", "%s 的隱含利率 %r 不在合理區間" % (r.get("date"), rate))
+        chg = r.get("chgBp")
+        if isinstance(chg, (int, float)) and abs(chg) > 150:
+            err("policy.json",
+                "%s 單次會議隱含變動 %.1fbp（超過六碼），迴歸或合約對應大概錯了"
+                % (r.get("date"), chg))
+
+    days = sorted(pol["hist"])
+    bad = [d for d in days if not valid_date(d)]
+    if bad:
+        err("policy.json", "每日序列有不合法的日期：%s" % "、".join(bad[:3]))
+    # 序列是逐日累積出來的，補不回來，所以縮短本身就是警訊
+    if len(days) < 5:
+        warn("policy.json", "每日序列只有 %d 天，事件當日的重定價還算不出來" % len(days))
+    else:
+        gap = (dt.date.fromisoformat(days[-1]) - dt.date.fromisoformat(days[0])).days
+        print("  policy.json：%d 個交易日（%s 起，跨 %d 天）" % (len(days), days[0], gap))
 
 
 def check_routines(cats):
@@ -307,6 +383,24 @@ def main():
                 v = str(it.get(fld, "")).strip()
                 if v and not NUM_RE.match(v):
                     err("reviews.json", "「%s」%s 不是純數值字串：%r" % (t, fld, v))
+            if titles and t not in titles:
+                # 複盤綁不上事件＝這一整趟白做，而且畫面上完全看不出來。
+                # 最常見的原因不是打錯字，是「近義字」——首度 vs 首次、
+                # 物價指數 vs 物價指標。人眼掃過去不會發現，所以要把最像的那個印出來。
+                near = difflib.get_close_matches(t, sorted(titles), n=1, cutoff=0.75)
+                hint = ("；最接近的是「%s」" % near[0]) if near else ""
+                age = None
+                if valid_date(it.get("date")):
+                    age = (today - dt.date.fromisoformat(it["date"])).days
+                # curated.json 的一次性事件過 60 天會被清掉，那時候舊複盤對不上是正常的
+                if age is not None and age > 45:
+                    warn("reviews.json",
+                         "「%s」對不上任何事件，但它已經是 %d 天前的紀錄，"
+                         "同名事件多半已經被清理程序移除了%s" % (t, age, hint))
+                else:
+                    err("reviews.json",
+                        "「%s」在 events/curated 裡找不到同名事件，"
+                        "這筆複盤不會顯示在網站上，等於白做%s" % (t, hint))
         print("  reviews.json：%d 筆" % len(items))
 
     rg = load("regime.json", {})
@@ -389,6 +483,7 @@ def main():
             warn("betas.json", "沒有任何資產通過品質門檻，前端會整組退回先驗")
         print("  betas.json：%d 個資產，%d 個採用" % (len(bt["assets"]), ok_assets))
 
+    check_policy()
     check_routines(cats)
 
     cl = load("changelog.json", [])

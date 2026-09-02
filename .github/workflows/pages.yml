@@ -50,7 +50,8 @@ jobs:
       - name: service worker 語法
         run: node --check sw.js
       - name: 抓取程式語法
-        run: python -m py_compile scripts/fetch_events.py scripts/rolling_beta.py scripts/validate_data.py
+        run: |
+          python -m py_compile scripts/fetch_events.py scripts/rolling_beta.py \n            scripts/policy_path.py scripts/validate_data.py
 
   deploy:
     needs: validate
