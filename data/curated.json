@@ -1,6 +1,16 @@
 {
- "generated": "2026-09-06T13:30:00Z",
+ "generated": "2026-09-06T23:17:38Z",
  "items": [
+  {
+   "date": "2026-09-21",
+   "kind": "R",
+   "cat": "quad",
+   "title": "S&P 500 季度成分股調整生效（納入 Bloom Energy／Illumina／Everpure，剔除 Molson Coors／The Trade Desk／Builders FirstSource）",
+   "est": false,
+   "t": "BMO",
+   "note": "S&P Global 官方公告（9/4）：9/21 開盤前生效，BE、ILMN、P 納入 S&P 500，TAP、TTD、BLDR 剔除並降至 SmallCap 600。指數型基金被動追蹤通常在 9/18（當週五、也是四巫日）收盤的再平衡拍賣裡集中執行，成交量與價格衝擊多半發生在 9/18 收盤，9/21 只是正式生效日。合法清單裡沒有「指數調整」專用代碼，選最接近的 quad（同樣是被動資金流驅動、不改變現金流或折現率的風險溢酬事件）；與 9/18 的四巫日本身是不同事件（一個是選擇權╱期貨到期，一個是指數成分變動），故另立一筆而非合併。",
+   "src": "S&P Global 官方新聞稿 2026-09-04（press.spglobal.com，第一級）"
+  },
   {
    "date": "2026-09-10",
    "kind": "D",
