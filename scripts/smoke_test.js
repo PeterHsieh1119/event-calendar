@@ -698,6 +698,51 @@ catKeys.forEach((k) => {
     h1.indexOf(encodeURIComponent("2026-08-28|乙事件")) >= 0);
 }
 
+/* ── 20. 政策路徑：往回的錨到期時，要能從未來的月份往回解 ──
+   policy_path.py 原本只肯用「已經過去、而且沒開會」的月份當錨。那種月份的合約
+   一到月底就到期，Yahoo 就不給價了，於是每逢「當月有會議、上一個沒開會的月份剛到期」
+   整條每日序列就會靜靜停住：generated 每天照更新，asof 卻不動。
+   2026-09-01 之後真的斷了四個交易日才被發現，而這個序列是補不回來的。
+   這裡用合成價格驗證「往回找不到錨」時仍然解得出當下的有效利率與整條路徑。 */
+{
+  const { execFileSync } = require("child_process");
+  const py = [
+    "import importlib.util, json, datetime as dt",
+    "spec = importlib.util.spec_from_file_location('pp', " +
+      JSON.stringify(path.join(ROOT, "scripts", "policy_path.py")) + ")",
+    "pp = importlib.util.module_from_spec(spec); spec.loader.exec_module(pp)",
+    // 9 月合約：9/16 會議，會前 3.63%、會後 3.88%（升一碼）。
+    // 10、11 月都是 3.88%。八月（往回唯一沒開會的月份）的合約刻意不給，模擬到期。
+    "sep = 100 - (16 * 3.63 + 14 * 3.88) / 30",
+    "px = {'ZQU26.CBT': {}, 'ZQV26.CBT': {}, 'ZQX26.CBT': {}}",
+    "for d in ('2026-09-02', '2026-09-25'):",
+    "    px['ZQU26.CBT'][d] = sep",
+    "    px['ZQV26.CBT'][d] = 100 - 3.88",
+    "    px['ZQX26.CBT'][d] = 100 - 3.88",
+    "out = {}",
+    "for d in ('2026-09-02', '2026-09-25'):",
+    "    dd = dt.date(int(d[:4]), int(d[5:7]), int(d[8:]))",
+    "    e, p = pp.solve_day(px, d, pp.meeting_list(dd))",
+    "    out[d] = {'effr': e, 'sep': p.get('2026-09-16'), 'n': len(p)}",
+    "print(json.dumps(out))",
+  ].join("\n");
+  let sol = null;
+  try {
+    sol = JSON.parse(execFileSync("python3", ["-c", py], { encoding: "utf8" }));
+  } catch (e) {
+    ok("policy_path.py 跑得起來", false, String((e && e.message) || e).slice(0, 200));
+  }
+  if (sol) {
+    const pre = sol["2026-09-02"], post = sol["2026-09-25"];
+    ok("往回的錨到期時仍然解得出有效利率（斷掉就補不回來）",
+      pre.effr !== null, "得到 null，序列會從這天起停住");
+    eq("會議前解出來的是會前利率", pre.effr, 3.63);
+    eq("會議之後解出來的是會後利率", post.effr, 3.88);
+    eq("同時解得出這次會議的會後隱含利率", pre.sep, 3.88);
+    ok("整條路徑不是只有一次會議", pre.n >= 2, "只解出 " + pre.n + " 次");
+  }
+}
+
 /* ── 報告 ── */
 console.log("");
 if (fails.length) {

@@ -113,6 +113,57 @@ def meeting_list(today, ahead=8):
     return out[:ahead]
 
 
+def anchor_forward(price, day):
+    """往回找不到錨的時候，改用**未來**最近一個沒開會的月份往回解出當下的有效利率。
+
+    為什麼需要這條：往回的錨只能是已經過去的月份，而過去的月份合約已經到期，
+    Yahoo 就不給價了。於是每逢「當月有會議、而上一個沒開會的月份剛到期」，
+    整個序列就會從那天起靜靜地停住——2026-09-01 之後就是這樣斷了四個交易日，
+    generated 每天照更新，asof 卻一直停在 09-01，閘門也看不出來。
+
+    未來的月份不會有這個問題（合約還在掛），代價是要多解幾條方程式：
+
+        m0 … A，A 是沒有會議的月份，它的合約價直接就是那個月的利率。
+        往回走，每個只有一次會議的月份用
+            100 − P = (d1/D)·r_前 + (d2/D)·r_後
+        由已知的 r_後 解出 r_前，一路解回 day 所在的月份。
+
+    2026、2027 兩年的 2、5、8、11 月都沒有會議，所以往前三個月內一定找得到 A。
+    抓不到就回 None，讓呼叫端跳過那一天——寧可少一天，不要寫一個猜的數字。
+    """
+    y, m = int(day[:4]), int(day[5:7])
+    chain = []
+    for _ in range(6):
+        got = meetings_in(y, m)
+        if not got:
+            break
+        if len(got) != 1:
+            return None          # 一個月兩次會議解不開
+        chain.append((y, m))
+        y, m = (y + (m == 12), (m % 12) + 1)
+    else:
+        return None              # 六個月內都有會議，不該發生
+    if not chain:
+        return None              # 當月就沒有會議，本來就走得通往回的錨
+    pa = price(y, m)
+    if pa is None:
+        return None
+    after = 100.0 - pa           # 錨定月份整個月的利率＝它前一次會議之後的利率
+    post_of = {}
+    for cy, cm in reversed(chain):
+        p = price(cy, cm)
+        if p is None:
+            return None
+        d1 = int(meetings_in(cy, cm)[0][3:])   # 決議隔天生效，會議當天算舊利率
+        D = days_in(cy, cm)
+        d2 = D - d1
+        post_of[(cy, cm)] = after
+        after = ((100.0 - p) * D - d2 * after) / d1
+    # 迴圈結束時 after ＝ day 所在月份的「會前」利率
+    md0 = int(meetings_in(*chain[0])[0][3:])
+    return round(post_of[chain[0]] if int(day[8:]) > md0 else after, 4)
+
+
 def solve_day(px, day, meets):
     """算出某一天收盤時，市場對每一次會議之後的政策利率定價。
 
@@ -137,6 +188,9 @@ def solve_day(px, day, meets):
         if p is not None:
             effr = round(100.0 - p, 4)
             break
+    if effr is None:
+        # 往回的月份合約已經到期，Yahoo 不給價了——改從未來的月份往回解
+        effr = anchor_forward(price, day)
     if effr is None:
         return None, {}
 

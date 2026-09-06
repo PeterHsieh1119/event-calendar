@@ -1,6 +1,46 @@
 {
- "generated": "2026-08-31T23:30:00Z",
+ "generated": "2026-09-06T13:30:00Z",
  "items": [
+  {
+   "date": "2026-09-10",
+   "kind": "D",
+   "cat": "ppi",
+   "title": "PPI",
+   "est": false,
+   "t": "08:30",
+   "note": "日期更正：規則引擎把 PPI 推成 CPI 的隔天（9/12），那天是星期六，不可能公布。BLS 九月排程確認 8 月 PPI 為 9/10（週四）08:30、8 月 CPI 為 9/11（週五）08:30——這一次 PPI 在 CPI 之前一天，不是之後。兩天連著公布，是 9/16 FOMC 前最後一組物價數據；上游價格若先於 CPI 轉熱，市場會提前把 CPI 的分布往上挪。（規則引擎「CPI 隔天」的推法本身不只這個月會偏，值得之後一併修。）",
+   "src": "BLS 2026 年 9 月發布排程（bls.gov/schedule/2026/09_sched_list.htm，搜尋摘要，未讀原文——bls.gov 被 egress proxy 擋下）"
+  },
+  {
+   "date": "2026-09-16",
+   "kind": "D",
+   "cat": "retail",
+   "title": "零售銷售",
+   "est": false,
+   "t": "08:30",
+   "note": "日期更正：規則引擎用「當月第三個週二」推成 9/15，普查局官方排程為 9/16（週三）08:30，差一天。這一天同時是 FOMC 決議日（14:00），零售銷售是委員會最後拿到的消費面數據，盤前先打一次分子端、下午再打一次分母端，兩段要分開讀。",
+   "src": "美國普查局月度零售貿易發布排程（census.gov/retail/release_schedule.html，搜尋摘要，未讀原文）"
+  },
+  {
+   "date": "2026-09-30",
+   "kind": "N",
+   "cat": "earn2",
+   "title": "MU 財報",
+   "est": false,
+   "t": "AMC",
+   "note": "日期更正：規則引擎以上次實際日 +91 天推到 9/24，美光 8/26 官方新聞稿已確認 FY26 第四季財報於 9/30（週三）美股收盤後公布、法說 14:30 山區時間（美東 16:30），差 6 天。公司自己給的第四季指引是營收約 500 億美元、非 GAAP EPS 約 31 美元，記憶體循環的位置由它定調，牽動整條 AI 供應鏈的分子端。這一天盤前還有 8 月 PCE（08:30）與 ADP（08:15），盤前分母端、盤後分子端，同一天兩端都會被打到。",
+   "src": "Micron 官方新聞稿 2026-08-26「Micron Technology to Report Fiscal Fourth Quarter Results on September 30, 2026」（investors.micron.com／GlobeNewswire，經搜尋摘要，未讀原文）"
+  },
+  {
+   "date": "2026-09-30",
+   "kind": "D",
+   "cat": "pce",
+   "title": "PCE 物價指數",
+   "est": false,
+   "t": "08:30",
+   "note": "日期確認（不是改期）：規則引擎推的是當月最後一個營業日，剛好也是 9/30，這裡只把 est 從推測改成確認。BEA 在 8/26 公布 7 月 PCE 時就載明 8 月數據於 9/30 公布，多家財經排程站一致。這是 9/16 FOMC 之後第一份核心通膨讀數，也是 12/9 會議前的第一個分母端錨點。",
+   "src": "BEA 8/26 新聞稿載明的下次發布日（見同檔 2026-08-26 PCE 那筆的第一級來源）／多家財經排程站交叉驗證（第三級，搜尋摘要，未讀原文）"
+  },
   {
    "date": "2026-08-26",
    "kind": "D",
@@ -58,8 +98,8 @@
    "title": "Apple 秋季發表會",
    "est": false,
    "t": "13:00",
-   "note": "Apple 8/26 發出邀請函，主題「Surprise and shine」，9/9 上午 10:00 PT（美東 13:00）於 Apple Park 的 Steve Jobs Theater 舉行，是新任執行長 John Ternus 的第一場發表會。首款折疊機 iPhone Fold／Ultra 與 iPhone 18 Pro 亮相，搭載首顆 2nm 手機 SoC A20 Pro；折疊機首季產能傳僅 50–100 萬支，良率與備貨節奏會直接牽動台系供應鏈與費半。",
-   "src": "Apple 官方邀請函，經 Numerama、Deccan Herald、Wccftech 等多家同步轉述（第三級，未直接讀 apple.com）"
+   "note": "Apple 8/26 發出邀請函，主題「Surprise and shine」，9/9 上午 10:00 PT（美東 13:00）於 Apple Park 的 Steve Jobs Theater 舉行，是新任執行長 John Ternus 的第一場發表會。首款折疊機 iPhone Fold／Ultra 與 iPhone 18 Pro 亮相，搭載首顆 2nm 手機 SoC A20 Pro；折疊機首季產能傳僅 50–100 萬支，良率與備貨節奏會直接牽動台系供應鏈與費半。【歷史脈絡】這是年度事件，px.json 只有兩年，網站的「歷史反應」樣本不足以形成分布，所以手動補：2025-09-09（iPhone 17／Awe Dropping）當日那斯達克 100 +0.28%、費半 +0.18%；2024-09-09（iPhone 16／It's Glowtime）+1.29%／+2.15%。兩次都不是指數級事件——2024 那天的漲幅是當週大盤反彈的一部分，不該歸因給發表會本身。要看的是台系供應鏈個股與費半的次日反應，不是發表會當天的指數；這也是 cat 給 product（B=18）而不是往上抬的理由。",
+   "src": "Apple 官方邀請函，經 Numerama、Deccan Herald、Wccftech 等多家同步轉述（第三級，未直接讀 apple.com）／歷史脈絡：發表會日期經 Apple Newsroom、CNBC 報導確認（第三級，搜尋摘要），當日指數變動由 data/px.json 自算（第一手內部資料）"
   },
   {
    "date": "2026-09-06",
