@@ -125,7 +125,7 @@
 ```
 總經與政策  fomc fomc_sep minutes cpi ppi pce gdp ism retail jackson refund
 就業        nfp adp claims jolts
-非美與跨國  boj ecb opec
+非美與跨國  boj ecb cbc opec
 風險溢酬    quad opex election tariff headline
 分子端      earn1 earn2 earn3 cloud twrev product
 ```
@@ -134,6 +134,11 @@
 出口管制、突發的政策談話。它的先驗定價程度只有 0.15——依定義，
 突發的東西不會被 price in，那正是它值得被記下來的原因。
 寫這類事件時 `t` 要填**實際發生的時間**（美東 HH:MM），不要用預設值。
+
+`cbc` 是台灣央行（中央銀行理監事聯席會議），季頻，慣例落在 FOMC 點陣圖會議之後的那個
+台北日下午，規則引擎已經照這個規律推算（點陣圖會議日 +1，`est: true`），官方公布確切日期後
+再用 curated 覆蓋。它對美股指數幾乎沒有作用，打的是台股與台幣，所以 B 只有 18——
+不要拿 `boj`／`ecb` 去代替它，那兩個的傳導路徑（日圓套利、美歐利差）跟它不是同一條。
 
 就業那一組的分工：`nfp` 是非農（月，週五 08:30），`adp` 是非農前兩天的民間預覽，
 `claims` 是每週四的初領失業金，`jolts` 是職缺（月，落後約五到六週）。
