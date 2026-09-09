@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0A0E13">
+<title>舌象 RGB 量測</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg">
+<style>
+:root{
+  --bg:#0A0E13; --card:#121821; --card2:#0E141C; --line:#1E2833;
+  --fg:#E6EDF3; --dim:#8A9AAB; --dim2:#5E6E7E;
+  --acc:#4EA1FF; --ok:#3FB950; --warn:#D29922; --bad:#F85149; --purple:#A371F7;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
+body{font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  padding-bottom:calc(72px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:20;background:rgba(10,14,19,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
+header h1{margin:0;font-size:16px;font-weight:600;letter-spacing:.5px}
+header .sub{color:var(--dim2);font-size:11px;margin-top:2px}
+main{padding:14px}
+.view{display:none} .view.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 10px;font-size:14px;font-weight:600;color:var(--fg)}
+.card h2 .tag{float:right;font-weight:400;font-size:11px;color:var(--dim2)}
+p.note{color:var(--dim);font-size:12.5px;margin:8px 0 0}
+p.note b{color:var(--fg);font-weight:600}
+button{font:inherit;font-size:14px;border:0;border-radius:10px;padding:11px 14px;background:var(--acc);
+  color:#04121F;font-weight:600;width:100%;margin-top:8px;cursor:pointer}
+button.sec{background:var(--card2);color:var(--fg);border:1px solid var(--line);font-weight:500}
+button.danger{background:var(--card2);color:var(--bad);border:1px solid #3A2226}
+button:disabled{opacity:.45}
+.row{display:flex;gap:8px} .row>button{margin-top:8px}
+.stage{position:relative;width:100%;aspect-ratio:3/4;background:#000;border-radius:12px;overflow:hidden;
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.stage canvas.fit{object-fit:contain}
+.stage .hint{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:12px;color:#CFE;
+  text-shadow:0 1px 4px #000;padding:0 12px;pointer-events:none}
+svg.guide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;border:1px solid var(--line);
+  background:var(--card2);color:var(--dim);margin:0 6px 6px 0}
+.pill.ok{color:var(--ok);border-color:#1D3A24} .pill.warn{color:var(--warn);border-color:#3A3018}
+.pill.bad{color:var(--bad);border-color:#3A2226} .pill.acc{color:var(--acc);border-color:#16324F}
+.verdict{border-radius:14px;padding:16px;text-align:center;border:1px solid var(--line);background:var(--card2)}
+.verdict .big{font-size:44px;font-weight:700;letter-spacing:-1px;line-height:1.1;font-variant-numeric:tabular-nums}
+.verdict .lbl{font-size:12px;color:var(--dim);margin-bottom:4px}
+.verdict .say{font-size:15px;font-weight:600;margin-top:8px}
+.verdict.hit{border-color:#4A2A5A;background:linear-gradient(180deg,#1B1226,#0E141C)}
+.verdict.hit .big{color:var(--purple)} .verdict.hit .say{color:var(--purple)}
+.verdict.miss .big{color:var(--ok)} .verdict.miss .say{color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right}
+td:first-child,th:first-child{text-align:left;color:var(--dim)}
+tr:last-child td{border-bottom:0}
+th{color:var(--dim2);font-weight:500;font-size:11px}
+.sw{display:inline-block;width:26px;height:14px;border-radius:4px;border:1px solid #2A3542;vertical-align:-2px}
+label.fld{display:block;margin-top:12px;font-size:12px;color:var(--dim)}
+input[type=text],input[type=number],textarea,select{width:100%;margin-top:5px;background:var(--card2);color:var(--fg);
+  border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;font-size:14px}
+textarea{min-height:60px;resize:vertical}
+input[type=range]{width:100%;margin-top:6px;accent-color:var(--acc)}
+.seg{display:flex;background:var(--card2);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:6px}
+.seg button{margin:0;border-radius:0;background:transparent;color:var(--dim);font-weight:500;font-size:13px;padding:9px 4px}
+.seg button.on{background:var(--acc);color:#04121F;font-weight:600}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:rgba(10,14,19,.96);
+  backdrop-filter:blur(8px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{margin:0;border-radius:0;background:transparent;color:var(--dim2);font-size:11px;font-weight:500;
+  padding:9px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button.on{color:var(--acc)} nav button svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7}
+.rec{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.rec:last-child{border-bottom:0}
+.rec img{width:46px;height:61px;object-fit:cover;border-radius:7px;background:#000;flex:0 0 auto}
+.rec .m{flex:1;min-width:0}
+.rec .m .t{font-size:11px;color:var(--dim2)}
+.rec .m .v{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.rec .m .n{font-size:11.5px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec .x{color:var(--dim2);font-size:11px;padding:6px;background:none;width:auto;margin:0}
+.spark{width:100%;height:88px;display:block}
+.warnbox{border:1px solid #3A3018;background:#191509;border-radius:10px;padding:10px;font-size:12.5px;color:#E3C168;margin-top:10px}
+.warnbox.bad{border-color:#3A2226;background:#1A0E10;color:#F0918B}
+.warnbox ul{margin:6px 0 0;padding-left:18px} .warnbox li{margin:2px 0}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:0}
+.foot{color:var(--dim2);font-size:11px;text-align:center;padding:6px 10px 20px;line-height:1.7}
+.kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--dim);
+  background:var(--card2);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>舌象 RGB 量測 <span id="calChip" class="pill" style="float:right;margin:0">未校色</span></h1>
+  <div class="sub">B/R 比值 → 青紫舌（瘀血傾向）初篩　·　非醫療器材</div>
+</header>
+
+<main>
+
+<!-- ══════════════ 拍攝 ══════════════ -->
+<section id="v-cap" class="view on">
+
+  <div id="stepLive">
+    <div class="card" style="padding:10px">
+      <div class="stage" id="liveStage">
+        <video id="video" playsinline autoplay muted></video>
+        <svg class="guide" viewBox="0 0 300 400" preserveAspectRatio="none">
+          <defs><mask id="mk"><rect width="300" height="400" fill="#fff"/>
+            <ellipse cx="150" cy="208" rx="90" ry="96" fill="#000"/></mask></defs>
+          <rect width="300" height="400" fill="#000" opacity=".45" mask="url(#mk)"/>
+          <ellipse cx="150" cy="208" rx="90" ry="96" fill="none" stroke="#4EA1FF" stroke-width="1.6" stroke-dasharray="5 4"/>
+          <line x1="150" y1="100" x2="150" y2="128" stroke="#4EA1FF" stroke-width="1" opacity=".5"/>
+        </svg>
+        <div class="hint" id="liveHint">把舌頭伸出來填滿橢圓，臉靠近一點</div>
+      </div>
+      <div class="row">
+        <button id="btnShot">拍照量測</button>
+        <button class="sec" id="btnPick" style="flex:0 0 38%">選照片</button>
+      </div>
+      <div class="row">
+        <button class="sec" id="btnFlip">切換鏡頭</button>
+        <button class="sec" id="btnLock">鎖白平衡</button>
+      </div>
+      <p class="note">拍法會直接決定數字準不準：<b>固定同一個光源、同一個距離、同一個時間</b>。
+      窗邊自然光（陰天散射光最好）比黃燈日光燈穩定得多。別開閃光燈，別在正上方光源下拍（舌面會反光）。</p>
+    </div>
+    <div class="card">
+      <h2>要量哪一種 <span class="tag">會記在紀錄裡</span></h2>
+      <div class="seg" id="segSite">
+        <button class="on" data-site="face">舌面（舌質顏色）</button>
+        <button data-site="under">舌下（舌下絡脈）</button>
+      </div>
+      <p class="note">中醫看瘀血，<b>舌下絡脈</b>（舌頭捲起來看下面兩條靜脈）的怒張青紫，通常比舌面顏色更早、更明顯。
+      兩個都拍，日後可以對照哪一個對你比較敏感。</p>
+    </div>
+  </div>
+
+  <div id="stepAdjust" style="display:none">
+    <div class="card" style="padding:10px">
+      <div class="stage" id="adjStage">
+        <canvas id="shotCv" class="fit"></canvas>
+        <canvas id="ovCv" class="fit"></canvas>
+        <div class="hint">拖曳移動取樣區　·　只框舌頭，別框到嘴唇和牙齒</div>
+      </div>
+      <label class="fld">取樣橢圓大小 <span id="szVal" style="float:right;color:var(--fg)"></span>
+        <input type="range" id="szR" min="8" max="46" value="30"></label>
+      <label class="fld">高矮 <span id="arVal" style="float:right;color:var(--fg)"></span>
+        <input type="range" id="arR" min="60" max="180" value="110"></label>
+      <div class="row"><button id="btnRun">分析這張</button>
+        <button class="sec" id="btnBack" style="flex:0 0 34%">重拍</button></div>
+      <div style="margin-top:8px"><label style="font-size:12.5px;color:var(--dim)">
+        <input type="checkbox" id="mirChk" style="width:auto;vertical-align:-2px"> 左右對調（別人幫你拍的照片勾這個）</label></div>
+    </div>
+  </div>
+
+  <div id="stepResult" style="display:none">
+    <div id="resVerdict"></div>
+    <div class="card" id="resQuality" style="display:none"></div>
+    <div class="card"><h2>色彩量測值 <span class="tag" id="resCalTag"></span></h2>
+      <div id="resTable"></div></div>
+    <div class="card"><h2>分區 B/R <span class="tag">看局部瘀點</span></h2>
+      <div id="resZone"></div>
+      <p class="note">邊緣或舌尖單獨偏高，常見於局部瘀斑；整片一起高才比較像全舌青紫。</p></div>
+    <div class="card">
+      <h2>存進紀錄</h2>
+      <label class="fld">備註（今天的狀況、光源、時間點）
+        <textarea id="noteIn" placeholder="例：早上空腹、窗邊陰天光、經期第2天"></textarea></label>
+      <button id="btnSave">存檔</button>
+      <button class="sec" id="btnAgain">再拍一張</button>
+    </div>
+  </div>
+
+</section>
+
+<!-- ══════════════ 紀錄 ══════════════ -->
+<section id="v-hist" class="view">
+  <div class="card"><h2>B/R 走勢 <span class="tag" id="trendTag"></span></h2>
+    <svg class="spark" id="spark" viewBox="0 0 320 88" preserveAspectRatio="none"></svg>
+    <p class="note" id="trendNote"></p></div>
+  <div class="card"><h2>紀錄 <span class="tag" id="recCount"></span></h2>
+    <div id="recList"></div></div>
+  <div class="card"><h2>匯出／清除</h2>
+    <div class="row"><button class="sec" id="btnCsv">匯出 CSV</button>
+      <button class="sec" id="btnJson">匯出 JSON</button></div>
+    <button class="danger" id="btnWipe">清除所有紀錄</button>
+    <p class="note">所有照片與數據<b>只存在這支手機的瀏覽器裡</b>，不會上傳到任何地方。清快取或換手機就沒了，重要的話定期匯出。</p></div>
+</section>
+
+<!-- ══════════════ 校色 ══════════════ -->
+<section id="v-cal" class="view">
+  <div class="card"><h2>目前狀態</h2><div id="calState"></div>
+    <p class="note">沒有校色的 B/R，量到的是<b>光源色溫</b>多過舌頭。暖黃燈會把 B/R 壓到 0.4 出頭，冷白 LED 會推到 0.75 以上——
+    同一條舌頭。所以先用灰卡把白平衡固定住，色卡到手再做完整校色。</p></div>
+
+  <div class="card"><h2>① 灰卡白平衡 <span class="tag">現在就能做</span></h2>
+    <p class="note">拿一張<b>中性灰或純白、不反光</b>的東西（灰卡最好，A4 影印紙、白色瓷盤也行），
+    放在跟舌頭同一個位置、同一個光線下拍一張，然後點一下畫面上那塊灰／白。</p>
+    <button class="sec" id="btnGrayShot">拍灰卡</button>
+    <button class="sec" id="btnGrayPick">從相簿選</button>
+    <div id="grayWrap" style="display:none;margin-top:10px">
+      <div class="stage" style="aspect-ratio:4/3"><canvas id="grayCv" class="fit"></canvas>
+        <div class="hint">點一下灰卡中央</div></div>
+      <div id="grayOut"></div>
+    </div></div>
+
+  <div class="card"><h2>② 24 色卡完整校色 <span class="tag">買到色卡再用</span></h2>
+    <p class="note">支援 X-Rite / Calibrite <b>ColorChecker Classic（24 色）</b>或任何相同排版的複製品。
+    把色卡放在舌頭旁邊、同一張照片裡拍下來，依序點<b>四個角落的色塊中心</b>：
+    左上（深膚色）→ 右上（藍綠）→ 右下（黑）→ 左下（白）。</p>
+    <button class="sec" id="btnCcShot">拍色卡</button>
+    <button class="sec" id="btnCcPick">從相簿選</button>
+    <div id="ccWrap" style="display:none;margin-top:10px">
+      <div class="stage" style="aspect-ratio:4/3"><canvas id="ccCv" class="fit"></canvas>
+        <canvas id="ccOv" class="fit"></canvas>
+        <div class="hint" id="ccHint">點第 1 點：左上角（深膚色）</div></div>
+      <div id="ccOut"></div>
+      <button class="sec" id="btnCcUndo">重點四個角</button>
+    </div></div>
+
+  <div class="card"><h2>校色資料</h2><div id="calDump"></div>
+    <button class="danger" id="btnCalClear">清除校色</button>
+    <p class="note">改了校色之後，<b>紀錄裡的舊資料會自動用新校色重算</b>——因為每一筆都存了未校色的原始 RGB。
+    所以現在先拍起來累積，不會白拍。</p></div>
+</section>
+
+<!-- ══════════════ 設定 ══════════════ -->
+<section id="v-set" class="view">
+  <div class="card"><h2>判定規則</h2>
+    <label class="fld">B/R 用哪個色彩空間算</label>
+    <div class="seg" id="segSpace">
+      <button class="on" data-sp="srgb">sRGB 原始值</button>
+      <button data-sp="lin">線性（去 gamma）</button>
+    </div>
+    <p class="note"><b>sRGB 原始值</b>＝照片檔案裡的 0–255 直接相除，就是你想的那個比值。
+    <b>線性</b>＝把 gamma 拿掉還原成真實光量後再相除，物理上才是「藍光／紅光的能量比」。
+    線性值會比 sRGB 低很多（同一條舌頭 sRGB 0.70 ≈ 線性 0.45），兩個閾值不能混用。</p>
+    <label class="fld">判定閾值 <span id="thVal" style="float:right;color:var(--fg)"></span>
+      <input type="range" id="thR" min="30" max="120" value="70"></label>
+    <label class="fld"><input type="checkbox" id="useCalChk" checked style="width:auto;vertical-align:-2px"> 套用校色資料</label>
+  </div>
+  <div class="card"><h2>取樣過濾</h2>
+    <label class="fld">剔除離群色（ΔE 門檻） <span id="deVal" style="float:right;color:var(--fg)"></span>
+      <input type="range" id="deR" min="10" max="60" value="26"></label>
+    <p class="note">先算一次中位色，再把跟它差太多的像素丟掉（牙齒、嘴唇、口腔陰影、反光），然後重算。
+    調小＝取樣更純但樣本少，調大＝容易混到不是舌頭的東西。</p>
+  </div>
+  <div class="card"><h2>這個數字能不能信</h2>
+    <p class="note">可以信的部分：<b>同一支手機、同一個光源、同一個姿勢，你自己跟自己比</b>的變化趨勢。
+    這是有意義的，也是這個 App 真正的用途。</p>
+    <p class="note">不能信的部分：<b>0.7 這個絕對閾值</b>。它沒有經過任何臨床驗證，不同手機、不同光線算出來完全不同數量級。
+    真正的做法是：先累積 30 天以上你自己的基線，看你的分布中位數落在哪，再把閾值訂在你自己基線的偏移量上（例如中位數 +2 個標準差），
+    而不是抄一個外面的數字。等你色卡到手、白平衡鎖死之後，這個基線才會穩。</p>
+    <p class="note">另外要知道：舌診的青紫舌是<b>整體望診</b>的一環，看的是色相（偏青／偏紫／偏暗）、
+    舌下絡脈、瘀點瘀斑、還有舌體胖瘦老嫩，不是單一個 B/R 數字。這支 App 只能量顏色，量不出其他的。
+    <b>它不能診斷任何疾病，有症狀請看醫師。</b></p>
+  </div>
+  <div class="card"><h2>關於</h2>
+    <p class="note">全部運算在你手機本機上跑，沒有後端、不連網、不上傳照片。
+    加到主畫面之後可以離線使用。</p>
+  </div>
+</section>
+
+<div class="foot">舌象 RGB 量測　·　自我追蹤用途，非醫療器材，不構成診斷或治療建議</div>
+</main>
+
+<nav>
+  <button class="on" data-v="cap"><svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 012-2h2.5l1.2-2h6.6l1.2 2H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>拍攝</button>
+  <button data-v="hist"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"/><path d="M8 15l3.5-5 3 3L20 7"/></svg>紀錄</button>
+  <button data-v="cal"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M9 5v14M15 5v14M3 12h18"/></svg>校色</button>
+  <button data-v="set"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/></svg>設定</button>
+</nav>
+
+<input type="file" id="fileIn" accept="image/*" style="display:none">
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+/* ═══════════════ 色彩數學 ═══════════════ */
+const S2L = new Float64Array(256);
+for (let i = 0; i < 256; i++) { const v = i / 255; S2L[i] = v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+const s2l = v => { v = v / 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+const l2s = v => { v = Math.max(0, Math.min(1, v)); return 255 * (v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055); };
+
+function linToXyz(r, g, b) {
+  return [0.4124564 * r + 0.3575761 * g + 0.1804375 * b,
+          0.2126729 * r + 0.7151522 * g + 0.0721750 * b,
+          0.0193339 * r + 0.1191920 * g + 0.9503041 * b];
+}
+const _f = t => t > 0.008856451679 ? Math.cbrt(t) : (903.2962962 * t + 16) / 116;
+function xyzToLab(X, Y, Z) {
+  const fx = _f(X / 0.95047), fy = _f(Y / 1.0), fz = _f(Z / 1.08883);
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+function labOfLin(r, g, b) { const c = linToXyz(r, g, b); return xyzToLab(c[0], c[1], c[2]); }
+function labOfSrgb(r, g, b) { return labOfLin(s2l(r), s2l(g), s2l(b)); }
+const dE = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+
+function matVec(M, v) {
+  return [M[0][0] * v[0] + M[0][1] * v[1] + M[0][2] * v[2],
+          M[1][0] * v[0] + M[1][1] * v[1] + M[1][2] * v[2],
+          M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2]];
+}
+function mat3inv(m) {
+  const a = m[0][0], b = m[0][1], c = m[0][2], d = m[1][0], e = m[1][1], f = m[1][2],
+        g = m[2][0], h = m[2][1], i = m[2][2];
+  const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g;
+  const det = a * A + b * B + c * C;
+  if (Math.abs(det) < 1e-14) return null;
+  return [[A / det, (c * h - b * i) / det, (b * f - c * e) / det],
+          [B / det, (a * i - c * g) / det, (c * d - a * f) / det],
+          [C / det, (b * g - a * h) / det, (a * e - b * d) / det]];
+}
+/* 最小平方擬合 3x3 色彩校正矩陣：M·measured ≈ reference（都在線性空間） */
+function fitCCM(meas, ref) {
+  const XX = [[0,0,0],[0,0,0],[0,0,0]], YX = [[0,0,0],[0,0,0],[0,0,0]];
+  for (let n = 0; n < meas.length; n++) {
+    const x = meas[n], y = ref[n];
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { XX[i][j] += x[i] * x[j]; YX[i][j] += y[i] * x[j]; }
+  }
+  const inv = mat3inv(XX); if (!inv) return null;
+  const M = [[0,0,0],[0,0,0],[0,0,0]];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+    let s = 0; for (let k = 0; k < 3; k++) s += YX[i][k] * inv[k][j]; M[i][j] = s;
+  }
+  return M;
+}
+/* 解 n 元一次聯立（高斯消去，部分主元） */
+function solveLin(A, b) {
+  const n = b.length, M = A.map((r, i) => r.concat([b[i]]));
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-12) return null;
+    const t = M[c]; M[c] = M[p]; M[p] = t;
+    for (let r = 0; r < n; r++) {
+      if (r === c) continue;
+      const f = M[r][c] / M[c][c];
+      for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k];
+    }
+  }
+  return M.map((r, i) => r[n] / M[i][i]);
+}
+/* 來源四點 → 目標四點的透視變換（src 預設為單位正方形） */
+function homography(dst, src) {
+  src = src || [[0,0],[1,0],[1,1],[0,1]];
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const u = src[i][0], v = src[i][1], x = dst[i][0], y = dst[i][1];
+    A.push([u, v, 1, 0, 0, 0, -u * x, -v * x]); b.push(x);
+    A.push([0, 0, 0, u, v, 1, -u * y, -v * y]); b.push(y);
+  }
+  const h = solveLin(A, b); if (!h) return null;
+  return [[h[0], h[1], h[2]], [h[3], h[4], h[5]], [h[6], h[7], 1]];
+}
+function applyH(H, u, v) {
+  const d = H[2][0] * u + H[2][1] * v + H[2][2];
+  return [(H[0][0] * u + H[0][1] * v + H[0][2]) / d, (H[1][0] * u + H[1][1] * v + H[1][2]) / d];
+}
+/* ColorChecker Classic 24 色標準 sRGB 值（列優先，左上→右下） */
+const CC24 = [
+  [115,82,68],[194,150,130],[98,122,157],[87,108,67],[133,128,177],[103,189,170],
+  [214,126,44],[80,91,166],[193,90,99],[94,60,108],[157,188,64],[224,163,46],
+  [56,61,150],[70,148,73],[175,54,60],[231,199,31],[187,86,149],[8,133,161],
+  [243,243,242],[200,200,200],[160,160,160],[122,122,121],[85,85,85],[52,52,52]];
+const CC24_NAME = ["深膚","淺膚","天空藍","樹葉綠","藍花","藍綠","橘","紫藍","中紅","紫","黃綠","橘黃",
+  "藍","綠","紅","黃","洋紅","青","白","灰8","灰6.5","灰5","灰3.5","黑"];
+
+/* ═══════════════ 狀態 ═══════════════ */
+const LS = { rec: "tongue.rec.v1", cal: "tongue.cal.v1", set: "tongue.set.v1" };
+const DEF_SET = { space: "srgb", th: 0.70, useCal: true, de: 26 };
+let SET = Object.assign({}, DEF_SET, load(LS.set, {}));
+let CAL = load(LS.cal, null);
+let RECS = load(LS.rec, []);
+let SITE = "face";
+
+function load(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+function save(k, v) {
+  try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+  catch (e) {
+    if (k === LS.rec) {              // 空間不夠：先丟掉最舊的縮圖，再丟最舊的紀錄
+      for (let i = 0; i < RECS.length && i < 40; i++) if (RECS[i].thumb) { delete RECS[i].thumb; }
+      try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e2) {}
+      RECS = RECS.slice(-60);
+      try { localStorage.setItem(k, JSON.stringify(RECS)); return true; } catch (e3) {}
+    }
+    alert("儲存空間不足，請先匯出並清除舊紀錄。"); return false;
+  }
+}
+
+/* ═══════════════ 指標計算（每次顯示都即時重算，所以改校色＝全部重算） ═══════════════ */
+function calibrateLin(lin) {
+  if (!SET.useCal || !CAL) return lin.slice();
+  if (CAL.type === "ccm") return matVec(CAL.M, lin);
+  if (CAL.type === "gray") return [lin[0] * CAL.gain[0], lin[1] * CAL.gain[1], lin[2] * CAL.gain[2]];
+  return lin.slice();
+}
+const EPS = 1e-6;
+function metrics(rawSrgb) {
+  const lin0 = [s2l(rawSrgb[0]), s2l(rawSrgb[1]), s2l(rawSrgb[2])];
+  const lin = calibrateLin(lin0).map(v => Math.max(0, v));
+  const srgb = lin.map(l2s);
+  const brS = srgb[0] > EPS ? srgb[2] / srgb[0] : 0;
+  const brL = lin[0] > EPS ? lin[2] / lin[0] : 0;
+  const grS = srgb[0] > EPS ? srgb[1] / srgb[0] : 0;
+  const sum = srgb[0] + srgb[1] + srgb[2] || 1;
+  const lab = labOfLin(lin[0], lin[1], lin[2]);
+  let h = Math.atan2(lab[2], lab[1]) * 180 / Math.PI; if (h < 0) h += 360;
+  return { lin, srgb, brS, brL, grS, lab, hue: h,
+           chroma: Math.hypot(lab[1], lab[2]),
+           prop: [srgb[0] / sum, srgb[1] / sum, srgb[2] / sum] };
+}
+const brOf = m => SET.space === "srgb" ? m.brS : m.brL;
+
+/* ═══════════════ 影像取樣 ═══════════════ */
+function median(arr, n) {
+  const a = arr.slice(0, n); a.sort(); // typed array sort = 數值排序
+  const h = n >> 1;
+  return n % 2 ? a[h] : (a[h - 1] + a[h]) / 2;
+}
+/* 在畫布上取一小塊的中位色（給灰卡／色卡點選用） */
+function patchMedian(ctx, cx, cy, rad) {
+  const x0 = Math.max(0, Math.round(cx - rad)), y0 = Math.max(0, Math.round(cy - rad));
+  const w = Math.min(ctx.canvas.width - x0, Math.round(rad * 2)), h = Math.min(ctx.canvas.height - y0, Math.round(rad * 2));
+  if (w < 2 || h < 2) return null;
+  const d = ctx.getImageData(x0, y0, w, h).data, n = w * h;
+  const R = new Float64Array(n), G = new Float64Array(n), B = new Float64Array(n);
+  for (let i = 0; i < n; i++) { R[i] = d[i * 4]; G[i] = d[i * 4 + 1]; B[i] = d[i * 4 + 2]; }
+  return [median(R, n), median(G, n), median(B, n)];
+}
+
+const ZN = 5;
+/* 主分析：兩段式穩健取樣 */
+function analyzeEllipse(cv, ell, deThr) {
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  const W = cv.width, H = cv.height;
+  const x0 = Math.max(0, Math.floor(ell.cx - ell.rx)), x1 = Math.min(W, Math.ceil(ell.cx + ell.rx));
+  const y0 = Math.max(0, Math.floor(ell.cy - ell.ry)), y1 = Math.min(H, Math.ceil(ell.cy + ell.ry));
+  if (x1 - x0 < 8 || y1 - y0 < 8) return null;
+  const img = ctx.getImageData(x0, y0, x1 - x0, y1 - y0), d = img.data;
+  const bw = x1 - x0, bh = y1 - y0;
+  const step = Math.max(1, Math.round(Math.sqrt(bw * bh / 90000)));   // 取樣上限約 9 萬點
+  const cap = Math.ceil(bw / step) * Math.ceil(bh / step);
+  const R = new Float64Array(cap), G = new Float64Array(cap), B = new Float64Array(cap), Z = new Uint8Array(cap);
+  let n = 0, inside = 0, clip = 0, glare = 0, dark = 0;
+
+  for (let y = 0; y < bh; y += step) {
+    const v = (y + y0 - ell.cy) / ell.ry;
+    for (let x = 0; x < bw; x += step) {
+      const u = (x + x0 - ell.cx) / ell.rx;
+      if (u * u + v * v > 1) continue;
+      inside++;
+      const i = (y * bw + x) * 4, r = d[i], g = d[i + 1], b = d[i + 2];
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      const V = mx / 255, S = mx > 0 ? (mx - mn) / mx : 0;
+      if (r >= 250 || g >= 250 || b >= 250) { clip++; continue; }
+      if (V > 0.90 && S < 0.15) { glare++; continue; }            // 鏡面反光
+      if (V < 0.12) { dark++; continue; }                          // 陰影／口腔深處
+      let z;
+      if (v > 0.35) z = 0; else if (v < -0.35) z = 1;
+      else if (u < -0.45) z = 2; else if (u > 0.45) z = 3; else z = 4;
+      R[n] = r; G[n] = g; B[n] = b; Z[n] = z; n++;
+    }
+  }
+  if (n < 200) return { fail: true, inside, kept: n };
+
+  const m1 = [median(R, n), median(G, n), median(B, n)];
+  const lab1 = labOfSrgb(m1[0], m1[1], m1[2]);
+
+  const keep = new Uint8Array(n);
+  let n2 = 0;
+  for (let i = 0; i < n; i++) {
+    const lab = labOfSrgb(R[i], G[i], B[i]);
+    if (dE(lab, lab1) <= deThr) { keep[i] = 1; n2++; }
+  }
+  if (n2 < 150) { for (let i = 0; i < n; i++) keep[i] = 1; n2 = n; }
+
+  const R2 = new Float64Array(n2), G2 = new Float64Array(n2), B2 = new Float64Array(n2);
+  const zR = [], zG = [], zB = [], zc = new Array(ZN).fill(0);
+  for (let z = 0; z < ZN; z++) { zR.push(new Float64Array(n2)); zG.push(new Float64Array(n2)); zB.push(new Float64Array(n2)); }
+  let k = 0, vSum = 0;
+  for (let i = 0; i < n; i++) {
+    if (!keep[i]) continue;
+    R2[k] = R[i]; G2[k] = G[i]; B2[k] = B[i]; k++;
+    vSum += Math.max(R[i], G[i], B[i]) / 255;
+    const z = Z[i], c = zc[z];
+    zR[z][c] = R[i]; zG[z][c] = G[i]; zB[z][c] = B[i]; zc[z]++;
+  }
+  const raw = [median(R2, n2), median(G2, n2), median(B2, n2)];
+  const zones = [];
+  for (let z = 0; z < ZN; z++) {
+    zones.push(zc[z] >= 60 ? [median(zR[z], zc[z]), median(zG[z], zc[z]), median(zB[z], zc[z])] : null);
+  }
+  const sd = (() => { let s = 0; const lm = labOfSrgb(raw[0], raw[1], raw[2]);
+    for (let i = 0; i < n2; i += Math.max(1, n2 >> 12)) { const e = dE(labOfSrgb(R2[i], G2[i], B2[i]), lm); s += e * e; }
+    return Math.sqrt(s / Math.max(1, Math.ceil(n2 / Math.max(1, n2 >> 12)))); })();
+
+  return { raw, zones, kept: n2, inside, sampled: n,
+           clipPct: inside ? clip / inside * 100 : 0,
+           glarePct: inside ? glare / inside * 100 : 0,
+           darkPct: inside ? dark / inside * 100 : 0,
+           meanV: n2 ? vSum / n2 : 0, spread: sd };
+}
+
+/* ═══════════════ 相機 ═══════════════ */
+let stream = null, facing = "user", track = null, wbLocked = false;
+async function startCam() {
+  stopCam();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false });
+    $("#video").srcObject = stream;
+    track = stream.getVideoTracks()[0];
+    $("#liveHint").textContent = "把舌頭伸出來填滿橢圓，臉靠近一點";
+  } catch (e) {
+    $("#liveHint").textContent = "打不開相機（" + (e.name || e) + "）——改用「選照片」";
+  }
+}
+function stopCam() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; track = null; } }
+
+async function toggleWB() {
+  if (!track) return;
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  if (!caps.whiteBalanceMode || !caps.whiteBalanceMode.includes("manual")) {
+    $("#btnLock").textContent = "此裝置不支援鎖白平衡"; return;
+  }
+  try {
+    if (!wbLocked) {
+      const adv = { whiteBalanceMode: "manual" };
+      if (caps.colorTemperature) adv.colorTemperature = Math.min(caps.colorTemperature.max,
+        Math.max(caps.colorTemperature.min, 5500));
+      if (caps.exposureMode && caps.exposureMode.includes("manual")) adv.exposureMode = "continuous";
+      await track.applyConstraints({ advanced: [adv] });
+      wbLocked = true; $("#btnLock").textContent = "✓ 白平衡已鎖 5500K";
+    } else {
+      await track.applyConstraints({ advanced: [{ whiteBalanceMode: "continuous" }] });
+      wbLocked = false; $("#btnLock").textContent = "鎖白平衡";
+    }
+  } catch (e) { $("#btnLock").textContent = "鎖定失敗"; }
+}
+
+/* 從 video 依 3:4 中央裁切成一張 canvas；前鏡頭做鏡像，跟預覽一致 */
+function grabFrame() {
+  const vd = $("#video");
+  if (!vd.videoWidth) return null;
+  const vw = vd.videoWidth, vh = vd.videoHeight, AR = 3 / 4;
+  let sw, sh;
+  if (vw / vh > AR) { sh = vh; sw = vh * AR; } else { sw = vw; sh = vw / AR; }
+  const sx = (vw - sw) / 2, sy = (vh - sh) / 2;
+  const OW = Math.min(900, Math.round(sw)), OH = Math.round(OW / AR);
+  const cv = document.createElement("canvas"); cv.width = OW; cv.height = OH;
+  const c = cv.getContext("2d");
+  if (facing === "user") { c.translate(OW, 0); c.scale(-1, 1); }
+  c.drawImage(vd, sx, sy, sw, sh, 0, 0, OW, OH);
+  return cv;
+}
+function fileToCanvas(file, maxSide) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.width * s); cv.height = Math.round(img.height * s);
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(url); res(cv);
+    };
+    img.onerror = e => { URL.revokeObjectURL(url); rej(e); };
+    img.src = url;
+  });
+}
+let filePurpose = null;
+</script>
+<script>
+/* ═══════════════ 拍攝 → 框選 → 分析 ═══════════════ */
+let SRC = null;                       // 目前這張照片（canvas）
+let ELL = { cx: 0.5, cy: 0.52, rx: 0.30, ar: 1.10 };
+let MIR = true;                       // 影像是否為鏡像（影像左＝你的左）
+let LAST = null;                      // 最近一次分析結果
+
+function showStep(s) {
+  $("#stepLive").style.display = s === "live" ? "" : "none";
+  $("#stepAdjust").style.display = s === "adjust" ? "" : "none";
+  $("#stepResult").style.display = s === "result" ? "" : "none";
+  if (s === "live") { if (!stream) startCam(); } else stopCam();
+  window.scrollTo(0, 0);
+}
+function ellPx(cv) {
+  const rx = ELL.rx * cv.width;
+  return { cx: ELL.cx * cv.width, cy: ELL.cy * cv.height, rx: rx, ry: rx * ELL.ar };
+}
+function enterAdjust(cv, mirrored) {
+  SRC = cv; MIR = mirrored;
+  $("#mirChk").checked = false;
+  const sc = $("#shotCv"), ov = $("#ovCv");
+  sc.width = ov.width = cv.width; sc.height = ov.height = cv.height;
+  sc.getContext("2d").drawImage(cv, 0, 0);
+  drawOverlay(); showStep("adjust");
+}
+function drawOverlay() {
+  const ov = $("#ovCv"), c = ov.getContext("2d"), W = ov.width, H = ov.height;
+  const e = ellPx(ov);
+  c.clearRect(0, 0, W, H);
+  c.fillStyle = "rgba(0,0,0,.45)";
+  c.beginPath(); c.rect(0, 0, W, H);
+  c.ellipse(e.cx, e.cy, e.rx, e.ry, 0, 0, Math.PI * 2, true); c.fill();
+  c.strokeStyle = "#4EA1FF"; c.lineWidth = Math.max(1.5, W / 400); c.setLineDash([7, 5]);
+  c.beginPath(); c.ellipse(e.cx, e.cy, e.rx, e.ry, 0, 0, Math.PI * 2); c.stroke();
+  c.setLineDash([]); c.globalAlpha = .35; c.lineWidth = Math.max(1, W / 700);
+  for (const f of [-0.35, 0.35]) {
+    const y = e.cy + f * e.ry, hw = e.rx * Math.sqrt(Math.max(0, 1 - f * f));
+    c.beginPath(); c.moveTo(e.cx - hw, y); c.lineTo(e.cx + hw, y); c.stroke();
+  }
+  for (const f of [-0.45, 0.45]) {
+    const x = e.cx + f * e.rx, hh = e.ry * 0.35;
+    c.beginPath(); c.moveTo(x, e.cy - hh); c.lineTo(x, e.cy + hh); c.stroke();
+  }
+  c.globalAlpha = 1;
+  $("#szVal").textContent = Math.round(ELL.rx * 200) + "% 寬";
+  $("#arVal").textContent = ELL.ar.toFixed(2);
+}
+function evtXY(ev, cv) {
+  const r = cv.getBoundingClientRect();
+  const s = Math.min(r.width / cv.width, r.height / cv.height);
+  const dw = cv.width * s, dh = cv.height * s;
+  return { x: (ev.clientX - r.left - (r.width - dw) / 2) / s,
+           y: (ev.clientY - r.top - (r.height - dh) / 2) / s };
+}
+(function dragSetup() {
+  const ov = $("#ovCv"); let drag = false, off = null;
+  ov.addEventListener("pointerdown", ev => {
+    ev.preventDefault(); const p = evtXY(ev, ov), e = ellPx(ov);
+    drag = true; off = { x: p.x - e.cx, y: p.y - e.cy }; ov.setPointerCapture(ev.pointerId);
+  });
+  ov.addEventListener("pointermove", ev => {
+    if (!drag) return; ev.preventDefault();
+    const p = evtXY(ev, ov);
+    ELL.cx = Math.min(1, Math.max(0, (p.x - off.x) / ov.width));
+    ELL.cy = Math.min(1, Math.max(0, (p.y - off.y) / ov.height));
+    drawOverlay();
+  });
+  ov.addEventListener("pointerup", () => { drag = false; });
+  ov.addEventListener("pointercancel", () => { drag = false; });
+})();
+$("#szR").oninput = e => { ELL.rx = +e.target.value / 100; drawOverlay(); };
+$("#arR").oninput = e => { ELL.ar = +e.target.value / 100; drawOverlay(); };
+$("#mirChk").onchange = () => { MIR = !MIR; };
+
+function runAnalysis() {
+  if (!SRC) return;
+  const a = analyzeEllipse($("#shotCv"), ellPx($("#shotCv")), SET.de);
+  if (!a || a.fail) { alert("取樣到的有效像素太少——橢圓拉大一點，或照片太暗／太亮。"); return; }
+  const th = document.createElement("canvas");
+  th.width = 150; th.height = Math.round(150 * SRC.height / SRC.width);
+  th.getContext("2d").drawImage(SRC, 0, 0, th.width, th.height);
+  LAST = { t: Date.now(), site: SITE, raw: a.raw.map(v => +v.toFixed(2)),
+           zones: a.zones.map(z => z ? z.map(v => +v.toFixed(2)) : null),
+           q: { kept: a.kept, inside: a.inside, clip: +a.clipPct.toFixed(1), glare: +a.glarePct.toFixed(1),
+                dark: +a.darkPct.toFixed(1), v: +a.meanV.toFixed(3), spread: +a.spread.toFixed(1) },
+           mir: MIR, thumb: th.toDataURL("image/jpeg", 0.62), note: "" };
+  renderResult(LAST); showStep("result");
+}
+
+/* ═══════════════ 結果 ═══════════════ */
+const ZLBL = i => ["舌尖", "舌根", "影像左", "影像右", "舌中"][i];
+function zoneLabel(i, mir) {
+  if (i === 2) return mir ? "舌左緣（你的左）" : "舌左緣（你的右）";
+  if (i === 3) return mir ? "舌右緣（你的右）" : "舌右緣（你的左）";
+  return ZLBL(i);
+}
+function swatch(rgb) {
+  return '<span class="sw" style="background:rgb(' + rgb.map(v => Math.round(Math.max(0, Math.min(255, v)))).join(",") + ')"></span>';
+}
+function qualityIssues(r) {
+  const q = r.q, out = [];
+  if (q.glare > 8) out.push("反光佔 " + q.glare + "%——舌面有亮點，換個角度或避開正上方光源");
+  if (q.clip > 3) out.push("過曝像素 " + q.clip + "%——太亮了，顏色資訊已經被截掉");
+  if (q.v > 0.85) out.push("整體偏亮（V=" + q.v + "），紅色容易飽和，B/R 會被低估");
+  if (q.v < 0.25) out.push("整體偏暗（V=" + q.v + "），雜訊會讓 B/R 亂跳");
+  if (q.kept < 3000) out.push("有效像素只有 " + q.kept + " 個——橢圓拉大或靠近一點");
+  if (q.spread > 14) out.push("取樣區顏色很不均勻（ΔE 散布 " + q.spread + "）——可能框到嘴唇、牙齒或舌苔厚薄不均");
+  if (!CAL || !SET.useCal) out.push("未套用校色——這個絕對數值只在「同一支手機＋同一個光源」下才能互相比較");
+  else if (CAL.type === "gray") out.push("目前只做了灰卡白平衡；買到 24 色卡做完整校色會更準");
+  return out;
+}
+function renderResult(r) {
+  const m = metrics(r.raw), v = brOf(m), hit = v >= SET.th;
+  const spaceName = SET.space === "srgb" ? "sRGB" : "線性";
+  $("#resVerdict").innerHTML =
+    '<div class="verdict ' + (hit ? "hit" : "miss") + '">' +
+      '<div class="lbl">B／R 比值（' + spaceName + '，閾值 ' + SET.th.toFixed(2) + '）</div>' +
+      '<div class="big">' + v.toFixed(3) + '</div>' +
+      '<div class="say">' + (hit ? "達到你設定的青紫舌閾值" : "未達閾值") + '</div>' +
+      '<div style="margin-top:10px">' + swatch(m.srgb) +
+        ' <span style="font-size:12px;color:var(--dim)">量到的舌色（校色後）</span></div>' +
+    '</div>';
+  const iss = qualityIssues(r);
+  $("#resQuality").style.display = iss.length ? "" : "none";
+  $("#resQuality").innerHTML = iss.length
+    ? '<div class="warnbox' + (iss.some(s => s.indexOf("過曝") === 0 || s.indexOf("有效像素") === 0) ? " bad" : "") + '">' +
+      '<b>拍攝品質提醒</b><ul>' + iss.map(s => "<li>" + s + "</li>").join("") + "</ul></div>" : "";
+  $("#resCalTag").textContent = CAL && SET.useCal ? (CAL.type === "ccm" ? "已套用 24 色卡校色" : "已套用灰卡白平衡") : "未校色";
+
+  const b = m.lab[2], a2 = m.lab[1];
+  const bluish = b < 4 ? (b < 0 ? "明顯偏藍" : "偏藍") : (b < 10 ? "略偏藍" : "正常偏黃紅");
+  $("#resTable").innerHTML = "<table>" +
+    row("原始像素中位 RGB", swatch(r.raw) + " " + r.raw.map(x => x.toFixed(0)).join(" / ")) +
+    row("校色後 RGB", m.srgb.map(x => x.toFixed(0)).join(" / ")) +
+    row("<b>B/R（sRGB）</b>", "<b>" + m.brS.toFixed(3) + "</b>") +
+    row("B/R（線性）", m.brL.toFixed(3)) +
+    row("G/R（sRGB）", m.grS.toFixed(3)) +
+    row("R:G:B 佔比", m.prop.map(x => (x * 100).toFixed(1) + "%").join(" · ")) +
+    row("L*（明度）", m.lab[0].toFixed(1)) +
+    row("a*（紅↔綠）", a2.toFixed(1)) +
+    row("b*（黃↔藍）", b.toFixed(1) + "　<span style='color:var(--dim2)'>" + bluish + "</span>") +
+    row("色相角 h°", m.hue.toFixed(1) + "°") +
+    row("彩度 C*", m.chroma.toFixed(1)) +
+    row("有效取樣點", r.q.kept.toLocaleString() + " 點") +
+    "</table>" +
+    "<p class='note'><b>b*</b> 是判斷青紫最直接的指標：正值＝偏黃紅，負值＝真的偏藍。" +
+    "健康舌大約 b* = 10～20；b* 掉到 5 以下、甚至變負值，才是色度學上真的「發青發紫」。" +
+    "它比 B/R 更抗光線變化，建議兩個一起看。</p>";
+
+  let zt = "<table><tr><th>部位</th><th>色</th><th>B/R</th><th>b*</th></tr>";
+  for (let i = 0; i < ZN; i++) {
+    const z = r.zones[i];
+    if (!z) { zt += "<tr><td>" + zoneLabel(i, r.mir) + "</td><td colspan=3 style='color:var(--dim2)'>取樣不足</td></tr>"; continue; }
+    const zm = metrics(z), zv = brOf(zm);
+    const hi = zv >= SET.th;
+    zt += "<tr><td>" + zoneLabel(i, r.mir) + "</td><td>" + swatch(zm.srgb) + "</td><td" +
+      (hi ? " style='color:var(--purple);font-weight:600'" : "") + ">" + zv.toFixed(3) + "</td><td>" +
+      zm.lab[2].toFixed(1) + "</td></tr>";
+  }
+  $("#resZone").innerHTML = zt + "</table>";
+}
+const row = (k, v) => "<tr><td>" + k + "</td><td>" + v + "</td></tr>";
+
+/* ═══════════════ 紀錄 ═══════════════ */
+function renderHist() {
+  $("#recCount").textContent = RECS.length + " 筆";
+  if (!RECS.length) {
+    $("#recList").innerHTML = "<p class='note'>還沒有紀錄。建議每天固定同一個時間、同一個光源拍一張，累積兩週以上才看得出趨勢。</p>";
+    $("#spark").innerHTML = ""; $("#trendNote").textContent = ""; $("#trendTag").textContent = "";
+    return;
+  }
+  const html = RECS.slice().reverse().map(r => {
+    const m = metrics(r.raw), v = brOf(m), hit = v >= SET.th;
+    const d = new Date(r.t);
+    const ts = d.getFullYear() + "/" + (d.getMonth() + 1) + "/" + d.getDate() + " " +
+      String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    return '<div class="rec">' +
+      (r.thumb ? '<img src="' + r.thumb + '">' : '<div style="width:46px;height:61px;border-radius:7px;background:#0E141C"></div>') +
+      '<div class="m"><div class="t">' + ts + "　" + (r.site === "under" ? "舌下" : "舌面") + '</div>' +
+      '<div class="v" style="color:' + (hit ? "var(--purple)" : "var(--fg)") + '">B/R ' + v.toFixed(3) +
+      '　<span style="font-size:11px;color:var(--dim)">b* ' + m.lab[2].toFixed(1) + "</span></div>" +
+      '<div class="n">' + (r.note ? esc(r.note) : "<span style='color:var(--dim2)'>—</span>") + "</div></div>" +
+      '<button class="x" data-del="' + r.t + '">刪</button></div>';
+  }).join("");
+  $("#recList").innerHTML = html;
+  $$("#recList [data-del]").forEach(b => b.onclick = () => {
+    if (!confirm("刪掉這一筆？")) return;
+    RECS = RECS.filter(r => r.t !== +b.dataset.del); save(LS.rec, RECS); renderHist();
+  });
+  drawSpark();
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function drawSpark() {
+  const pts = RECS.filter(r => r.site === "face").slice(-40);
+  const tag = $("#trendTag"), note = $("#trendNote"), sv = $("#spark");
+  if (pts.length < 2) {
+    sv.innerHTML = ""; sv.style.display = "none"; tag.textContent = "至少 2 筆才畫";
+    note.textContent = "每天固定同一個時間、同一個光源各拍一張，兩筆以上才開始畫走勢。"; return;
+  }
+  sv.style.display = "";
+  const vals = pts.map(r => brOf(metrics(r.raw)));
+  const lo = Math.min(SET.th, Math.min.apply(null, vals)) * 0.96;
+  const hi = Math.max(SET.th, Math.max.apply(null, vals)) * 1.04;
+  const X = i => 6 + i * (308 / (pts.length - 1)), Y = v => 82 - (v - lo) / (hi - lo) * 76;
+  let p = "";
+  vals.forEach((v, i) => p += (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1));
+  const ty = Y(SET.th).toFixed(1);
+  sv.innerHTML =
+    '<line x1="0" y1="' + ty + '" x2="320" y2="' + ty + '" stroke="#A371F7" stroke-width="1" stroke-dasharray="4 4" opacity=".8"/>' +
+    '<path d="' + p + '" fill="none" stroke="#4EA1FF" stroke-width="1.8" stroke-linejoin="round"/>' +
+    vals.map((v, i) => '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="2.4" fill="' +
+      (v >= SET.th ? "#A371F7" : "#4EA1FF") + '"/>').join("");
+  const sorted = vals.slice().sort((a, b) => a - b);
+  const med = sorted[sorted.length >> 1];
+  const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) * (b - mean), 0) / vals.length);
+  tag.textContent = pts.length + " 筆舌面紀錄";
+  note.innerHTML = "你自己的中位數 <b>" + med.toFixed(3) + "</b>，標準差 <b>" + sd.toFixed(3) +
+    "</b>，紫色虛線是你現在設的閾值 " + SET.th.toFixed(2) + "。<br>" +
+    "抄外面的 0.7 不如用自己的基線：以你目前的分布，<b>" + (med + 2 * sd).toFixed(3) +
+    "</b>（中位數＋2 個標準差）才是對你有意義的「異常偏藍」門檻。樣本越多這個估計越穩。";
+}
+
+function toCSV() {
+  const head = ["時間", "部位", "R", "G", "B", "B/R_sRGB", "B/R_線性", "G/R", "L*", "a*", "b*", "色相",
+    "有效點", "反光%", "過曝%", "亮度V", "校色", "備註"];
+  const lines = [head.join(",")];
+  RECS.forEach(r => {
+    const m = metrics(r.raw);
+    lines.push([new Date(r.t).toISOString(), r.site, r.raw[0].toFixed(1), r.raw[1].toFixed(1), r.raw[2].toFixed(1),
+      m.brS.toFixed(4), m.brL.toFixed(4), m.grS.toFixed(4), m.lab[0].toFixed(2), m.lab[1].toFixed(2),
+      m.lab[2].toFixed(2), m.hue.toFixed(1), r.q.kept, r.q.glare, r.q.clip, r.q.v,
+      (CAL && SET.useCal ? CAL.type : "none"), '"' + String(r.note || "").replace(/"/g, '""') + '"'].join(","));
+  });
+  return lines.join("\n");
+}
+function dl(name, text, mime) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + text], { type: mime }));
+  a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+</script>
+<script>
+/* ═══════════════ 校色 ═══════════════ */
+function calLabel() {
+  if (!CAL) return "未校色";
+  return CAL.type === "ccm" ? "24 色卡" : "灰卡白平衡";
+}
+function renderCal() {
+  const chip = $("#calChip");
+  chip.textContent = !CAL ? "未校色" : (SET.useCal ? calLabel() : calLabel() + "（停用）");
+  chip.className = "pill " + (!CAL ? "warn" : SET.useCal ? "ok" : "");
+  chip.style.float = "right"; chip.style.margin = "0";
+
+  if (!CAL) {
+    $("#calState").innerHTML = '<span class="dot" style="background:var(--warn)"></span>' +
+      "<b>還沒校色。</b>現在量到的 B/R 只能拿來跟「同一支手機、同一個光源」下的其他次數比較，絕對值沒有跨裝置意義。";
+    $("#calDump").innerHTML = "<p class='note'>目前沒有任何校色資料。</p>";
+    return;
+  }
+  const d = new Date(CAL.t);
+  const age = Math.floor((Date.now() - CAL.t) / 86400000);
+  $("#calState").innerHTML = '<span class="dot" style="background:var(--ok)"></span><b>' + calLabel() +
+    "</b>　" + d.toLocaleString("zh-TW") + "（" + age + " 天前）" +
+    (CAL.type === "gray" ? "<p class='note'>灰卡只修正了色偏（白平衡），沒有修正手機感光元件的通道串擾。要更準要用 24 色卡。</p>" : "") +
+    (age > 30 ? "<p class='note' style='color:var(--warn)'>超過 30 天了。換季、換燈泡、換拍攝地點都建議重做一次。</p>" : "");
+
+  let dump;
+  if (CAL.type === "gray") {
+    dump = "<table>" + row("量到的灰卡 RGB", swatch(CAL.patch) + " " + CAL.patch.map(v => v.toFixed(0)).join(" / ")) +
+      row("R 增益", CAL.gain[0].toFixed(4)) + row("G 增益", CAL.gain[1].toFixed(4)) +
+      row("B 增益", CAL.gain[2].toFixed(4)) +
+      row("色偏強度", ((Math.max.apply(null, CAL.gain) / Math.min.apply(null, CAL.gain) - 1) * 100).toFixed(1) + "%") + "</table>";
+  } else {
+    dump = "<table><tr><th>3×3 校色矩陣</th><th>R</th><th>G</th><th>B</th></tr>" +
+      CAL.M.map((r, i) => "<tr><td>→ " + "RGB"[i] + "</td>" + r.map(v => "<td>" + v.toFixed(4) + "</td>").join("") + "</tr>").join("") +
+      "</table><table>" + row("校正前平均 ΔE", CAL.de0.toFixed(2)) + row("校正後平均 ΔE", CAL.de1.toFixed(2)) +
+      row("色塊數", CAL.n) + "</table>";
+  }
+  $("#calDump").innerHTML = dump;
+}
+
+/* ── 灰卡 ── */
+let grayCv = null;
+function loadGray(cv) {
+  grayCv = cv;
+  const c = $("#grayCv"); c.width = cv.width; c.height = cv.height;
+  c.getContext("2d").drawImage(cv, 0, 0);
+  $("#grayWrap").style.display = ""; $("#grayOut").innerHTML = "";
+  c.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+$("#grayCv").addEventListener("pointerdown", ev => {
+  if (!grayCv) return;
+  const c = $("#grayCv"), p = evtXY(ev, c);
+  const rad = Math.max(6, c.width * 0.022);
+  const px = patchMedian(c.getContext("2d", { willReadFrequently: true }), p.x, p.y, rad);
+  if (!px) return;
+  const c2 = c.getContext("2d");
+  c2.strokeStyle = "#4EA1FF"; c2.lineWidth = Math.max(2, c.width / 250);
+  c2.strokeRect(p.x - rad, p.y - rad, rad * 2, rad * 2);
+  const lin = [s2l(px[0]), s2l(px[1]), s2l(px[2])];
+  if (Math.max.apply(null, px) > 248) {
+    $("#grayOut").innerHTML = "<div class='warnbox bad'>這一塊已經過曝（有通道 ≥248），拍暗一點再來。</div>"; return;
+  }
+  if (Math.max.apply(null, px) < 40) {
+    $("#grayOut").innerHTML = "<div class='warnbox bad'>這一塊太暗了，白平衡會很不準。拍亮一點。</div>"; return;
+  }
+  const gain = [lin[1] / Math.max(lin[0], EPS), 1, lin[1] / Math.max(lin[2], EPS)];
+  const cast = (Math.max.apply(null, gain) / Math.min.apply(null, gain) - 1) * 100;
+  $("#grayOut").innerHTML =
+    "<table>" + row("量到的顏色", swatch(px) + " " + px.map(v => v.toFixed(0)).join(" / ")) +
+    row("R / G / B 增益", gain.map(v => v.toFixed(3)).join(" / ")) +
+    row("光源色偏", cast.toFixed(1) + "%　" + (px[2] > px[0] ? "偏冷（藍）" : "偏暖（黃）")) + "</table>" +
+    "<div class='warnbox'>套用之後，這個光源造成的色偏會被扣掉，B/R 才會反映舌頭本身。" +
+    "<b>換光源就要重做一次。</b></div>" +
+    "<button id='btnGrayApply'>套用這組白平衡</button>";
+  $("#btnGrayApply").onclick = () => {
+    CAL = { type: "gray", t: Date.now(), gain: gain, patch: px.map(v => +v.toFixed(2)) };
+    save(LS.cal, CAL); renderCal(); refreshAll();
+    $("#grayOut").innerHTML = "<div class='warnbox' style='border-color:#1D3A24;background:#0C1A10;color:#7EE787'>" +
+      "已套用，過去所有紀錄也一起重新換算了。</div>";
+    $("#grayWrap").style.display = "none"; grayCv = null;
+  };
+});
+
+/* ── 24 色卡 ── */
+let ccCv = null, ccPts = [];
+const CC_HINTS = ["點第 1 點：左上角（深咖啡膚色）", "點第 2 點：右上角（藍綠）",
+  "點第 3 點：右下角（黑）", "點第 4 點：左下角（白）"];
+function loadCC(cv) {
+  ccCv = cv; ccPts = [];
+  const c = $("#ccCv"), o = $("#ccOv");
+  c.width = o.width = cv.width; c.height = o.height = cv.height;
+  c.getContext("2d").drawImage(cv, 0, 0);
+  o.getContext("2d").clearRect(0, 0, o.width, o.height);
+  $("#ccWrap").style.display = ""; $("#ccOut").innerHTML = "";
+  $("#ccHint").textContent = CC_HINTS[0];
+  c.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+$("#ccOv").addEventListener("pointerdown", ev => {
+  if (!ccCv || ccPts.length >= 4) return;
+  const o = $("#ccOv"), p = evtXY(ev, o);
+  ccPts.push([p.x, p.y]);
+  const c = o.getContext("2d"), r = Math.max(5, o.width / 90);
+  c.strokeStyle = "#4EA1FF"; c.fillStyle = "#4EA1FF"; c.lineWidth = Math.max(2, o.width / 300);
+  c.beginPath(); c.arc(p.x, p.y, r, 0, 7); c.stroke();
+  c.font = (r * 2.2 | 0) + "px sans-serif"; c.fillText(String(ccPts.length), p.x + r * 1.3, p.y - r * .6);
+  if (ccPts.length < 4) { $("#ccHint").textContent = CC_HINTS[ccPts.length]; return; }
+  $("#ccHint").textContent = "取樣中…";
+  setTimeout(fitCard, 30);
+});
+$("#btnCcUndo").onclick = () => { if (ccCv) loadCC(ccCv); };
+
+/* 使用者點的是「四個角落色塊的中心」，不是卡片的四個角，
+   所以來源座標要用色塊中心在 6x4 網格裡的位置，否則內部 24 塊會整片算偏 */
+const CC_CORNERS = [[0.5/6, 0.5/4], [5.5/6, 0.5/4], [5.5/6, 3.5/4], [0.5/6, 3.5/4]];
+function fitCard() {
+  const H = homography(ccPts, CC_CORNERS);
+  if (!H) { $("#ccOut").innerHTML = "<div class='warnbox bad'>四個點算不出透視變換，重點一次。</div>"; return; }
+  const src = $("#ccCv").getContext("2d", { willReadFrequently: true });
+  const o = $("#ccOv").getContext("2d");
+  const meas = [], ref = [], W = $("#ccCv").width;
+  // 用四角距離估一個色塊的大小，取中央 40% 當取樣區
+  const cellW = Math.hypot(ccPts[1][0] - ccPts[0][0], ccPts[1][1] - ccPts[0][1]) / 5;
+  const rad = Math.max(3, cellW * 0.20);
+  let bad = 0;
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++) {
+    const i = r * 6 + c;
+    const pt = applyH(H, (c + 0.5) / 6, (r + 0.5) / 4);
+    const px = patchMedian(src, pt[0], pt[1], rad);
+    if (!px) { bad++; meas.push(null); continue; }
+    meas.push(px);
+    o.strokeStyle = "rgba(78,161,255,.9)"; o.lineWidth = Math.max(1.5, W / 400);
+    o.strokeRect(pt[0] - rad, pt[1] - rad, rad * 2, rad * 2);
+  }
+  if (bad) { $("#ccOut").innerHTML = "<div class='warnbox bad'>有色塊落在照片外面，四個角要點在色塊中心。</div>"; return; }
+  const white = meas[18], black = meas[23];
+  const wl = white[0] + white[1] + white[2], bl = black[0] + black[1] + black[2];
+  let warn = "";
+  if (wl < bl + 90) warn = "<div class='warnbox'>第 4 點（左下）應該是<b>白色</b>塊、第 3 點（右下）是<b>黑色</b>塊，" +
+    "現在量到的亮度反了——色卡方向可能拿反了，結果會錯。</div>";
+  if (Math.max(white[0], white[1], white[2]) > 250)
+    warn += "<div class='warnbox'>白色塊已經過曝，校色矩陣會失真。拍暗一點（減曝光）再做一次。</div>";
+
+  const mLin = [], rLin = [];
+  for (let i = 0; i < 24; i++) {
+    mLin.push([s2l(meas[i][0]), s2l(meas[i][1]), s2l(meas[i][2])]);
+    rLin.push([s2l(CC24[i][0]), s2l(CC24[i][1]), s2l(CC24[i][2])]);
+  }
+  const M = fitCCM(mLin, rLin);
+  if (!M) { $("#ccOut").innerHTML = "<div class='warnbox bad'>矩陣解不出來，重拍一張。</div>"; return; }
+  let de0 = 0, de1 = 0;
+  const rows = [];
+  for (let i = 0; i < 24; i++) {
+    const refLab = labOfLin(rLin[i][0], rLin[i][1], rLin[i][2]);
+    const e0 = dE(labOfLin(mLin[i][0], mLin[i][1], mLin[i][2]), refLab);
+    const co = matVec(M, mLin[i]);
+    const e1 = dE(labOfLin(Math.max(0, co[0]), Math.max(0, co[1]), Math.max(0, co[2])), refLab);
+    de0 += e0; de1 += e1;
+    rows.push("<tr><td>" + CC24_NAME[i] + "</td><td>" + swatch(meas[i]) + "</td><td>" +
+      swatch(co.map(l2s)) + "</td><td>" + swatch(CC24[i]) + "</td><td>" + e0.toFixed(1) + "</td><td>" + e1.toFixed(1) + "</td></tr>");
+  }
+  de0 /= 24; de1 /= 24;
+  const good = de1 < de0 && de1 < 12;
+  $("#ccOut").innerHTML = warn +
+    "<table>" + row("校正前平均 ΔE", de0.toFixed(2)) +
+    row("校正後平均 ΔE", "<b style='color:" + (good ? "var(--ok)" : "var(--warn)") + "'>" + de1.toFixed(2) + "</b>") + "</table>" +
+    "<p class='note'>ΔE 是跟色卡標準值的色差。<b>校正後平均 ΔE 落在 3～8 算很好，10 以內堪用</b>；" +
+    "如果比校正前還大，代表點錯角或色卡上有反光。</p>" +
+    "<details style='margin-top:8px'><summary style='color:var(--dim);font-size:12.5px'>看 24 色塊逐塊結果</summary>" +
+    "<table><tr><th>色塊</th><th>拍到</th><th>校正後</th><th>標準</th><th>ΔE前</th><th>ΔE後</th></tr>" +
+    rows.join("") + "</table></details>" +
+    "<button id='btnCcApply'>套用這組校色矩陣</button>";
+  $("#ccHint").textContent = "24 個色塊已取樣";
+  $("#btnCcApply").onclick = () => {
+    CAL = { type: "ccm", t: Date.now(), M: M, de0: de0, de1: de1, n: 24 };
+    save(LS.cal, CAL); renderCal(); refreshAll();
+    $("#ccOut").innerHTML = "<div class='warnbox' style='border-color:#1D3A24;background:#0C1A10;color:#7EE787'>" +
+      "已套用（平均 ΔE " + de1.toFixed(2) + "），過去所有紀錄也一起重新換算了。</div>";
+    $("#ccWrap").style.display = "none"; ccCv = null;
+  };
+}
+
+/* ═══════════════ 事件接線 ═══════════════ */
+$("#fileIn").onchange = async e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  try {
+    const cv = await fileToCanvas(f, filePurpose === "shot" ? 1100 : 1500);
+    if (filePurpose === "shot") enterAdjust(cv, false);
+    else if (filePurpose === "gray") loadGray(cv);
+    else if (filePurpose === "cc") loadCC(cv);
+  } catch (err) { alert("讀不到這張照片"); }
+};
+function pick(purpose, useCam) {
+  filePurpose = purpose;
+  const el = $("#fileIn");
+  if (useCam) el.setAttribute("capture", "environment"); else el.removeAttribute("capture");
+  el.value = ""; el.click();
+}
+$("#btnShot").onclick = () => {
+  const cv = grabFrame();
+  if (!cv) { alert("相機還沒準備好，或請改用「選照片」。"); return; }
+  enterAdjust(cv, facing === "user");
+};
+$("#btnPick").onclick = () => pick("shot", false);
+$("#btnFlip").onclick = () => { facing = facing === "user" ? "environment" : "user"; wbLocked = false; $("#btnLock").textContent = "鎖白平衡"; startCam(); };
+$("#btnLock").onclick = toggleWB;
+$("#btnBack").onclick = () => showStep("live");
+$("#btnRun").onclick = runAnalysis;
+$("#btnAgain").onclick = () => showStep("live");
+$("#btnSave").onclick = () => {
+  if (!LAST) return;
+  LAST.note = $("#noteIn").value.trim();
+  RECS.push(LAST); if (RECS.length > 300) RECS = RECS.slice(-300);
+  if (save(LS.rec, RECS)) { $("#noteIn").value = ""; LAST = null; renderHist(); go("hist"); }
+};
+$$("#segSite button").forEach(b => b.onclick = () => {
+  $$("#segSite button").forEach(x => x.classList.remove("on")); b.classList.add("on"); SITE = b.dataset.site;
+});
+$("#btnGrayShot").onclick = () => pick("gray", true);
+$("#btnGrayPick").onclick = () => pick("gray", false);
+$("#btnCcShot").onclick = () => pick("cc", true);
+$("#btnCcPick").onclick = () => pick("cc", false);
+$("#btnCalClear").onclick = () => {
+  if (!confirm("清除校色資料？紀錄會回到未校色的數值。")) return;
+  CAL = null; localStorage.removeItem(LS.cal); renderCal(); refreshAll();
+};
+$("#btnCsv").onclick = () => dl("tongue-" + new Date().toISOString().slice(0, 10) + ".csv", toCSV(), "text/csv;charset=utf-8");
+$("#btnJson").onclick = () => dl("tongue-" + new Date().toISOString().slice(0, 10) + ".json",
+  JSON.stringify({ exported: new Date().toISOString(), settings: SET, calibration: CAL,
+    records: RECS.map(r => { const o = Object.assign({}, r); delete o.thumb; return o; }) }, null, 1), "application/json");
+$("#btnWipe").onclick = () => {
+  if (!confirm("刪掉全部 " + RECS.length + " 筆紀錄？這個動作救不回來，建議先匯出。")) return;
+  RECS = []; save(LS.rec, RECS); renderHist();
+};
+
+/* 設定 */
+function applySet() {
+  $$("#segSpace button").forEach(b => b.classList.toggle("on", b.dataset.sp === SET.space));
+  $("#thR").value = Math.round(SET.th * 100); $("#thVal").textContent = SET.th.toFixed(2);
+  $("#deR").value = SET.de; $("#deVal").textContent = "ΔE " + SET.de;
+  $("#useCalChk").checked = SET.useCal;
+}
+$$("#segSpace button").forEach(b => b.onclick = () => {
+  SET.space = b.dataset.sp;
+  if (SET.space === "lin" && SET.th > 0.62) SET.th = +(SET.th * 0.62).toFixed(2);
+  if (SET.space === "srgb" && SET.th < 0.5) SET.th = +(SET.th / 0.62).toFixed(2);
+  save(LS.set, SET); applySet(); refreshAll();
+});
+$("#thR").oninput = e => { SET.th = +e.target.value / 100; $("#thVal").textContent = SET.th.toFixed(2); };
+$("#thR").onchange = () => { save(LS.set, SET); refreshAll(); };
+$("#deR").oninput = e => { SET.de = +e.target.value; $("#deVal").textContent = "ΔE " + SET.de; };
+$("#deR").onchange = () => save(LS.set, SET);
+$("#useCalChk").onchange = e => { SET.useCal = e.target.checked; save(LS.set, SET); renderCal(); refreshAll(); };
+function refreshAll() { if (LAST) renderResult(LAST); renderHist(); }
+
+/* 分頁 */
+function go(v) {
+  $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
+  $$(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  if (v === "cap") { if ($("#stepLive").style.display !== "none") startCam(); }
+  else stopCam();
+  if (v === "hist") renderHist();
+  if (v === "cal") renderCal();
+  window.scrollTo(0, 0);
+}
+$$("nav button").forEach(b => b.onclick = () => go(b.dataset.v));
+
+/* 啟動 */
+applySet(); renderCal(); refreshAll(); showStep("live");
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+document.addEventListener("visibilitychange", () => { if (document.hidden) stopCam(); });
+</script>
+</body>
+</html>
