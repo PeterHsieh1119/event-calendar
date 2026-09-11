@@ -101,6 +101,17 @@ try {
 const T = sandbox.__T;
 if (!T) { console.error("拿不到匯出的函式，EXPORT 那段可能對不上實作"); process.exit(1); }
 
+/* 日期夾具一律相對於「今天」算，不要寫死。
+   mergeRemote 對已經過去的事件是不動的（那是歷史紀錄），所以寫死的日期只要被
+   今天追過，整組夾具就會靜靜失真：2026-09-11 那天起，下面 10b 與 14 的固定日期
+   全部落到過去，三條斷言一起紅——程式沒壞，是測試自己爛掉。
+   這種「某天開始就會紅」的測試比沒有測試更糟：它會擋住部署，而且看起來像真的壞了。 */
+const D = (n) => {
+  const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") +
+    "-" + String(d.getDate()).padStart(2, "0");
+};
+
 /* ── 1. 設定表一致性：三張表的鍵必須完全對得上 ── */
 const catKeys = Object.keys(T.CAT).sort();
 Object.keys(T.PXD0).forEach((k) =>
@@ -307,30 +318,30 @@ catKeys.forEach((k) => {
       note: "", checks: [], src: "" }, extra || {});
 
   // (1) 已確認的推算日，被另一個已確認的日期更正 → 取代，不是並存
-  T.setEVENTS([E("2026-09-10", false, { note: "推算的" })]);
-  T.mergeRemote([E("2026-09-02", false, { note: "官方公告的" })]);
+  T.setEVENTS([E(D(14), false, { note: "推算的" })]);
+  T.mergeRemote([E(D(6), false, { note: "官方公告的" })]);
   let after = T.getEVENTS().filter((e) => e.title === "測試 財報");
   eq("確認日被確認的更正取代後只剩一筆", after.length, 1);
-  eq("留下來的是更正後的日期", after[0].date, "2026-09-02");
+  eq("留下來的是更正後的日期", after[0].date, D(6));
   eq("更正的 note 也跟著進來", after[0].note, "官方公告的");
 
   // (2) 反向：est 的猜測日蓋不掉已確認的日期
-  T.setEVENTS([E("2026-09-10", false, { note: "官方確認的" })]);
-  T.mergeRemote([E("2026-09-02", true, { note: "猜的" })]);
+  T.setEVENTS([E(D(14), false, { note: "官方確認的" })]);
+  T.mergeRemote([E(D(6), true, { note: "猜的" })]);
   after = T.getEVENTS().filter((e) => e.title === "測試 財報").sort(
     (a, b) => a.date.localeCompare(b.date));
   eq("猜測日不會取代已確認的日期", after.length, 2);
-  ok("已確認的那筆還在", after.some((e) => e.date === "2026-09-10" && !e.est));
+  ok("已確認的那筆還在", after.some((e) => e.date === D(14) && !e.est));
 
   // (3) 週期性重複的同名事件：只下架最接近的一筆，隔壁幾週不能被連坐
-  T.setEVENTS([E("2026-09-03", true), E("2026-09-10", true), E("2026-09-17", true)]);
-  T.mergeRemote([E("2026-09-11", false)]);
+  T.setEVENTS([E(D(7), true), E(D(14), true), E(D(21), true)]);
+  T.mergeRemote([E(D(15), false)]);
   after = T.getEVENTS().filter((e) => e.title === "測試 財報").map((e) => e.date).sort();
-  eq("只取代最接近的那一筆", after.join(","), "2026-09-03,2026-09-11,2026-09-17");
+  eq("只取代最接近的那一筆", after.join(","), [D(7), D(15), D(21)].sort().join(","));
 
   // (4) 已經過去的事件是歷史紀錄，更正不去動它
-  T.setEVENTS([E("2026-01-05", true, { note: "去年初的" })]);
-  T.mergeRemote([E("2026-01-08", false, { note: "更正" })]);
+  T.setEVENTS([E(D(-250), true, { note: "很久以前的" })]);
+  T.mergeRemote([E(D(-247), false, { note: "更正" })]);
   after = T.getEVENTS().filter((e) => e.title === "測試 財報");
   eq("過去的事件不會被更正掉", after.length, 2);
 
@@ -463,37 +474,38 @@ catKeys.forEach((k) => {
   const base = T.getEVENTS();
   const W = (d) => ({ date: d, kind: "D", title: "初領失業金", cat: "claims",
                       est: true, note: "", checks: [], t: "08:30" });
-  const weeks = ["2026-09-03", "2026-09-10", "2026-09-17", "2026-09-24"];
+  const weeks = [D(7), D(14), D(21), D(28)];
   const dates = () => T.getEVENTS().filter((e) => e.title === "初領失業金")
     .map((e) => e.date).sort().join(",");
+  const sorted = (a) => a.slice().sort().join(",");
 
   // (1) routine 只是把某一週標成已確認，日期沒變
   T.setEVENTS(weeks.map(W));
-  T.mergeRemote([{ date: "2026-09-10", kind: "D", title: "初領失業金", cat: "claims",
+  T.mergeRemote([{ date: D(14), kind: "D", title: "初領失業金", cat: "claims",
                    est: false, note: "官方確認" }]);
-  eq("確認同一天不會刪掉隔壁那一週", dates(), weeks.join(","));
+  eq("確認同一天不會刪掉隔壁那一週", dates(), sorted(weeks));
   ok("確認的那一筆不再是推算日",
-    T.getEVENTS().filter((e) => e.date === "2026-09-10")[0].est === false);
+    T.getEVENTS().filter((e) => e.date === D(14))[0].est === false);
 
   // (2) 一次確認整串，也不能互相刪
   T.setEVENTS(weeks.map(W));
   T.mergeRemote(weeks.map((d) => Object.assign(W(d), { est: false })));
-  eq("整串一起確認也不會互相刪", dates(), weeks.join(","));
+  eq("整串一起確認也不會互相刪", dates(), sorted(weeks));
 
   // (3) 真的改期時，還是要下架最接近的舊日期
   T.setEVENTS(weeks.map(W));
-  T.mergeRemote([{ date: "2026-09-11", kind: "D", title: "初領失業金", cat: "claims",
+  T.mergeRemote([{ date: D(15), kind: "D", title: "初領失業金", cat: "claims",
                    est: false, note: "官方延後一天" }]);
   eq("真的改期時舊日期要下架",
-    dates(), "2026-09-03,2026-09-11,2026-09-17,2026-09-24");
+    dates(), sorted([D(7), D(15), D(21), D(28)]));
 
   // (4) 改期的目標日剛好是另一週時，那一週不可以被當成舊日期刪掉
   T.setEVENTS(weeks.map(W));
-  T.mergeRemote([{ date: "2026-09-17", kind: "D", title: "初領失業金", cat: "claims",
+  T.mergeRemote([{ date: D(21), kind: "D", title: "初領失業金", cat: "claims",
                    est: false, note: "更正" },
-                 { date: "2026-09-24", kind: "D", title: "初領失業金", cat: "claims",
+                 { date: D(28), kind: "D", title: "初領失業金", cat: "claims",
                    est: false, note: "更正" }]);
-  eq("更正層自己列的日期不會被當成舊日期", dates(), weeks.join(","));
+  eq("更正層自己列的日期不會被當成舊日期", dates(), sorted(weeks));
 
   T.setEVENTS(base);
 }
@@ -570,7 +582,7 @@ catKeys.forEach((k) => {
   ok("頂部那行講得出目前定價", T.policyLine().indexOf("3.63%") >= 0, T.policyLine());
 
   // 未來事件：顯示現在定價到哪
-  const fut = T.policyHTML({ date: "2027-01-11", cat: "cpi", title: "CPI" });
+  const fut = T.policyHTML({ date: D(120), cat: "cpi", title: "CPI" });
   ok("未來事件顯示目前的路徑", fut.indexOf("09/16") >= 0, fut.slice(0, 120));
   ok("未來事件顯示有效利率", fut.indexOf("3.63%") >= 0);
 
@@ -593,7 +605,7 @@ catKeys.forEach((k) => {
   // 雲端字串照樣要跳脫
   T.applyPolicy(Object.assign({}, POL, { source: LT + "img src=x onerror=alert(1)" }));
   ok("policy.json 的字串也跳脫",
-    T.policyHTML({ date: "2027-01-11", cat: "cpi" }).indexOf(LT + "img") === -1);
+    T.policyHTML({ date: D(120), cat: "cpi" }).indexOf(LT + "img") === -1);
   T.applyPolicy(null);
 }
 
