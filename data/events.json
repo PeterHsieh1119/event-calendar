@@ -1,18 +1,8 @@
 {
- "generated": "2026-09-11T23:50:17+00:00",
+ "generated": "2026-09-12T23:40:24+00:00",
  "source": "官方排程（未設 FMP_API_KEY）",
- "count": 16,
+ "count": 15,
  "events": [
-  {
-   "date": "2026-09-11",
-   "kind": "D",
-   "cat": "cpi",
-   "title": "CPI",
-   "est": false,
-   "src": "bls.gov",
-   "note": "核心服務與房租分項決定通膨黏性，比總數重要。",
-   "t": "08:30"
-  },
   {
    "date": "2026-09-16",
    "kind": "D",
