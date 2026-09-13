@@ -377,6 +377,13 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
     <div id="dataStat"></div>
   </div>
   <div class="panelbox">
+    <h4>回測：這組分數排得準不準</h4>
+    <p>拿過去兩年已經發生的事件，用網站自己的 score() 重新計分，配到它被吸收的美股交易日，
+      再跟那一天 QQQ 的實際變動比。<b>實際變動先除以前 20 個交易日的已實現波動換算成 σ</b>，
+      不然量到的會是波動叢聚而不是事件的預測力。由 <span class="est">scripts/backtest.js</span> 產生。</p>
+    <div id="backtestBody">載入中…</div>
+  </div>
+  <div class="panelbox">
     <h4>更新日誌</h4>
     <p>每天的排程任務改了什麼，都會寫進 data/changelog.json，這裡直接讀。</p>
     <div id="chlog" class="log">載入中…</div>
@@ -896,7 +903,7 @@ function buildBaseline(y0,y1){
     [0,3,6,9].forEach(m=>{if(y>=y0&&y<=y1)P(iso(nthWd(y,m,2,4)),"N","大型雲端財報週","cloud",true,"四大的資本支出指引，是整條 AI 供應鏈分子端的源頭。",ck("cloud"));});
   }
   P("2026-11-03","R","美國期中選舉","election",false,"席次決定 2027 起的財政與稅制走向，也決定關稅政策的政治約束。",ck("election"));
-  P("2027-01-15","R","政府撥款期限","election",true,"關門風險會延後官方數據發布，讓市場暫時失去分母端的判斷依據。",ck("default"));
+  P("2026-12-11","R","政府撥款期限","election",false,"關門風險會延後官方數據發布，讓市場暫時失去分母端的判斷依據。",ck("default"));
 
   WATCH.forEach(w=>{
     const a=parse(w.anchor);
@@ -1599,6 +1606,11 @@ async function loadRemote(){
     stat("regime.json","環境設定",n>0,(j&&(j.asof||j.generated))||"",n);
   }catch(e){stat("regime.json","環境設定",false,"",0,"讀取失敗");}
   try{
+    const j=await grab("backtest.json");
+    BACKTEST=(j&&j.ic)?j:null;
+    stat("backtest.json","回測（rank IC）",!!BACKTEST,(j&&(j.asof||j.generated))||"",(j&&j.n)||0);
+  }catch(e){BACKTEST=null;stat("backtest.json","回測（rank IC）",false,"",0,"讀取失敗");}
+  try{
     const j=await grab("changelog.json");
     CHANGELOG=j;
     stat("changelog.json","更新日誌",Array.isArray(j)&&j.length>0,
@@ -1610,7 +1622,8 @@ async function loadRemote(){
    所以資料頁必須自己講出「這個檔案已經三天沒動了」——不然某個排程默默掛掉，
    網站看起來還是好好的，只是數字停在上禮拜。null＝本來就不是定期更新的。 */
 const STALE={"events.json":3,"px.json":4,"betas.json":4,"priced.json":3,"policy.json":4,
-             "regime.json":10,"reviews.json":null,"curated.json":null,"changelog.json":null};
+             "regime.json":10,"backtest.json":10,"reviews.json":null,"curated.json":null,
+             "changelog.json":null};
 function ageDays(gen){
   const s=String(gen||"").slice(0,10);
   if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return null;
@@ -1643,6 +1656,78 @@ function renderDataStat(){
     +`複盤與策劃事件本來就不是每天都有，所以不列更新間隔。`
     +`<br>只存在這台裝置上的：${local.join("、")}。</div>`;
 }
+/* data/backtest.json：由 scripts/backtest.js 每週產生。
+   回答的是「70 分門檻不是隨便訂的嗎」——沒有這個數字，整組分數就只是看起來合理的先驗。
+   結果不好看也要照實顯示：一個只在自己準的時候才給看的回測沒有任何用處。 */
+let BACKTEST=null;
+function icVerdict(ic){
+  const a=Math.abs(ic);
+  if(a<0.05)return["#FF5C5C","沒有可辨識的預測力"];
+  if(a<0.10)return["var(--tx2)","微弱"];
+  if(a<0.20)return["var(--up)","有，但不強"];
+  return["var(--up)","明顯"];
+}
+function backtestHTML(j){
+  if(!j||!j.ic)return`<div class="log">還沒有回測結果。跑 <span class="est">node scripts/backtest.js</span> 產生 data/backtest.json。</div>`;
+  const ic=j.ic||{}, main=(ic.day!=null)?ic.day:ic.score;
+  const [col,word]=icVerdict(main==null?0:main);
+  const num=(v)=>v==null?"—":(v>0?"+":"")+v.toFixed(3);
+  const row=(a,b,c,d)=>`<div class="calrow"><span style="font-size:11.5px">${a}</span>`
+    +`<span class="v">${b}</span><span class="v">${c}</span><span class="v">${d}</span></div>`;
+  let h=`<div class="kv"><span class="k">事件層級 rank IC（衝擊分數）</span>`
+    +`<span class="v" style="font-family:var(--mono)">${num(ic.score)}</span></div>`
+    +`<div class="kv"><span class="k">事件層級 rank IC（定價落差）</span>`
+    +`<span class="v" style="font-family:var(--mono)">${num(ic.gap)}</span></div>`
+    +`<div class="kv"><span class="k">日層級 rank IC（同日合分）</span>`
+    +`<span class="v" style="font-family:var(--mono);color:${col}">${num(ic.day)}　${esc(word)}</span></div>`
+    +`<div class="kv"><span class="k">第十分位 − 第一分位</span>`
+    +`<span class="v" style="font-family:var(--mono)">${j.spread==null?"—":(j.spread>0?"+":"")+j.spread} σ</span></div>`
+    +`<div class="kv"><span class="k">樣本</span><span class="v">${j.n} 筆事件 · ${j.nDays} 個交易日`
+    +`（${esc(j.window?j.window.from:"")} → ${esc(j.window?j.window.to:"")}）</span></div>`;
+  const b=j.baseline;
+  if(b&&b.eventDays&&b.quietDays){
+    const same=Math.abs(b.eventDays.z-b.quietDays.z)<0.05;
+    h+=`<div class="log" style="margin:10px 0 2px">`
+      +`<b>先問更早的一個問題</b>：有事件的日子比沒事件的日子會動嗎？`
+      +`有事件 <b>${b.eventDays.z}σ</b>（${b.eventDays.n} 天） vs 沒事件 <b>${b.quietDays.z}σ</b>（${b.quietDays.n} 天）。`
+      +(same?`<b style="color:#FF5C5C">兩邊一樣。</b>那就不是「排序不準」而已，是「這一天有沒有排程事件」本身沒有篩出任何東西——`
+            +`不過日曆上超過半數的交易日本來就有事件（初領失業金每週一筆），這個對照組先天就被稀釋了。`
+           :`事件日確實比較會動。`)+`</div>`;
+  }
+  if(Array.isArray(j.deciles)&&j.deciles.length){
+    h+=`<div style="margin-top:12px">`+row(`<span style="color:var(--tx3)">分數十分位</span>`,
+      `<span style="color:var(--tx3)">分數區間</span>`,`<span style="color:var(--tx3)">筆數</span>`,
+      `<span style="color:var(--tx3)">平均 σ</span>`);
+    j.deciles.forEach(d=>{h+=row("第 "+d.d+" 分位",d.sLo+"–"+d.sHi,d.n,d.z.toFixed(2));});
+    h+=`</div>`;
+  }
+  if(Array.isArray(j.cats)&&j.cats.length){
+    const big=j.cats.filter(c=>c.n>=6);
+    if(big.length){
+      const zs=big.map(c=>c.z), mz=zs.reduce((a,b)=>a+b,0)/zs.length;
+      h+=`<div class="log" style="margin:14px 0 4px"><b>分類型：模型錯在哪裡</b>　`
+        +`只列樣本 6 筆以上的。<span style="color:#FF5C5C">紅色</span>＝分數高但實際不太動（被高估），`
+        +`<span style="color:var(--den)">藍色</span>＝分數低但實際會動（被低估）。`
+        +`平均 σ 的基準是 ${mz.toFixed(2)}。</div>`;
+      h+=row(`<span style="color:var(--tx3)">類型</span>`,`<span style="color:var(--tx3)">筆數</span>`,
+        `<span style="color:var(--tx3)">平均分數</span>`,`<span style="color:var(--tx3)">平均 σ</span>`);
+      const sMid=50;
+      big.forEach(c=>{
+        const over=(c.s>=sMid&&c.z<mz-0.15), under=(c.s<sMid&&c.z>mz+0.15);
+        const cl=over?"#FF5C5C":(under?"var(--den)":"var(--tx2)");
+        const lab=(CAT[c.cat]&&CAT[c.cat].label)||c.cat;
+        h+=row(esc(lab),c.n,c.s,`<span style="color:${cl}">${c.z.toFixed(2)}</span>`);
+      });
+    }
+  }
+  if(Array.isArray(j.caveats)&&j.caveats.length){
+    h+=`<div class="log" style="margin-top:12px;line-height:1.75"><b>這個數字不能拿來說什麼</b><br>`
+      +j.caveats.map(c=>"· "+esc(c)).join("<br>")+`</div>`;
+  }
+  return h;
+}
+function renderBacktest(){const el=$("backtestBody");if(el)el.innerHTML=backtestHTML(BACKTEST);}
+
 let CHANGELOG=null, CURATED=0, RREV=0;
 /* data/reviews.json：由每日盤後 routine 寫入的複盤。
    本機自己填過的同一筆優先，routine 的只補空缺，不會蓋掉你的紀錄。 */
@@ -2219,7 +2304,7 @@ function render(){
   $("todaytxt").textContent=iso(TODAY)+(BUILD?" · 資料 "+BUILD.slice(0,10):"");updateRegimeText();
   if(view==="impact")renderImpact();else if(view==="year")renderYear();
   else if(view==="month")renderMonth();else if(view==="regime")renderRegime();
-  if(view==="cfg")renderDataStat();
+  if(view==="cfg"){renderDataStat();renderBacktest();}
   else if(view==="matrix")renderMatrix();else if(view==="review")renderReview();
   else if(view==="daily")renderDaily();
   if(view==="cfg"&&$("chlog")){
@@ -2333,7 +2418,7 @@ async function refreshAll(){
     try{
       await loadRemote();
       applyCalib(); renderRegime(); updateRegimeText(); renderPxPick(); render();
-      if(view==="cfg")renderDataStat();
+      if(view==="cfg"){renderDataStat();renderBacktest();}
       const n=new Date();
       setNote(`已更新 ${pad(n.getHours())}:${pad(n.getMinutes())}`
         +` · 事件 ${EVENTS.length} · 定價 ${PRICED.length} · 複盤 ${Object.keys(REVIEW).length}`

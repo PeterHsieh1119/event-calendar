@@ -89,6 +89,7 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "ageDays:ageDays,STALE:STALE,applyPolicy:applyPolicy,policyHTML:policyHTML," +
   "policyLine:policyLine,polOdds:polOdds,POLCAT:POLCAT,checksOf:checksOf," +
   "polMoveBp:polMoveBp,verdict:verdict,reviewForm:reviewForm," +
+  "backtestHTML:backtestHTML,icVerdict:icVerdict," +
   "getBETAS:function(){return BETAS;}};\n";
 
 try {
@@ -532,7 +533,7 @@ catKeys.forEach((k) => {
   // 每一個 STALE 的 key 都要真的是 loadRemote 會抓的檔案，不然設了也沒用
   const FILES = ["events.json", "curated.json", "px.json", "priced.json",
                  "reviews.json", "betas.json", "policy.json", "regime.json",
-                 "changelog.json"];
+                 "backtest.json", "changelog.json"];
   eq("STALE 涵蓋所有雲端檔案",
     FILES.filter((f) => !(f in T.STALE)).join(","), "");
   eq("STALE 沒有多餘的 key",
@@ -753,6 +754,77 @@ catKeys.forEach((k) => {
     eq("同時解得出這次會議的會後隱含利率", pre.sep, 3.88);
     ok("整條路徑不是只有一次會議", pre.n >= 2, "只解出 " + pre.n + " 次");
   }
+}
+
+/* ── 18. 回測面板：backtestHTML 把 data/backtest.json 畫成「資料」頁那一段 ──
+   這一段的重點不是排版，是「結果不好看的時候不能悄悄不顯示」。
+   一個只在自己準的時候才給看的回測沒有任何用處，所以 IC 接近 0 必須印出紅字結論。 */
+{
+  const BT = {
+    generated: "2026-09-13T00:00:00Z", asof: "2026-09-13",
+    window: { from: "2024-10-11", to: "2026-09-11" },
+    n: 421, nDays: 285, benchmark: "QQQ",
+    ic: { score: 0.033, gap: -0.017, day: -0.004 },
+    spread: -0.01,
+    baseline: { allDays: { n: 480, z: 0.82 }, eventDays: { n: 285, z: 0.82 },
+                quietDays: { n: 195, z: 0.82 } },
+    deciles: [{ d: 1, n: 42, sLo: 22, sHi: 27, z: 0.84, absPct: 0.9 },
+              { d: 10, n: 42, sLo: 76, sHi: 91, z: 0.83, absPct: 0.9 }],
+    cats: [{ cat: "cpi", n: 21, s: 82, z: 0.50 },
+           { cat: "nfp", n: 22, s: 78, z: 1.25 },
+           { cat: "twrev", n: 21, s: 27, z: 1.09 },
+           { cat: "jolts", n: 21, s: 27, z: 0.48 },
+           { cat: "ecb", n: 1, s: 48, z: 1.32 }],
+    caveats: ["樣本內：用今天的環境設定重新計分。"],
+  };
+  const h = T.backtestHTML(BT);
+
+  ok("IC 三個數字都印出來", h.indexOf("+0.033") >= 0 && h.indexOf("-0.017") >= 0 &&
+    h.indexOf("-0.004") >= 0, h.slice(0, 200));
+  ok("IC 接近 0 時說的是「沒有可辨識的預測力」，不是含糊帶過",
+    h.indexOf("沒有可辨識的預測力") >= 0);
+  ok("沒有預測力時用紅字，不會跟有預測力長得一樣", h.indexOf("#FF5C5C") >= 0);
+  ok("樣本數與區間要寫出來", h.indexOf("421") >= 0 && h.indexOf("2024-10-11") >= 0);
+  ok("事件日與非事件日的對照組要顯示", h.indexOf("0.82") >= 0 && h.indexOf("195") >= 0);
+  ok("兩邊一樣時要講出「篩不出東西」這個結論", h.indexOf("沒有篩出任何東西") >= 0);
+  ok("十分位表印得出來", h.indexOf("第 1 分位") >= 0 && h.indexOf("第 10 分位") >= 0);
+  ok("警語要顯示，不能只報好消息", h.indexOf("樣本內") >= 0);
+
+  // 分類型：樣本 6 筆以下的不列（一筆 ecb 不能拿來說任何事）
+  ok("分類型只列樣本 6 筆以上的", h.indexOf("1.32") < 0, "樣本 1 筆的 ecb 被列出來了");
+  // 高分低反應＝高估（紅），低分高反應＝低估（藍）。兩個方向都要標得出來
+  ok("高分但實際不太動的類型標成高估", h.indexOf("0.50") >= 0 && h.indexOf("#FF5C5C") >= 0);
+  ok("低分但實際會動的類型標成低估", h.indexOf("var(--den)") >= 0);
+  ok("類型顯示的是看得懂的名稱不是代碼",
+    h.indexOf(T.CAT.twrev.label) >= 0, "找不到 " + T.CAT.twrev.label);
+
+  // 沒有資料 / 壞資料時不能整頁爆掉
+  ok("還沒有回測結果時給的是「怎麼產生」而不是空白",
+    T.backtestHTML(null).indexOf("scripts/backtest.js") >= 0);
+  ok("缺 ic 欄位時當成沒有資料", T.backtestHTML({ n: 1 }).indexOf("scripts/backtest.js") >= 0);
+  ok("只有 ic 沒有其他欄位也不會爆",
+    T.backtestHTML({ ic: { score: 0.5, gap: null, day: null } }).length > 0);
+
+  // 門檻：IC 大到有意義時就不能再說「沒有預測力」
+  const strong = T.backtestHTML(Object.assign({}, BT, { ic: { score: .3, gap: .3, day: .3 } }));
+  ok("IC 夠大時結論要跟著變", strong.indexOf("沒有可辨識的預測力") < 0 &&
+    strong.indexOf("明顯") >= 0);
+
+  // 回測檔案本身也要被新鮮度監看，不然它靜靜停在幾個月前也沒人知道
+  ok("backtest.json 有新鮮度門檻", T.STALE["backtest.json"] > 0);
+  ok("每週產生的回測門檻不比每日檔案嚴",
+    T.STALE["backtest.json"] > T.STALE["events.json"]);
+}
+
+/* ── 19. 政府撥款期限：這是會過期的硬編日期，不是規則推得出來的 ──
+   2026-09-13 從 2027-01-15（est）改成 2026-12-11（9/1 通過的短期撥款到期日）。
+   沒有這條斷言的話，下次有人把它改回推算值也不會有人發現。 */
+{
+  const f = T.EVENTS.filter((e) => e.title === "政府撥款期限");
+  eq("日曆上只有一筆政府撥款期限", f.length, 1);
+  eq("日期是實際的撥款到期日", f[0] && f[0].date, "2026-12-11");
+  ok("已確認不是推算", f[0] && f[0].est === false);
+  eq("走風險溢酬那一端，跟規則引擎原本那筆同一個代碼", f[0] && f[0].cat, "election");
 }
 
 /* ── 報告 ── */
