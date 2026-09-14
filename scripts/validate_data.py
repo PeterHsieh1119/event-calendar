@@ -499,6 +499,25 @@ def main():
     check_policy()
     check_routines(cats)
 
+    # Actions 抓取排程掛掉也是靜默的：routine 照跑、網站照開，只是資料停在某一天。
+    # update-data.yml 每天 22:00 UTC 跑一次（含週末），所以超過 3 天沒動就是壞了。
+    for fn, label in (("events.json", "官方確認的事件"),
+                      ("px.json", "七個標的的日線"),
+                      ("policy.json", "聯邦資金期貨反推的政策路徑")):
+        j = load(fn, {})
+        g = j.get("generated") if isinstance(j, dict) else None
+        if not g:
+            continue
+        try:
+            d = dt.date.fromisoformat(str(g)[:10])
+        except ValueError:
+            continue
+        gap = (today - d).days
+        if gap > 3:
+            warn(fn, "generated 是 %d 天前（%s）。這個檔案由 GitHub Actions 每天寫，"
+                     "停這麼久代表抓取排程掛了——「%s」現在是舊的，"
+                     "不要自己手動補，去看 Actions" % (gap, str(g)[:10], label))
+
     cl = load("changelog.json", [])
     if isinstance(cl, list):
         for i, c in enumerate(cl):

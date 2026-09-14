@@ -40,7 +40,7 @@ prompt 進了版控，每週任務可以用 PR 改進自己的指示。
 
 | 任務 | 何時跑 | 指示檔 | 負責的檔案 |
 |---|---|---|---|
-| 每日：定價與新事件 | 交易日台北 07:00 | `routines/daily.md` | `priced.json`、`curated.json` |
+| 每日：定價與新事件＋檢查與優化 | 交易日台北 07:00 | `routines/daily.md` | `priced.json`、`curated.json`、`backlog.md` |
 | 每日：盤後複盤 | 交易日台北 08:00 | `routines/review.md` | `reviews.json` |
 | 每日：當日校正 | 交易日台北 21:30 | `routines/intraday.md` | `priced.json`、`curated.json` |
 | 每週：前瞻、環境、校正、工程 | 週日台北 21:00 | `routines/weekly.md` | `regime.json`、`index.html`、`scripts/`、`routines/` |
@@ -134,6 +134,7 @@ routines/daily.md            每日 07:00 任務的指示（網站與 cloud rout
 routines/review.md           每日 08:00 盤後複盤
 routines/intraday.md         每日 21:30 當日校正
 routines/weekly.md           每週日前瞻與工程改進
+routines/backlog.md          每日那趟提出、週日那趟執行的程式碼待辦
 scripts/fetch_events.py      Actions 跑的抓取程式
 scripts/validate_data.py     資料閘門，routine 與 CI 都會跑
 scripts/smoke_test.js        行為煙霧測試，routine 與 CI 都會跑
