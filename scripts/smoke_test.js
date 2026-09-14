@@ -88,7 +88,7 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "esc:esc,viewsHTML:viewsHTML,getREVIEW:function(){return REVIEW;}," +
   "ageDays:ageDays,STALE:STALE,applyPolicy:applyPolicy,policyHTML:policyHTML," +
   "policyLine:policyLine,polOdds:polOdds,POLCAT:POLCAT,checksOf:checksOf," +
-  "polMoveBp:polMoveBp,verdict:verdict,reviewForm:reviewForm," +
+  "polMoveBp:polMoveBp,verdict:verdict,reviewForm:reviewForm,reactionMag:reactionMag," +
   "backtestHTML:backtestHTML,icVerdict:icVerdict," +
   "getBETAS:function(){return BETAS;}};\n";
 
@@ -509,6 +509,23 @@ catKeys.forEach((k) => {
   eq("更正層自己列的日期不會被當成舊日期", dates(), sorted(weeks));
 
   T.setEVENTS(base);
+}
+
+/* ── 14b. 台灣端事件的反應強度：美股欄位是空的，不能算成「沒反應」 ──
+   台積電月營收、央行理監事會打不到美股，複盤時 spx/ndx/y10 本來就填不出東西。
+   沒有退回台股那一欄的話 mag=0，校準會把它當成「意外大、反應小」，
+   然後把整個類型的基準敏感度往下修——拿一個根本沒量到的反應去改模型。 */
+{
+  eq("美股有填的時候照舊看美股",
+    T.reactionMag({ spx: "-0.8", ndx: "-1.3", y10: "+7", twse: "+1.7" }).toFixed(2), "0.98");
+  eq("美股全空時退回台股",
+    T.reactionMag({ spx: "", ndx: "", y10: "", twse: "+1.60" }).toFixed(2), "1.20");
+  eq("兩邊都空還是 0", T.reactionMag({}), 0);
+
+  // 判讀的方向也要跟著退回台股，否則台灣端事件永遠判不出「方向背離」
+  const e = { date: "2026-09-10", title: "台積電月營收", cat: "twrev", kind: "N", t: "TW" };
+  const v = T.verdict(e, { z: "2.0", twse: "+2.4", sigma: "1.0" });
+  ok("台灣端事件判得出反應", v && v.t && v.t.indexOf("反應小") === -1, v && v.t);
 }
 
 /* ── 15. 資料新鮮度：排程掛掉的時候，資料頁要自己講出來 ── */

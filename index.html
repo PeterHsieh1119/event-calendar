@@ -1316,7 +1316,12 @@ function readingHTML(e){
 function reactionMag(r){
   const a=Math.abs(parseFloat(r.spx)||0), b=Math.abs(parseFloat(r.ndx)||0);
   const y=Math.abs(parseFloat(r.y10)||0)/10;      // 10bp ≈ 1%
-  return Math.max(a,b*0.75,y);
+  const m=Math.max(a,b*0.75,y);
+  // 台灣端事件（台積電月營收、央行理監事會）打不到美股，那三欄本來就會是空的。
+  // 沒有這一段的話 mag 會是 0，校準把它讀成「完全沒反應」，然後把整個類型的
+  // 基準敏感度往下調——用一個根本沒量到的反應去修模型，比不修還糟。
+  if(m===0){ const t=Math.abs(parseFloat(r.twse)||0); return t*0.75; }
+  return m;
 }
 /* 事件當天政策路徑的平均移動（bp，正值＝鷹派）。抓不到資料回 null。
    這個數字對政策事件來說就是「意外」本身——演說與 FOMC 沒有共識數字可以算 z 分數，
@@ -1345,7 +1350,8 @@ function verdict(e,r){
   const polBig=(pol!=null&&Math.abs(pol)>=4);
   const sgn=sz||(pol!=null?Math.sign(pol):0);
   const expSign=Math.sign(ai.out.spx||0)*Math.sign(sgn||0);   // 預期的股市方向
-  const gotSign=Math.sign(parseFloat(r.spx)||0);
+  // 方向同理：台灣端事件看台股，美股那一欄是空的
+  const gotSign=Math.sign(parseFloat(r.spx)||0)||Math.sign(parseFloat(r.twse)||0);
   const bigS=Math.abs(sz)>=1||polBig, bigM=mag>= (sc>=60?0.9:0.6);
   if(sgn&&gotSign&&expSign&&expSign!==gotSign)
     return {k:4,t:"方向背離 — 環境可能已經切換",
@@ -1739,7 +1745,7 @@ function applyRemoteReviews(items){
     const k=it.date+"|"+it.title;
     if(REVIEW[k])return;
     REVIEW[k]={cons:it.cons||"",act:it.act||"",z:it.z||"",spx:it.spx||"",ndx:it.ndx||"",
-      y10:it.y10||"",dxy:it.dxy||"",gld:it.gld||"",memo:it.memo||"",
+      y10:it.y10||"",dxy:it.dxy||"",gld:it.gld||"",twse:it.twse||"",memo:it.memo||"",
       sigma:it.sigma||"",metrics:Array.isArray(it.metrics)?it.metrics:[],
       driver:it.driver||"",views:Array.isArray(it.views)?it.views:[],
       ts:it.asof||it.date,by:"routine"};
@@ -2124,7 +2130,7 @@ function openDay(ds,evs,focus){
     // 尤其 sigma 沒了校準會退回寫死的 0.9%，而且畫面上完全看不出來。
     const old=REVIEW[k]||{};
     REVIEW[k]={...old,cons:g("cons"),act:g("act"),z:g("z"),spx:g("spx"),ndx:g("ndx"),
-      y10:g("y10"),dxy:g("dxy"),gld:g("gld"),memo:g("memo"),ts:iso(TODAY),by:"local"};
+      y10:g("y10"),dxy:g("dxy"),gld:g("gld"),twse:g("twse"),memo:g("memo"),ts:iso(TODAY),by:"local"};
     await saveReviews();applyCalib();
     const e2=EVENTS.find(x=>rkey(x)===k);
     openDay(e2.date,vis().filter(x=>x.date===e2.date),e2.title);
@@ -2246,6 +2252,7 @@ function reviewForm(e,bi){
    ${f("z","意外 z 分數","正=高於預期",r.z)}${f("spx","標普當日 %","例 -0.8",r.spx)}
    ${f("ndx","那斯達克 %","例 -1.3",r.ndx)}${f("y10","10Y 變動 bp","例 +7",r.y10)}
    ${f("dxy","美元 %","",r.dxy)}${f("gld","黃金 %","",r.gld)}
+   ${f("twse","台股當日 %","例 +1.7",r.twse)}
    </div><div style="grid-column:1/-1;margin-top:8px"><div class="fld"><label>備註（法說重點、盤中轉折）</label><input id="rv${bi}_memo" value="${esc(r.memo||"")}"></div></div>
    <button class="btn" data-save="${encodeURIComponent(k)}" data-bi="${bi}" style="margin-top:12px">存入複盤</button>`;
   if(r.act||r.spx){

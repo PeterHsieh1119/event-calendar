@@ -379,7 +379,7 @@ def main():
                             err("reviews.json", "「%s」views 的 tone 只能是 "
                                                 "鷹／鴿／偏多／偏空／中性，拿到 %r"
                                 % (t, v.get("tone")))
-            for fld in ("spx", "ndx", "y10", "dxy", "gld", "sigma", "z"):
+            for fld in ("spx", "ndx", "y10", "dxy", "gld", "twse", "sigma", "z"):
                 v = str(it.get(fld, "")).strip()
                 if v and not NUM_RE.match(v):
                     err("reviews.json", "「%s」%s 不是純數值字串：%r" % (t, fld, v))
@@ -401,6 +401,19 @@ def main():
                     err("reviews.json",
                         "「%s」在 events/curated 裡找不到同名事件，"
                         "這筆複盤不會顯示在網站上，等於白做%s" % (t, hint))
+        # 複盤停擺是靜默的：排程照跑、每次都回報成功，reviews.json 就是不長。
+        # 2026-09-02 到 09-13 整整十二天沒有人發現，因為沒有任何東西會講話。
+        # 這裡不設成錯誤（有時候真的就是連假），但每一趟 routine 與每一次 CI 都會看到。
+        rdates = [it["date"] for it in items
+                  if isinstance(it, dict) and valid_date(it.get("date"))]
+        if rdates:
+            newest = max(rdates)
+            gap = (today - dt.date.fromisoformat(newest)).days
+            if gap > 10:
+                warn("reviews.json",
+                     "最新一筆是 %d 天前（%s）。複盤是校準的唯一輸入，"
+                     "停這麼久通常代表盤後那一趟在空轉——"
+                     "看 routines/review.md 第一步的範圍怎麼算" % (gap, newest))
         print("  reviews.json：%d 筆" % len(items))
 
     rg = load("regime.json", {})
