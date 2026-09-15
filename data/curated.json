@@ -1,6 +1,16 @@
 {
- "generated": "2026-09-14T23:17:05Z",
+ "generated": "2026-09-15T23:13:37Z",
  "items": [
+  {
+   "date": "2026-09-14",
+   "kind": "N",
+   "cat": "headline",
+   "title": "Anthropic／OpenAI／xAI 龍頭集體呼籲放緩 AI 模型開發，費半單日重挫",
+   "est": false,
+   "t": "BMO",
+   "note": "9/12（週六）Anthropic CEO Dario Amodei 發文呼籲整個 AI 產業放緩前沿模型的迭代速度，警告若不放緩，失控 AI 代理程式最快 6 個月內可能危及網路安全；提出三步走方案（給外部稽核方員工級存取權檢查安全流程、呼籲民主國家協調安全標準），強調不犧牲商業優勢與美國 AI 領先地位。OpenAI CEO Sam Altman 隨後表態支持放緩前沿模型開發並加強安全措施，xAI 創辦人 Elon Musk 也附和——這是 AI 產業龍頭第一次集體釋出「主動減速」訊號，市場解讀為對 AI 資本支出擴張步調的疑慮，疊加「AI 盈餘成長能否持續、估值已達歷史高檔」的既有隱憂。【反應，SOX 由 px.json 自算，是第一手內部資料】9/14（週一）美股開盤前晶片股已現弱勢（AMD 盤前一度跌 5.6%），費城半導體指數收跌 **−5.86%**（是 7/1 以來最大單日跌幅；20 日日報酬標準差僅 2.42%，這天的跌幅是 2.4 倍）。個股：Corning −13.74%、Teradyne 與 Coherent 跌逾 10%、ARM／Marvell／Intel／Micron／SK 海力士跌逾 5%、NVDA −3.36%、AVGO 與 AMD 跌逾 4%。同日那斯達克綜合指數收 26,186.41（−0.56%）、標普 500 收 7,619.98（−0.48%）、道瓊收 52,421.20（−0.29%，媒體數字）——大盤跌幅遠小於半導體，賣壓集中在 AI 資本支出鏈，不是系統性風險。【px.json 缺口】QQQ／台股在 px.json 目前最新只到 9/11，還沒更新到 9/14，這裡引用的是媒體給的那斯達克綜合指數，不是內部自算的 QQQ；等資料補上再回頭核對。【反方】SeekingAlpha 同日一篇報導稱之為「chip bloodbath bargains」，認為部分龍頭股評價已跌到具吸引力區間，屬於逢低承接的看法，跟賣壓方並存。【為什麼是 kind:N】Amodei 的訴求本質是放緩 AI 模型迭代與資本支出步調，直接改寫的是市場對 AI 晶片需求成長曲線的預期，屬於現金流／盈餘端；同時市場也在做評價壓縮（估值處於歷史高檔），那一段走的是風險溢酬——headline 這個 cat 本身 erp 權重已經最高（0.85），兩個管道同時存在，但改寫預期的起點是分子端，故 kind 標 N。est/pxd 沿用 headline 類型先驗（0.15），此為突發事件、非排程項目，未另立 priced.json 條目。與昨天（9/15）盤後複盤已先發現這個歸因缺口一致，這裡補成正式條目。",
+   "src": "Axios 2026-09-12『Anthropic, OpenAI CEOs call for slowdown in AI development』、TechCrunch 2026-09-12、Forbes 2026-09-12（皆第三級，經 WebSearch 摘要，未讀 Amodei 原文 essay）／9/14 市場反應：21經濟網、觀點網、新浪財經、Yahoo Finance、The Motley Fool、Bloomberg、TradingKey 等多家中英文報導交叉驗證，2026-09-14／09-15（第三級，經 WebSearch 摘要，未讀原文）／SOX 當日跌幅與 20 日標準差由 data/px.json 自算（第一手內部資料）／反方看法：SeekingAlpha 2026-09-14『Chip bloodbath bargains』（第三級，搜尋摘要）"
+  },
   {
    "date": "2026-09-11",
    "kind": "R",

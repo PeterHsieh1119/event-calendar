@@ -1,7 +1,7 @@
 [
  {
   "date": "2026-09-15",
-  "text": "intraday: 日期核對（9/16 FOMC＋零售銷售、9/17 央行理監事會、9/18 日本央行）都對得上，無需更正。定價更新 1 筆：FOMC pxd 0.87→0.93（policy.json asof 9/14 單一結果升息機率 93.2%，較 9/13 的 87.2% 一天內再升 6pp，同日並觀察到 10Y 殖利率盤中觸及 5.02%、2007 年以來新高，方向一致）。另外發現 9/14（週一）費半 -5.86%（px.json 自算，9/11→9/14）疑似由週末 Anthropic／OpenAI／xAI 三方呼籲放緩 AI 模型發展的談話引發，curated.json 目前沒有對應條目，但 9/14 不在本任務的日期範圍內，留給明天的 daily/複盤處理。"
+  "text": "daily: 補 9/14 費半 -5.86% 的歸因缺口，新增 curated.json 1 筆（Anthropic/OpenAI/xAI 呼籲放緩 AI 開發、費半單日重挫，kind:N/cat:headline，延續昨天複盤已發現的缺口）。priced.json 範圍內僅 FOMC／BOJ 兩筆合格，policy.json 尚未更新到新的 asof，未變動。清理檢查：cat／t／過期／重複四項皆無需處理。五項機械檢查：閘門過、0 警告、events/px/policy.json 皆今天更新、reviews.json 今天有活動、線上版本比對照例被 egress proxy 擋下跳過。優化：在 _shared.md 一之四補一條——px.json 七個標的的最新資料日期常不同步，這次 QQQ/TWII 停在 9/11、其他到 9/14~15，逐標的各自看最後一筆，不要假設全部同步到檔案最新日。"
  },
  {
   "date": "2026-09-15",
