@@ -12,6 +12,15 @@
 
 ---
 
+## 同一個站台底下的另一支工具
+
+`tongue/` 是一支獨立的 PWA：**舌象 RGB 量測**——拍舌頭、算取樣區的 RGB 中位色與 B/R 比值、
+追蹤青紫舌（瘀血傾向）的變化，支援灰卡白平衡與 24 色卡完整校色。
+部署後網址是 `https://<帳號>.github.io/event-calendar/tongue/`，跟日曆互不干擾，可以各自加到主畫面。
+用法、拍攝 SOP 與演算法說明見 [`tongue/README.md`](tongue/README.md)。
+
+---
+
 ## 一、放上 GitHub Pages（十分鐘，手機就有網址了）
 
 1. 開一個 repo，例如 `event-calendar`，把這整個資料夾推上去（`main` 分支）。

@@ -1,0 +1,13 @@
+{
+  "name": "舌象 RGB 量測",
+  "short_name": "舌象量測",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0A0E13",
+  "theme_color": "#0A0E13",
+  "orientation": "portrait",
+  "icons": [
+    {"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
