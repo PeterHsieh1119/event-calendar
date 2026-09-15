@@ -334,6 +334,11 @@ python scripts/validate_data.py && node scripts/smoke_test.js
   用 `git log --oneline -5` 找出是哪一筆，`git revert` 它，說明你 revert 了什麼，然後才繼續做自己的事。
 - **commit 之前再跑一次，沒過就不要 commit。** 不要「先推上去再說」，
   也不要為了讓閘門過而放寬檢查——閘門本身不在你的改動範圍內。
+- **動過 `index.html` 或 `sw.js` 就要跑 `python scripts/stamp_version.py`。**
+  它把版本字串蓋成內容的雜湊；沒蓋的話資料驗證會直接報錯（這是錯誤不是警告）。
+  原因：使用者手機上的「更新」按鈕是比對版本字串才決定要不要清快取重載，
+  2026-08-27 到 09-15 之間 index.html 改了十三次、版本一次都沒動，
+  於是那顆按鈕永遠認為沒有新版——**程式碼推上去了，沒有人拿得到。**
 
 ## 九、commit 與回報
 

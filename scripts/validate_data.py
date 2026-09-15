@@ -499,6 +499,25 @@ def main():
     check_policy()
     check_routines(cats)
 
+    # 版本字串沒跟著內容動，使用者的「更新」按鈕就永遠認為沒有新版——
+    # 2026-08-27 到 09-15 之間 index.html 改了十三次，版本一次都沒動。
+    # 這是錯誤不是警告：資料改錯下次覆蓋就好，程式碼推上去卻沒人拿得到才是白做。
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import stamp_version
+        want = stamp_version.compute()
+        have = stamp_version.current()
+        if have[0] != want or have[1] != want:
+            err("index.html / sw.js",
+                "版本字串對不上內容（index.html=%s、sw.js=%s，應該是 %s）。"
+                "跑 python scripts/stamp_version.py 蓋上去——"
+                "不蓋的話「更新」按鈕不會知道有新版，使用者手機上跑的還是舊程式碼"
+                % (have[0], have[1], want))
+        else:
+            print("  版本字串：%s（與 index.html／sw.js 的內容一致）" % want)
+    except Exception as exc:                       # noqa: BLE001
+        warn("index.html / sw.js", "版本檢查跑不起來：%s" % exc)
+
     # Actions 抓取排程掛掉也是靜默的：routine 照跑、網站照開，只是資料停在某一天。
     # update-data.yml 每天 22:00 UTC 跑一次（含週末），所以超過 3 天沒動就是壞了。
     for fn, label in (("events.json", "官方確認的事件"),

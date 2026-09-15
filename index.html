@@ -506,7 +506,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-v17";
+const APP_VER = "evcal-a1253b30";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -2419,7 +2419,7 @@ async function refreshAll(){
         setTimeout(()=>location.reload(),500);
       }
     }
-  }catch(e){}
+  }catch(e){ setNote("連不到伺服器，改用這台裝置上的快取資料…"); }
   if(!reloading){
     setNote("重新抓取雲端資料…");
     try{
@@ -2427,7 +2427,10 @@ async function refreshAll(){
       applyCalib(); renderRegime(); updateRegimeText(); renderPxPick(); render();
       if(view==="cfg"){renderDataStat();renderBacktest();}
       const n=new Date();
-      setNote(`已更新 ${pad(n.getHours())}:${pad(n.getMinutes())}`
+      // 版本一樣的時候要講清楚「程式碼已經是最新的」，不然使用者按了看不出差別，
+      // 會以為按鈕壞了。版本字串現在由 scripts/stamp_version.py 從內容算，
+      // 程式碼一改它就會變，所以這行講的是實話。
+      setNote(`已更新 ${pad(n.getHours())}:${pad(n.getMinutes())} · 版本 ${APP_VER}（已是最新）`
         +` · 事件 ${EVENTS.length} · 定價 ${PRICED.length} · 複盤 ${Object.keys(REVIEW).length}`
         +(BUILD?` · 資料產於 ${String(BUILD).slice(0,10)}`:""));
     }catch(e){ setNote("更新失敗："+((e&&e.message)||e)); }

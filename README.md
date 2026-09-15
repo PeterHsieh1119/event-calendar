@@ -57,8 +57,9 @@ prompt 進了版控，每週任務可以用 PR 改進自己的指示。
 沒有人在旁邊審 routine 的 commit，所以壞掉的東西必須被機器擋住：
 
 ```bash
-python scripts/validate_data.py    # 資料閘門
+python scripts/validate_data.py    # 資料閘門（含版本字串檢查）
 node scripts/smoke_test.js         # 行為煙霧測試
+python scripts/stamp_version.py    # 動過 index.html 或 sw.js 之後要跑這個
 ```
 
 `validate_data.py` 檢查的是那些「不會報錯、只會靜默出錯」的事：未知的事件類型會被
@@ -137,6 +138,7 @@ routines/weekly.md           每週日前瞻與工程改進
 routines/backlog.md          每日那趟提出、週日那趟執行的程式碼待辦
 scripts/fetch_events.py      Actions 跑的抓取程式
 scripts/validate_data.py     資料閘門，routine 與 CI 都會跑
+scripts/stamp_version.py     把版本字串蓋成 index.html／sw.js 的內容雜湊
 scripts/smoke_test.js        行為煙霧測試，routine 與 CI 都會跑
 .github/workflows/           update-data.yml（每天）、pages.yml（部署）
 ```
