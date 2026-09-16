@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-15T23:13:37Z",
+ "generated": "2026-09-16T23:15:24Z",
  "items": [
   {
    "date": "2026-09-14",
@@ -18,8 +18,8 @@
    "title": "沙烏地東西原油管線遭伊拉克境內無人機擊中並關閉，備援出口暫停",
    "est": false,
    "t": "BMO",
-   "note": "9/10（週四）從伊拉克 Maysan 省境內發射的無人機擊中沙烏地阿拉伯東西原油管線（連接東部油田與紅海延布港，長約 1,200 公里），引發火警；沙國 9/11 對外確認遭擊中，9/12 以預防為由關閉管線，應巴格達要求暫不報復。這條管線是荷姆茲海峽以外唯一的陸上備援出口，原本承接約 500 萬桶/日的分流量——荷姆茲海峽本身已因伊朗攻擊實質關閉（等於拿掉全球約 20% 供給），這條備援管線再停擺，代表沙國暫時失去繞開海峽的路徑，是本輪原油上漲從「海峽風險」升級到「陸上基礎設施風險」的關鍵一步。伊拉克總理 Ali al-Zaidi 9/11 譴責攻擊、成立調查委員會並撤換 Maysan 省軍事指揮官。【與同檔其他中東事件的區別】本週已有三個獨立事件：9/8 葉門胡塞攻擊沙烏地阿美設施、9/9 美軍摧毀伊朗油輪＋伊朗飛彈反擊約旦基地，這一筆是第三個——攻擊發起地（伊拉克境內組織）、打擊標的（陸上輸油管線而非海上航運或油輪）都不同，故另立一筆而非合併。【反應，CL=F 由 px.json 自算】9/11 收 100.05（−2.37%，當天市場尚未完全消化後續關閉決定）；管線 9/12 確認關閉後，週末夜盤重新定價，9/13 收 102.47（+2.42%）；截至 9/14（週一）盤中 Bloomberg report 顯示 WTI 站上約 102 美元、布蘭特收在 105 美元上方，管線仍未恢復，是 5 月以來新高區間。",
-   "src": "Al Jazeera 2026-09-11『Saudi Arabia says East-West pipeline hit by drones launched from Iraq』、CNN 2026-09-11『Saudi oil pipeline shut down after attack triggers fires』、Al Jazeera 2026-09-12『Saudi Arabia shuts critical oil pipeline after drone attack』、FDD's Long War Journal 2026-09-13、Bloomberg 2026-09-14『Latest Oil Market News and Analysis for Sept. 15』（皆第三級，經 WebSearch 摘要，未讀原文）／CL=F 當日變動由 data/px.json 自算（第一手內部資料）"
+   "note": "9/10（週四）從伊拉克 Maysan 省境內發射的無人機擊中沙烏地阿拉伯東西原油管線（連接東部油田與紅海延布港，長約 1,200 公里），引發火警；沙國 9/11 對外確認遭擊中，9/12 以預防為由關閉管線，應巴格達要求暫不報復。這條管線是荷姆茲海峽以外唯一的陸上備援出口，原本承接約 500 萬桶/日的分流量——荷姆茲海峽本身已因伊朗攻擊實質關閉（等於拿掉全球約 20% 供給），這條備援管線再停擺，代表沙國暫時失去繞開海峽的路徑，是本輪原油上漲從「海峽風險」升級到「陸上基礎設施風險」的關鍵一步。伊拉克總理 Ali al-Zaidi 9/11 譴責攻擊、成立調查委員會並撤換 Maysan 省軍事指揮官。【與同檔其他中東事件的區別】本週已有三個獨立事件：9/8 葉門胡塞攻擊沙烏地阿美設施、9/9 美軍摧毀伊朗油輪＋伊朗飛彈反擊約旦基地，這一筆是第三個——攻擊發起地（伊拉克境內組織）、打擊標的（陸上輸油管線而非海上航運或油輪）都不同，故另立一筆而非合併。【反應，CL=F 由 px.json 自算】9/11 收 100.05（−2.37%，當天市場尚未完全消化後續關閉決定）；管線 9/12 確認關閉後，週末夜盤重新定價，9/13 收 102.47（+2.42%）；截至 9/14（週一）盤中 Bloomberg report 顯示 WTI 站上約 102 美元、布蘭特收在 105 美元上方，管線仍未恢復，是 5 月以來新高區間。【9/15 補記，px.json 自算】管線持續未恢復，WTI 再漲 +3.97% 收 105.42（20 日標準差僅 2.35%，這天是 1.7 倍），布蘭特同日站上 108 美元、一度過去四個月新高；WebSearch 交叉查證未找到 9/15 當天的獨立新催化劑，主流報導（Fortune、Octagon AI 預測市場、NewsBreak）一致把這一天的漲幅算進同一個「沙國管線未修復＋荷姆茲海峽緊張」故事線，屬於同一事件的延續反應，不另立新條目。",
+   "src": "Al Jazeera 2026-09-11『Saudi Arabia says East-West pipeline hit by drones launched from Iraq』、CNN 2026-09-11『Saudi oil pipeline shut down after attack triggers fires』、Al Jazeera 2026-09-12『Saudi Arabia shuts critical oil pipeline after drone attack』、FDD's Long War Journal 2026-09-13、Bloomberg 2026-09-14『Latest Oil Market News and Analysis for Sept. 15』、Fortune／Octagon AI／NewsBreak 2026-09-15（皆第三級，經 WebSearch 摘要，未讀原文）／CL=F 當日變動由 data/px.json 自算（第一手內部資料）"
   },
   {
    "date": "2026-12-11",
