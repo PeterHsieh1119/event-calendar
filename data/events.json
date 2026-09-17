@@ -1,18 +1,8 @@
 {
- "generated": "2026-09-15T23:55:15+00:00",
+ "generated": "2026-09-17T00:01:55+00:00",
  "source": "官方排程（未設 FMP_API_KEY）",
- "count": 15,
+ "count": 14,
  "events": [
-  {
-   "date": "2026-09-16",
-   "kind": "D",
-   "cat": "fomc_sep",
-   "title": "FOMC 決議＋點陣圖",
-   "est": false,
-   "src": "federalreserve.gov",
-   "note": "除利率外更新經濟預測與點陣圖，是重新定價整條殖利率曲線的場合。",
-   "t": "14:00"
-  },
   {
    "date": "2026-10-02",
    "kind": "D",
