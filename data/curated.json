@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-20T13:10:44Z",
+ "generated": "2026-09-20T23:17:37Z",
  "items": [
   {
    "date": "2026-09-16",
@@ -52,14 +52,14 @@
    "src": "會晤日期：Sputnik 中文 2026-08-18『特朗普確認習近平9月24日到訪白宮』、VOA 中文 2026-09-20（第三級，搜尋摘要，未讀白宮原稿）／何立峰 9/19–23 赴美磋商、習近平 9/23 抵達：東方財富《环球下周看点》2026-09-20、VOA 中文 2026-09-20（第三級，搜尋摘要）／2019 大阪 G20 歷史對照：CNBC 2019-06-29『Trump and Xi agree to hold off on new tariffs』、CNBC 2019-07-01『S&P hits record high after US-China trade truce』、Yahoo Finance 2019-07-01（第三級，WebSearch 摘要，未讀原文；單日漲幅數字未查證到，故未引用）"
   },
   {
-   "date": "2026-09-25",
+   "date": "2026-09-24",
    "kind": "N",
    "cat": "earn2",
    "t": "AMC",
    "est": false,
    "title": "Costco 財報（FY2026 Q4 及全年）",
-   "note": "盤後公布 2026 會計年度第四季與全年業績。【為什麼值得標】它是這一週唯一一檔指數級的財報，而且在通膨主導環境下有雙重身分：會員費與同店銷售是分子端的消費動能讀數，毛利率與售價轉嫁則是通膨黏性的民間佐證，比官方數據早一步。【cat】不是那斯達克前五大，走 earn2（B=42）而不是 earn3。同週另有 AutoZone、General Mills 財報，但兩者都不在指數權值的量級，沒有另立條目。【沒有寫進 priced.json】沒有自算的選擇權隱含變動，pxd 退回 earn2 的類型先驗 0.50，不用推測值填數值欄。",
-   "src": "FX168 一周前瞻 2026-09-20、moomoo Costco 財報專頁（兩篇都給 9/25 盤後，第三級，WebSearch 摘要，未讀 Costco 投資人關係頁原文——該網域連不出去）"
+   "note": "**日期更正：原記 9/25，實際是 9/24（週四）盤後。** 盤後公布 2026 會計年度第四季與全年業績。【為什麼值得標】它是這一週唯一一檔指數級的財報，而且在通膨主導環境下有雙重身分：會員費與同店銷售是分子端的消費動能讀數，毛利率與售價轉嫁則是通膨黏性的民間佐證，比官方數據早一步。【cat】不是那斯達克前五大，走 earn2（B=42）而不是 earn3。同週另有 AutoZone、General Mills 財報，但兩者都不在指數權值的量級，沒有另立條目。【已寫進 priced.json】9/20 用 IBKR 選擇權鏈自算隱含變動約 3.4~3.5%（取財報後隔一個交易日 9/25 到期），pxd 0.45，見 priced.json 該筆。",
+   "src": "日期更正：TipRanks 2026-09『Costco (COST) Reports Q4 Earnings on Sept. 24』、MarketBeat 2026-09-17、Costco 投資人關係活動頁（investor.costco.com/events-and-presentations，搜尋結果摘要標示為 Q4 2026 Earnings Call，該網域連不出去、未讀原文）三方交叉驗證，皆為 9/24 盤後（第三級，WebSearch 摘要）／原 9/25：FX168 一周前瞻 2026-09-20、moomoo Costco 財報專頁（第三級，搜尋摘要，日期有誤）"
   },
   {
    "date": "2026-12-17",

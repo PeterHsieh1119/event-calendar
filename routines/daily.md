@@ -32,6 +32,14 @@
 
 範圍：未來 14 天內、衝擊分數 45 以上的事件。範圍外的不要碰。
 
+**「衝擊分數」不是 `index.html` 的 `CAT[cat].B`，是 `score()` 函式算完之後的 `s`。**
+2026-09-20 這一趟撞到：`earn2` 的 `B` 只有 42，看起來低於 45 的門檻，前幾趟因此
+沒把 Costco／MU 財報排進 `priced.json`。但 `score()` 會用當週 `regime.json` 的
+`conc`／`vol` 把 `B` 往上推——這一趟 `conc=0.5`、`vol=1` 時，`earn2` 的實際分數
+（`raw=100*(B/100)^(1/mult)`，`mult=1+conc權重×conc+vol權重×vol`）算出來是 **52 左右**，
+已經過門檻。手算 `raw` 只要幾行（`CAT[e.cat].w` 在 `index.html` 574 行附近，
+regime 值讀 `data/regime.json`），不要單看 `B` 就把整個類型排除在範圍外。
+
 ### 財報 — 用 IBKR 選擇權鏈自己算
 
 不要去找二手報導的隱含變動數字，自己算比較準，步驟固定：
