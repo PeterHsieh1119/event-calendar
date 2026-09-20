@@ -506,11 +506,14 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-a1253b30";
+const APP_VER = "evcal-a75d8767";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
- {s:"TSM",n:"台積電",anchor:"2026-10-15",cat:"earn3",t:"BMO"},
+ /* anchor 釘在「最後一場已經開過的法說」，不是下一場的推算日——k!==0 的那幾筆才會標 est，
+    釘在未來的話那個推算日會被當成已確認。2026Q2 是 7/16（已舉行），Q3 的 10/15 因此退回 est，
+    等台積電 IR 公告再把 anchor 往前搬。t 是台北下午 14:00 的法說，不是美東盤前。 */
+ {s:"TSM",n:"台積電",anchor:"2026-07-16",cat:"earn3",t:"TPE:14:00"},
  {s:"ASML",n:"ASML",anchor:"2026-10-14",cat:"earn2",t:"BMO"},
  {s:"MU",n:"MU",anchor:"2026-09-24",cat:"earn2",t:"AMC"},
  {s:"AMAT",n:"AMAT",anchor:"2026-08-13",cat:"earn2",t:"AMC"},
@@ -742,13 +745,16 @@ function score(e){
   const dd=Math.round((parse(e.date)-TODAY)/864e5);
   const disc = e.est?clamp(0.94-Math.max(0,dd-90)/275*0.09,0.85,0.94):1;
   const cal = (CALIB[e.cat]&&CALIB[e.cat].n>=3)?CALIB[e.cat].adj:1;
+  // 意外空間：利率端事件才算得出來，算不出來就是 1（退回類型先驗），見 polSurprise
+  const sp = (typeof polSurprise==="function")?polSurprise(e):null;
+  const spc = sp?sp.mult:1;
   // 環境放大作用在「離滿分的距離」上，mult=1 時就等於基準，不會爆表
   const raw = 100*Math.pow(c.B/100, 1/Math.max(mult,.4));
-  const s = clamp(Math.round(raw*disc*cal),0,99);
+  const s = clamp(Math.round(raw*disc*cal*spc),0,99);
   // 已定價程度：事件自己的 pxd 優先，否則用類型先驗。落差＝還沒被 price in 的部分。
   const pxd = (e.pxd!=null&&isFinite(e.pxd))?clamp(+e.pxd,0,1):(PXD0[e.cat]!=null?PXD0[e.cat]:.5);
   const gap = clamp(Math.round(s*(1-pxd)),0,99);
-  return {s,gap,pxd,mult,parts,disc,B:c.B,cal,raw:Math.round(raw)};
+  return {s,gap,pxd,mult,parts,disc,B:c.B,cal,spc,sp,raw:Math.round(raw)};
 }
 const RK={shock:"衝擊來源",infl:"通膨距離",pivot:"政策轉折",vol:"波動水位",conc:"指數集中"};
 
@@ -1168,6 +1174,63 @@ function polPrev(day){
   const i=ks.indexOf(day);
   return i>0?ks[i-1]:null;
 }
+/* 兩天之間，某一次會議的隱含利率被推了幾 bp。
+   看的是隱含利率本身的差，不是「相對 effr 的累計」的差——後者在有效聯邦資金利率
+   自己跳一階的那一天（升息生效日）會產生假訊號：2026-09-17 effr 從 3.62% 跳到 3.88%，
+   10/28 的隱含利率其實只從 4.005% 走到 4.020%（＋1.5bp），但相對 effr 的累計會從
+   +38.1bp 掉到 +13.8bp，看起來像一天之內鴿派重定價 24bp。effr 沒動的日子兩種算法
+   完全相同，所以顯示用的「累計」欄位維持相對 effr（那是對的口徑），只有「當日變動」改成這個。 */
+const polDelta=(a,b,k)=>(b.m[k]-a.m[k])*100;
+
+/* ═══ 意外空間：市場預期這件事能把路徑推多遠 ═══ */
+/* 首頁文案寫的是「意外空間 × 已定價程度 × 環境放大」，但公式裡一直只有後兩段——
+   B 是類型層級的常數，同一個 CPI 不管市場當下對利率多敏感，都拿同一個基準分數。
+   這一段補上利率端的那一半（routines/weekly.md 任務四第 3 項）：事件公布前，
+   整條政策路徑平均每天被重定價幾 bp，就是市場對它的意外空間預期。
+   基準不是寫死的常數，是同一條序列自己的中位數，序列變長時基準自己跟著走。
+   分子端事件（財報、月營收）要走選擇權隱含變動，那一半還沒做，所以那些事件回 null。
+   刻意跟環境的「波動定價水位」分開算：那一格看的是 VIX 的年度分位（部位有沒有避險墊），
+   這裡看的是利率被重定價的速度，兩者在同一週可以指向相反方向，不是同一件事的兩種寫法。 */
+const SPC={WIN:10,MIN:20,K:0.15,CAP:0.12};
+let SPCSRC=null,SPCROWS=null,SPCMEMO=null;
+/* 每個交易日，前四次會議的隱含利率平均被推了多少（絕對值，bp） */
+function polMoves(){
+  if(!POLICY)return [];
+  if(SPCSRC===POLICY)return SPCROWS;
+  const ks=Object.keys(POLICY.hist).sort(),rows=[];
+  for(let i=1;i<ks.length;i++){
+    const a=POLICY.hist[ks[i-1]],b=POLICY.hist[ks[i]];
+    if(!a||!b||!a.m||!b.m)continue;
+    const ms=Object.keys(b.m).filter(k=>k in a.m).slice(0,4);
+    if(!ms.length)continue;
+    let s=0;ms.forEach(k=>{s+=Math.abs(polDelta(a,b,k));});
+    rows.push({d:ks[i],bp:s/ms.length});
+  }
+  SPCSRC=POLICY;SPCROWS=rows;SPCMEMO=new Map();
+  return rows;
+}
+/* 這個事件的意外空間。算不出來一律回 null——寧可退回類型先驗，
+   也不要拿三五天硬湊一個比值出來，那比沒有更糟。 */
+function polSurprise(e){
+  if(!POLICY||!POLCAT(e))return null;
+  const cut=addD(e.date,polShift(e));        // 事件被吸收的那一天；當天本身不算，才沒有前視
+  const rows=polMoves();                     // 順便把 SPCMEMO 建好／換掉
+  // 同一天常有好幾個事件，而 score() 每次重畫都會被呼叫一輪——用吸收日當 key 快取，
+  // 否則序列長到幾百天、事件長到上千筆之後，每次重畫都要重掃一遍
+  if(SPCMEMO&&SPCMEMO.has(cut))return SPCMEMO.get(cut);
+  const put=v=>{if(SPCMEMO)SPCMEMO.set(cut,v);return v;};
+  const before=rows.filter(r=>r.d<cut);
+  if(before.length<SPC.MIN)return put(null);
+  const win=before.slice(-SPC.WIN);
+  const recent=win.reduce((s,r)=>s+r.bp,0)/win.length;
+  const base=median(before.map(r=>r.bp));
+  if(!(base>0.05))return put(null);          // 整條序列都沒在動，比值沒有意義
+  const ratio=recent/base;
+  // 取對數才對稱：ratio 2 與 ratio 0.5 給出大小相同、方向相反的調整
+  const mult=clamp(1+SPC.K*Math.log(ratio),1-SPC.CAP,1+SPC.CAP);
+  return put({recent,base,ratio,mult,n:win.length,from:win[0].d,to:win[win.length-1].d,
+          all:before.length});
+}
 /* 一次會議的隱含變動換算成一碼的機率。超過一碼講機率沒有意義，改講碼數。 */
 function polOdds(bp){
   const n=bp/25;
@@ -1186,6 +1249,29 @@ function policyLine(){
     ||POLICY.meetings[POLICY.meetings.length-1];
   return `政策定價 ${POLICY.effr.toFixed(2)}%／${m.date.slice(5).replace("-","/")} ${polOdds(m.chgBp)}`
     +`／到 ${yearEnd.date.slice(5).replace("-","/")} 累計 ${bpFmt(yearEnd.cumBp)}`;
+}
+
+/* 意外空間那一小段。算不出來就整段不顯示，不要放一個寫著「資料不足」的空殼。 */
+function spcHTML(e){
+  const sp=polSurprise(e);
+  if(!sp)return "";
+  const up=sp.mult>1.005,dn=sp.mult<0.995;
+  return `<h4 style="margin-top:16px">意外空間（利率端）</h4>`
+    +`<div class="kv"><span class="k">前 ${sp.n} 個交易日，路徑平均每天被推</span>`
+    +`<span class="v">${sp.recent.toFixed(2)}bp</span></div>`
+    +`<div class="kv"><span class="k">序列中位數（${sp.all} 個交易日）</span>`
+    +`<span class="v">${sp.base.toFixed(2)}bp</span></div>`
+    +`<div class="kv"><span class="k">比值 → 衝擊分數</span>`
+    +`<span class="v">${sp.ratio.toFixed(2)} × → ×${sp.mult.toFixed(3)}</span></div>`
+    +`<div class="note">公布前幾天市場把政策路徑改得越多，代表它對這條線越敏感，`
+    +`同樣一份數據能造成的變動空間就越大——這就是分數裡的「意外空間」那一段，`
+    +`算得出來的只有利率端，分子端（財報、月營收）要走選擇權隱含變動，還沒做。`
+    +(up?`目前是<b>放大</b>：最近的重定價比這條序列平常快。`
+        :dn?`目前是<b>縮小</b>：最近市場幾乎沒在改路徑，同一份數據的殺傷力比平常小。`
+           :`目前跟平常差不多，等於沒有調整。`)
+    +`這一段跟環境的「波動定價水位」是兩件事：那一格看 VIX 的年度分位（部位有沒有避險墊），`
+    +`這裡看利率被重定價的速度，同一週可以指向相反方向。`
+    +`上限 ±${Math.round(SPC.CAP*100)}%，前 ${SPC.MIN} 個交易日之內的事件不給估計（序列太短）。</div>`;
 }
 
 /* 事件抽屜裡的政策路徑區塊 */
@@ -1207,12 +1293,14 @@ function policyHTML(e){
     const ms=Object.keys(b.m).filter(k=>k in a.m).slice(0,4);
     if(!ms.length)return "";
     const body=ms.map(k=>{
-      const pa=(a.m[k]-a.effr)*100, pb=(b.m[k]-b.effr)*100, d=pb-pa;
+      // 累計欄位相對當天的 effr（那是對的口徑），但當日變動看隱含利率本身的差——
+      // 兩者在 effr 跳一階的那天會差二十幾 bp，理由見 polDelta 上面那段
+      const pa=(a.m[k]-a.effr)*100, pb=(b.m[k]-b.effr)*100, d=polDelta(a,b,k);
       return `<tr><td>${esc(k.slice(5).replace("-","/"))}</td>`
         +`<td>${polOdds(pa)}</td><td>${polOdds(pb)}</td>`
         +`<td style="color:${bpCol(d)}">${bpFmt(d)}</td></tr>`;}).join("");
-    const tot=ms.reduce((s,k)=>s+Math.abs((b.m[k]-b.effr)-(a.m[k]-a.effr)),0)*100/ms.length;
-    const dir=((b.m[ms[ms.length-1]]-b.effr)-(a.m[ms[ms.length-1]]-a.effr))>0?"鷹派":"鴿派";
+    const tot=ms.reduce((s,k)=>s+Math.abs(polDelta(a,b,k)),0)/ms.length;
+    const dir=polDelta(a,b,ms[ms.length-1])>0?"鷹派":"鴿派";
     return head
       +`<table class="mtab"><tr><th>會議</th><th>${esc(prev.slice(5))} 累計</th>`
       +`<th>${esc(day.slice(5))} 累計</th><th>當日變動</th></tr>${body}</table>`
@@ -1221,7 +1309,8 @@ function policyHTML(e){
       +(tot>=2?`這一天平均移動 ${tot.toFixed(1)}bp，方向是<b>${dir}</b>——`
               +`對一個交易日來說這是明確的重定價，不是雜訊。`
              :`這一天平均只移動 ${tot.toFixed(1)}bp，政策路徑基本上沒被改寫。`)
-      +`</div>`;
+      +`</div>`
+      +spcHTML(e);
   }
 
   const body=rows.map(r=>
@@ -1237,7 +1326,8 @@ function policyHTML(e){
     +`<div class="note">已經定價進去的東西不會造成衝擊——這張表就是「已定價程度」`
     +`在利率這一端的原始資料。這個事件如果把某一列往上或往下推，那才是它的殺傷力所在。`
     +`資料來源：${esc(POLICY.source||"聯邦資金期貨")}，${esc(POLICY.asof||"")} 收盤。`
-    +`人要自己核對的話看 CME FedWatch Tool，原料是同一組期貨價格。</div>`;
+    +`人要自己核對的話看 CME FedWatch Tool，原料是同一組期貨價格。</div>`
+    +spcHTML(e);
 }
 
 /* 傳導鏈：把「為什麼是這個數字」逐項攤開，可以自己核對 */
@@ -1335,7 +1425,7 @@ function polMoveBp(e){
   const ks=Object.keys(b.m).filter(k=>k in a.m).slice(0,4);
   if(!ks.length)return null;
   let s=0;
-  ks.forEach(k=>{s+=((b.m[k]-b.effr)-(a.m[k]-a.effr))*100;});
+  ks.forEach(k=>{s+=polDelta(a,b,k);});
   return s/ks.length;
 }
 /* 四象限判讀 */
@@ -2086,7 +2176,7 @@ function openDay(ds,evs,focus){
     return `<div class="block">
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:6px">${ring(sc.s)}
         <div><div style="font-size:16px;font-weight:600">${esc(e.title)} ${e.est?'<span class="est">≈</span>':""}</div>
-        <div class="est">${CAT[e.cat]?c.label:`未知類型「${esc(e.cat)}」暫以 ${c.label} 計分`} · 基準 ${sc.B} · 環境 ×${sc.mult.toFixed(2)} → ${sc.raw}${sc.cal!==1?` · 校準 ×${sc.cal.toFixed(2)}`:""}${sc.disc<1?" · 推算日折 6%":""}</div></div></div>
+        <div class="est">${CAT[e.cat]?c.label:`未知類型「${esc(e.cat)}」暫以 ${c.label} 計分`} · 基準 ${sc.B} · 環境 ×${sc.mult.toFixed(2)} → ${sc.raw}${sc.cal!==1?` · 校準 ×${sc.cal.toFixed(2)}`:""}${sc.spc!==1?` · 意外空間 ×${sc.spc.toFixed(2)}`:""}${sc.disc<1?" · 推算日折 6%":""}</div></div></div>
       <div style="font-size:12.5px;color:var(--tx2);line-height:1.65;margin:8px 0 14px">${esc(e.note||"")}</div>
 
       <h4>可能的走向</h4>${flowHTML(e)}

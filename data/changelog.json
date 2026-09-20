@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-09-20",
+  "text": "weekly: 新增 7 筆事件（川習白宮會晤 9/24、Fed 官員 9/22、標普全球 flash PMI 9/23、Costco 9/25、央行理監事會更正為 12/17、9/18 FTSE 台灣季調、9/16 SK海力士×英特爾）；regime 五格不動、basis 與 asof 重寫；工程改進做「意外空間」——用 policy.json 每日序列算出事件前政策路徑的重定價速度，乘進 score()（上限 ±12%、無前視），順手修掉升息生效日會噴出假鴿派 25bp 的錨點問題；TSM anchor 改釘已開過的 7/16、t 改 TPE:14:00；重跑回測（IC 0.030）。"
+ },
+ {
   "date": "2026-09-18",
   "text": "intraday: BOJ利率決議如預期升息至1.25%（7:2票，CNBC/Bloomberg/日經WebSearch交叉確認），已從priced.json移除該筆（今日已公布，pxd不再有意義）。日期核對：S&P500季度調整（9/21生效）、Meta Connect（9/23）與日曆一致，未變動。當天無新headline事件、無盤中歸因缺口。"
  },

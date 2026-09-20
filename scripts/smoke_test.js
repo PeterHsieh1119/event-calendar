@@ -90,6 +90,7 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "policyLine:policyLine,polOdds:polOdds,POLCAT:POLCAT,checksOf:checksOf," +
   "polMoveBp:polMoveBp,verdict:verdict,reviewForm:reviewForm,reactionMag:reactionMag," +
   "backtestHTML:backtestHTML,icVerdict:icVerdict," +
+  "polSurprise:polSurprise,spcHTML:spcHTML,polMoves:polMoves,SPC:SPC," +
   "getBETAS:function(){return BETAS;}};\n";
 
 try {
@@ -842,6 +843,135 @@ catKeys.forEach((k) => {
   eq("日期是實際的撥款到期日", f[0] && f[0].date, "2026-12-11");
   ok("已確認不是推算", f[0] && f[0].est === false);
   eq("走風險溢酬那一端，跟規則引擎原本那筆同一個代碼", f[0] && f[0].cat, "election");
+}
+
+
+/* ── 20. 意外空間（利率端）：公式裡原本只有「已定價 × 環境放大」兩段 ──
+   首頁文案寫的是三段，B 卻是類型層級的常數，同一個 CPI 不管市場當下對利率多敏感
+   都拿同一個基準分數。polSurprise 用 policy.json 的每日序列補上第三段：
+   公布前整條政策路徑平均每天被重定價幾 bp ÷ 這條序列自己的中位數。
+   下面每一條都是在守「算不出來就不要給數字」與「不可以偷看事件之後的資料」。 */
+{
+  /* 造一條可以指定每天推幾 bp 的序列。正負交替，測的是絕對值。
+     effrStepAt：第幾天讓有效聯邦資金利率自己跳一階（升息生效日），用來釘 polDelta 的錨點修正。 */
+  const mkPol = (moves, opts) => {
+    const o = opts || {};
+    const d0 = Date.UTC(2026, 0, 1);
+    const day = (i) => new Date(d0 + i * 864e5).toISOString().slice(0, 10);
+    let r1 = 4.00, r2 = 4.20, effr = 3.50;
+    const hist = {};
+    hist[day(0)] = { effr, m: { "2026-10-28": r1, "2026-12-09": r2 } };
+    moves.forEach((bp, i) => {
+      const sgn = i % 2 ? -1 : 1;
+      r1 += sgn * bp / 100; r2 += sgn * bp / 100;
+      if (o.effrStepAt === i + 1) effr += 0.25;
+      hist[day(i + 1)] = { effr, m: { "2026-10-28": r1, "2026-12-09": r2 } };
+    });
+    return { day, pol: { asof: day(moves.length), histFrom: day(0), effr, source: "測試",
+      meetings: [{ date: "2026-10-28", rate: r1, chgBp: 10, cumBp: 10 }], hist } };
+  };
+  const rep = (n, v) => new Array(n).fill(v);
+  const EV = (date, cat) => ({ date, title: "測試", cat: cat || "cpi", kind: "D", t: "08:30" });
+
+  // 沒有 policy.json 就沒有意外空間——不能拿類型先驗假裝成估計值
+  T.applyPolicy(null);
+  eq("沒有政策資料時算不出意外空間", T.polSurprise(EV("2026-02-01")), null);
+  eq("算不出來時抽屜裡那一段整個消失", T.spcHTML(EV("2026-02-01")), "");
+  eq("算不出來時分數不受影響", T.score(EV("2026-02-01")).spc, 1);
+
+  // 序列太短：20 個交易日以下一律不給估計
+  const shortSeq = mkPol(rep(12, 1.0));
+  T.applyPolicy(shortSeq.pol);
+  eq("序列不到 20 個交易日就不給估計", T.polSurprise(EV("2026-02-01")), null);
+
+  // 序列夠長、最近明顯比平常熱 → 放大，而且被 ±12% 的上限擋住
+  const hot = mkPol(rep(20, 1.0).concat(rep(10, 4.0)));
+  T.applyPolicy(hot.pol);
+  const sHot = T.polSurprise(EV("2026-02-01"));
+  ok("序列夠長就算得出來", !!sHot, String(sHot));
+  eq("取的是最近 10 個交易日", sHot && sHot.n, 10);
+  eq("基準用的是事件之前的整條序列", sHot && sHot.all, 30);
+  ok("最近 10 日平均約 4bp", Math.abs(sHot.recent - 4.0) < 0.01, String(sHot.recent));
+  ok("序列中位數約 1bp", Math.abs(sHot.base - 1.0) < 0.01, String(sHot.base));
+  ok("比值約 4 倍", Math.abs(sHot.ratio - 4) < 0.02, String(sHot.ratio));
+  ok("放大幅度被上限擋住，不會無限放大",
+    Math.abs(sHot.mult - 1.12) < 1e-9, String(sHot.mult));
+
+  // 溫和放大：沒撞到上限時要按對數比例給，不是給上限
+  const mild = mkPol(rep(20, 1.0).concat(rep(10, 1.5)));
+  T.applyPolicy(mild.pol);
+  const sMild = T.polSurprise(EV("2026-02-01"));
+  ok("溫和放大時不是直接給上限", sMild.mult > 1.0 && sMild.mult < 1.12, String(sMild.mult));
+  ok("倍率是 1+0.15×ln(比值)",
+    Math.abs(sMild.mult - (1 + 0.15 * Math.log(1.5))) < 1e-9, String(sMild.mult));
+
+  // 反方向：最近幾乎沒在改路徑 → 縮小。少了這一條，這一項就只會放大不會縮小
+  const quiet = mkPol(rep(20, 2.0).concat(rep(10, 1.0)));
+  T.applyPolicy(quiet.pol);
+  const sQuiet = T.polSurprise(EV("2026-02-01"));
+  ok("最近沒在改路徑時要縮小而不是維持 1", sQuiet.mult < 1, String(sQuiet.mult));
+  ok("對數映射是對稱的：比值 0.5 與比值 2 的調整幅度相同",
+    Math.abs((1 - sQuiet.mult) - 0.15 * Math.log(2)) < 1e-9, String(sQuiet.mult));
+
+  // 不可以偷看事件之後的資料。同一條序列、同一個 hot 樣本，
+  // 事件落在變熱之前時必須完全看不到後面那 10 天。
+  T.applyPolicy(hot.pol);
+  const early = T.polSurprise(EV(hot.day(21)));
+  ok("事件之前的資料不足以看到後面那段熱度", early && Math.abs(early.ratio - 1) < 1e-9,
+    early ? String(early.ratio) : "null");
+  eq("所以事件當下的倍率是 1，不是事後才知道的 1.12", early && early.mult, 1);
+
+  // 不走利率管道的事件沒有這一項（分子端要走選擇權隱含變動，還沒做）
+  eq("財報沒有利率端的意外空間", T.polSurprise(EV("2026-02-01", "earn3")), null);
+  eq("四巫日也沒有", T.polSurprise(EV("2026-02-01", "quad")), null);
+
+  // 真的有作用在分數上，不是只印在抽屜裡
+  {
+    const e = EV("2026-02-01", "claims");
+    T.applyPolicy(null);
+    const base = T.score(e);
+    T.applyPolicy(hot.pol);
+    const lift = T.score(e);
+    eq("沒有政策序列時倍率是 1", base.spc, 1);
+    ok("有序列且市場正在快速重定價時分數要跟著升高",
+      lift.spc > base.spc && lift.s > base.s, base.s + "→" + lift.s);
+    T.applyPolicy(quiet.pol);
+    const cut = T.score(e);
+    ok("市場沒在改路徑時分數要低於基準", cut.spc < 1 && cut.s < base.s,
+      base.s + "→" + cut.s);
+  }
+
+  // 抽屜裡那一段要把數字攤出來，使用者才有得核對
+  T.applyPolicy(hot.pol);
+  const h = T.spcHTML(EV("2026-02-01"));
+  ok("抽屜列出最近的平均 bp", h.indexOf("4.00bp") >= 0, h.slice(0, 200));
+  ok("抽屜列出序列中位數", h.indexOf("1.00bp") >= 0, h.slice(0, 200));
+  ok("抽屜列出倍率", h.indexOf("1.120") >= 0, h.slice(0, 260));
+  ok("利率端事件的政策路徑區塊帶著意外空間",
+    T.policyHTML(EV("2026-02-01")).indexOf("意外空間") >= 0);
+  ok("財報的抽屜不會冒出意外空間",
+    T.spcHTML(EV("2026-02-01", "earn3")).indexOf("意外空間") < 0);
+
+  /* 錨點修正：有效聯邦資金利率自己跳一階的那一天（升息生效日），
+     「相對 effr 的累計」會整條掉 25bp，但隱含利率其實只動了 1bp。
+     當日變動改看隱含利率本身的差之後才不會噴出假的鴿派重定價。
+     2026-09-17 真實資料上就是這個情形：舊算法 −25.2bp、實際只有 +0.85bp。 */
+  const stepped = mkPol(rep(30, 1.0), { effrStepAt: 25 });
+  T.applyPolicy(stepped.pol);
+  const mv = T.polMoveBp(EV(stepped.day(25)));
+  ok("升息生效日不會被算成一天之內鴿派重定價二十幾 bp",
+    mv != null && Math.abs(mv) < 2, String(mv));
+  ok("那一天量到的就是隱含利率真正的變動", Math.abs(mv - 1.0) < 0.01, String(mv));
+  const ph = T.policyHTML(EV(stepped.day(25)));
+  const bps = (ph.match(/[+-]\d+(?:\.\d+)?bp/g) || []).map(parseFloat);
+  ok("抽屜裡印得出當日變動", bps.length > 0, ph.slice(0, 200));
+  ok("當日變動欄位也不會出現那個假數字",
+    bps.every((v) => Math.abs(v) < 5), bps.join(","));
+  // effr 沒動的日子，兩種算法本來就完全相同——修正不可以改到正常日子
+  const mvNormal = T.polMoveBp(EV(stepped.day(10)));
+  ok("effr 沒動的日子維持原本的數字", Math.abs(mvNormal) - 1.0 < 0.01, String(mvNormal));
+
+  T.applyPolicy(null);
 }
 
 /* ── 報告 ── */

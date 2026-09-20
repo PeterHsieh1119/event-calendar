@@ -77,6 +77,7 @@ const m = html.match(/<script>([\s\S]*?)<\/script>/);
 if (!m) { console.error("找不到 index.html 裡的 <script> 區塊"); process.exit(1); }
 const EXPORT = "\n;globalThis.__T={CAT:CAT,score:score,session:session,dayScore:dayScore," +
   "mergeRemote:mergeRemote,applyRegime:applyRegime,applyRemoteReviews:applyRemoteReviews," +
+  "applyPolicy:applyPolicy," +
   "getEVENTS:function(){return EVENTS;}};\n";
 vm.createContext(sandbox);
 vm.runInContext(m[1] + EXPORT, sandbox, { filename: "index.html<script>", timeout: 20000 });
@@ -86,8 +87,11 @@ const T = sandbox.__T;
 const readJSON = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, "data", f), "utf8"));
 const px = readJSON("px.json");
 
-// 環境與校準要跟網站當下用的一致，否則算出來的不是網站在用的那組分數
+// 環境與校準要跟網站當下用的一致，否則算出來的不是網站在用的那組分數。
+// policy.json 同理——意外空間那一項只有載入它才算得出來，不載入的話回測量到的
+// 是一組網站上根本不存在的分數（polSurprise 只看事件吸收日之前的序列，沒有前視）。
 try { T.applyRegime(readJSON("regime.json")); } catch (e) {}
+try { T.applyPolicy(readJSON("policy.json")); } catch (e) {}
 try {
   const r = readJSON("reviews.json");
   T.applyRemoteReviews(Array.isArray(r) ? r : r.items);
