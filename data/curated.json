@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-20T23:17:37Z",
+ "generated": "2026-09-21T13:33:05Z",
  "items": [
   {
    "date": "2026-09-16",
@@ -347,9 +347,9 @@
    "cat": "product",
    "title": "Meta Connect 2026 開發者大會",
    "est": false,
-   "t": "13:00",
-   "note": "官方已確認發布會日期，市場關注AI/AR智慧眼鏡新品，可能牽動META及供應鏈預期。cat原誤標為ism，已更正為product。",
-   "src": "meta.com/connect 官方公告"
+   "t": "AMC",
+   "note": "官方已確認發布會日期，市場關注AI/AR智慧眼鏡新品，可能牽動META及供應鏈預期。cat原誤標為ism，已更正為product。【t 更正】原記 13:00 美東是錯的，官方 Keynote 是 4:00 PM PT／7:00 PM ET（美股收盤後），改填 AMC 才不會誤判成盤中吸收；9/24 另有 10:00 AM PT 的 Developer State of the Union，屬第二場，不另立條目。",
+   "src": "meta.com/connect 官方公告；時間更正：mixed-news.com 2026-09、Engadget、VR.org（三方交叉驗證 4PM PT/7PM ET，第三級，WebSearch 摘要）"
   },
   {
    "date": "2026-09-01",
