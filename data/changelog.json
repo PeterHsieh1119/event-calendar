@@ -1,7 +1,7 @@
 [
  {
   "date": "2026-09-21",
-  "text": "intraday: 更正 Meta Connect 2026 開發者大會（9/23）的 t 欄位，13:00 誤植改為 AMC（官方 Keynote 實際為 4PM PT/7PM ET，收盤後）；核對過 9/22 Treasury Market Conference、9/23 S&P Global flash PMI、9/24 川習會日期均正確，無需更正；未來三日內衝擊分數皆未達 45，priced.json 無需更新。"
+  "text": "daily: priced.json 更新 2 筆（MU、Costco 用 IBKR 選擇權鏈重算 basis，pxd 皆不變）、修正 1 筆日期錯誤（Costco date 欄位 9/25→9/24，與 curated.json 的更正同步）；curated.json 新增 1 筆歸因缺口（原油連四日重挫，荷姆茲海峽航運回穩＋卡達斡旋美伊談判）、覆核 1 筆複盤留下的疑慮（SK海力士/英特爾 +7.67% 經 WebSearch 確認屬 9/17 無誤，不需更正）；五項檢查：閘門與驗證器綠、Actions 正常、複盤 3 天內不算停擺，線上版本連不出去（該網域被 egress proxy 擋）跳過；優化：_shared.md 補一條商品期貨週日資料日期的說明。"
  },
  {
   "date": "2026-09-21",
