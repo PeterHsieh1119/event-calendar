@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-09-22",
+  "text": "daily: priced.json 更新 4 筆（MU、Costco 用 IBKR 選擇權鏈重算 basis，pxd 皆不變；NFP、PCE 重新核對但 policy.json 的 hist 卡在 asof 09-18，路徑動能無法確認，pxd 亦不變）；curated.json 補進 1 筆歸因缺口（Meta Muse AI 代理人登上 App Store 免費榜第一，帶動晶片股全面暴漲，AMD 市值破兆美元，9/21，上一趟複盤點名的缺口）；掃新事件：flash PMI（9/23）與川習白宮會晤（9/24）雖 score()＞45 門檻，但前者 WebSearch 三次查詢給出三組互相矛盾的預測/實際值、後者無可量化的定價方法，皆判斷查不到可信數字，本趟不寫入 priced.json；五項檢查：兩道閘門與 0 警告皆綠、events/px/policy.json 的 generated 皆今日、reviews.json 更新到 09-22 不算停擺、線上版本比對被 egress 擋下跳過；優化：_shared.md 補一條 policy.json 的 generated 新不代表 hist 也新的說明。"
+ },
+ {
+  "date": "2026-09-22",
   "text": "review: 複盤 2 筆（荷姆茲海峽航運回穩＋卡達斡旋美伊談判 9/21、S&P 500 季度成分股調整生效 9/21）；發現同日最大歸因缺口：Meta Muse AI 代理人登上 App Store 免費榜第一帶動晶片股全面暴漲（AMD +10% 破 1 兆市值、Intel +12%、Arm +17%、SOX +4.3%），完全沒有排程在 curated.json，NDX 當天+2.83%絕大部分要記給這件事，不是荷姆茲降溫或S&P調整，待下一趟每日/校正routine補進curated.json；兩筆分別判為環境確認（荷姆茲，僅就oil/10Y/dxy乾淨訊號）與已被定價（S&P調整，價格資訊已在9/4公告與9/18再平衡拍賣提前釋放）；px.json商品期貨的09-20列僅涵蓋部分時段，spx/ndx/y10改用IBKR歷史報價。"
  },
  {
