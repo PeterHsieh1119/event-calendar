@@ -1,7 +1,7 @@
 {
- "generated": "2026-09-20T23:48:21+00:00",
+ "generated": "2026-09-22T00:32:06+00:00",
  "source": "官方排程（未設 FMP_API_KEY）",
- "count": 14,
+ "count": 15,
  "events": [
   {
    "date": "2026-10-02",
@@ -141,6 +141,16 @@
    "est": false,
    "src": "federalreserve.gov",
    "note": "除利率外更新經濟預測與點陣圖，是重新定價整條殖利率曲線的場合。",
+   "t": "14:00"
+  },
+  {
+   "date": "2027-10-27",
+   "kind": "D",
+   "cat": "fomc",
+   "title": "FOMC 利率決議",
+   "est": false,
+   "src": "federalreserve.gov",
+   "note": "只有聲明稿與記者會，市場靠措辭變化推斷傾向。",
    "t": "14:00"
   }
  ]
