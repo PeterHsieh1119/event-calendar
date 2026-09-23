@@ -40,6 +40,22 @@
 已經過門檻。手算 `raw` 只要幾行（`CAT[e.cat].w` 在 `index.html` 574 行附近，
 regime 值讀 `data/regime.json`），不要單看 `B` 就把整個類型排除在範圍外。
 
+**2026-09-24 這一趟改用程式算，不要手算。** 手算 `mult`／`raw`／`disc`／`cal`／`spc` 疊起來很容易漏乘一項。
+更準的做法是照抄 `scripts/smoke_test.js` 開頭那段最小 DOM stub＋`vm.runInContext`，
+把 `index.html` 的 `<script>` 區塊原封不動跑起來，`EXPORT` 那行加上 `score`、`mergeRemote`、
+`getEVENTS`，然後在 node 裡依序 `mergeRemote(events.json)`→`mergeRemote(curated.json)`、
+套上 `regime.json` 的 `values`、用 `priced.json` 現有的 `pxd` 覆蓋對應事件，
+再對「未來 14 天」窗口內的每筆事件呼叫 `score(e).s`，一次就拿到跟網站上完全一致的數字，
+不必自己重算 `CAT[e.cat].w`、環境放大、推算日折扣這些疊在一起的項目。
+
+**這個窗口的「今天」要用台北時區算，不要用容器預設的 UTC。** 這台機器的
+`date`／node 的 `new Date()` 預設時區是 UTC，但使用者人在台北、「未來 14 天」
+這個窗口是相對台北日曆算的。容器 UTC 時間每天大約有 8 小時（到隔天台北 08:00 為止）
+落在「UTC 日期還是前一天」的區間——這一趟 UTC 23:09 對應台北已經是隔天 07:09，
+若直接用 `new Date()` 不轉時區，`TODAY` 會少算一天，14 天窗口跟著整個偏移，
+臨界的事件（例如衝擊分數剛好卡在窗口邊界那天）會被誤判進或退出範圍。
+跑上面那支 node script 時在指令前面加 `TZ=Asia/Taipei`。
+
 ### 財報 — 用 IBKR 選擇權鏈自己算
 
 不要去找二手報導的隱含變動數字，自己算比較準，步驟固定：
