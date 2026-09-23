@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-09-23",
+  "text": "review: 複盤 2 筆（Meta Muse AI 代理人登上 App Store 免費榜第一帶動晶片股全面暴漲 9/21——上一趟複盤點名、當日校正已補進 curated.json 的缺口；Fed 官員密集發聲 Williams／Jefferson／Barkin 9/22）；前者判為環境確認（SOX 反應約 3.3 倍 sigma），但點名連三日上漲、AMD 估值約 81 倍獲利、大盤廣度開始收窄（9/22 SPX 打平但 SOX/QQQ 續漲）是正回饋的早期徵兆，需持續盯；後者用 policy.json 逐筆核對政策路徑，9/21→9/22 全曲線僅個位數 bp 移動，判為已被定價，並點名 QQQ/SOX 當天的漲幅其實是 Meta Muse 行情延續、不能算給這三場演說。兩筆皆無 priced.json 事前紀錄，退回類型先驗（headline 0.15、minutes 0.55），估得準。"
+ },
+ {
   "date": "2026-09-22",
   "text": "daily: priced.json 更新 4 筆（MU、Costco 用 IBKR 選擇權鏈重算 basis，pxd 皆不變；NFP、PCE 重新核對但 policy.json 的 hist 卡在 asof 09-18，路徑動能無法確認，pxd 亦不變）；curated.json 補進 1 筆歸因缺口（Meta Muse AI 代理人登上 App Store 免費榜第一，帶動晶片股全面暴漲，AMD 市值破兆美元，9/21，上一趟複盤點名的缺口）；掃新事件：flash PMI（9/23）與川習白宮會晤（9/24）雖 score()＞45 門檻，但前者 WebSearch 三次查詢給出三組互相矛盾的預測/實際值、後者無可量化的定價方法，皆判斷查不到可信數字，本趟不寫入 priced.json；五項檢查：兩道閘門與 0 警告皆綠、events/px/policy.json 的 generated 皆今日、reviews.json 更新到 09-22 不算停擺、線上版本比對被 egress 擋下跳過；優化：_shared.md 補一條 policy.json 的 generated 新不代表 hist 也新的說明。"
  },
