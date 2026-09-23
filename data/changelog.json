@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-09-23",
+  "text": "intraday: 日期核對都對得上（PMI flash 9/23 09:45、川習會晤 9/24、Costco 財報 9/24 AMC 皆 WebSearch 二次確認無異動）；priced.json 更新 1 筆（Costco，IBKR 選擇權鏈盤中重算，895／897.5 履約隱含變動 3.16~3.18%，因今日尚無成交改用買賣中價，跟歷史參考值比仍屬大致相當，pxd 0.45 不變）；盤中未見可辨識的突發事件。"
+ },
+ {
+  "date": "2026-09-23",
   "text": "review: 複盤 2 筆（Meta Muse AI 代理人登上 App Store 免費榜第一帶動晶片股全面暴漲 9/21——上一趟複盤點名、當日校正已補進 curated.json 的缺口；Fed 官員密集發聲 Williams／Jefferson／Barkin 9/22）；前者判為環境確認（SOX 反應約 3.3 倍 sigma），但點名連三日上漲、AMD 估值約 81 倍獲利、大盤廣度開始收窄（9/22 SPX 打平但 SOX/QQQ 續漲）是正回饋的早期徵兆，需持續盯；後者用 policy.json 逐筆核對政策路徑，9/21→9/22 全曲線僅個位數 bp 移動，判為已被定價，並點名 QQQ/SOX 當天的漲幅其實是 Meta Muse 行情延續、不能算給這三場演說。兩筆皆無 priced.json 事前紀錄，退回類型先驗（headline 0.15、minutes 0.55），估得準。"
  },
  {
