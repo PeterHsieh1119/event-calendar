@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-09-24",
+  "text": "intraday: 日期核對都對得上（川習白宮會晤、Costco 財報皆 9/24，WebSearch 二次確認無異動）；priced.json 更新 1 筆（Costco，IBKR 選擇權鏈開盤後重算，905／907.5 履約隱含變動 3.41~3.43%，四腳報價為收盤標記非即時、已在 basis 註明，pxd 0.45 不變）；QQQ 盤中約 -0.6%，屬正常波動，未見可辨識的突發 headline 事件。"
+ },
+ {
+  "date": "2026-09-24",
   "text": "review: 複盤 5 筆（Oracle 財報、初領失業金 09-10、四巫日 09-18、Fed 理事 Barr 談話與標普全球 flash PMI 09-23）；09-10 claims 與 09-23 兩筆互為 confound，已在 memo 交叉標註；發現規則引擎重複產生一筆過期的『2026-09-10 AVGO 財報』幽靈事件（真實日期 09-02 已由 curated.json 更正並複盤過），未寫入複盤、已在回報中點名，需要 daily/weekly 或 index.html 端處理。"
  },
  {
