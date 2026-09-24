@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-09-24",
+  "text": "daily: priced.json 更新 3 筆、新增 1 筆、移除 1 筆過期。改用 score() 程式跑 14 天窗口（TZ=Asia/Taipei）才發現 FOMC 會議紀要（10/7，B=22）被環境放大後 s=46，過門檻卻一直沒被排進來，已補（pxd 0.65：9/16 全票 12-0 無異議、會後三週密集 Fedspeak 已先攤開分歧，紀要邊際資訊有限）；非農／PCE 改用程式重算 policy.json 的 cumBp 逐日序列，抓到 9/23 因 Barr 談話單日跳動 3~4bp（前五個交易日窄幅盤整 13.8~14.4bp），路徑在動即上調 pxd（0.35→0.40、0.55→0.60）；Costco 財報已於 9/24 盤後公布，從 priced.json 移除。curated.json 檢查後 cat／t／到期日皆正常，未改動。近三個交易日（QQQ／SOX／TWII／TNX／CL=F／DX-Y 逐標的最後可用日）大變動都已掛在既有事件上，DXY 9/24 走強查證後是 9/23 PMI＋Barr 鷹派故事的延續，非新事件。優化：實測重現 mergeRemote 對『新舊兩筆同名事件日期都已成為過去』時不會去重的 bug（AVGO 財報 09-02／09-10 永久並存），已寫進 backlog 供週日處理。"
+ },
+ {
+  "date": "2026-09-24",
   "text": "intraday: 日期核對都對得上（川習白宮會晤、Costco 財報皆 9/24，WebSearch 二次確認無異動）；priced.json 更新 1 筆（Costco，IBKR 選擇權鏈開盤後重算，905／907.5 履約隱含變動 3.41~3.43%，四腳報價為收盤標記非即時、已在 basis 註明，pxd 0.45 不變）；QQQ 盤中約 -0.6%，屬正常波動，未見可辨識的突發 headline 事件。"
  },
  {

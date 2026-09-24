@@ -1,7 +1,15 @@
 {
- "generated": "2026-09-24T13:46:09Z",
+ "generated": "2026-09-24T23:17:05Z",
  "note": "由每日 routine 覆蓋寫入。items 每筆對應日曆上的一個事件，pxd 是 0~1 的已定價程度。",
  "items": [
+  {
+   "date": "2026-10-07",
+   "title": "FOMC 會議紀要",
+   "pxd": 0.65,
+   "basis": "第一步依規範改用 score() 程式算（TZ=Asia/Taipei、mergeRemote 兩檔＋regime.json 套用），這一筆原本用 CAT.minutes 的 B=22 看起來過不了 45 分門檻，但 conc=0.5／vol=1 的環境放大後實際 s=46，剛好跨過門檻，之前都被漏掉。定價邏輯：9/16 那次會議是 12-0 全票通過升息，沒有異議票需要紀要去追認；而且會後三週已有密集 Fedspeak 把個別官員的立場攤開——Williams／Jefferson（9/22）、Barr（9/23，明確講『我的基本情境下後續很可能還需要進一步政策調整』）——紀要裡『several/many/most』的分歧程度，市場透過這些演說已經先看過一輪，邊際新資訊有限，故 pxd 給高於 minutes 類型先驗（0.55）的 0.65，而不是照先驗填。",
+   "src": "FOMC 9/16 全票通過（12-0）：Charles Schwab『FOMC Meeting』會議摘要、CNBC 2026-09-16（第三級，WebSearch 摘要）／會後密集 Fedspeak：data/curated.json 2026-09-22（Williams／Jefferson）與 2026-09-23（Barr）兩筆條目（第一手內部資料，附完整來源）／紀要公布時間 10/7 14:00 ET：FedRateCalc『FOMC Minutes Release Schedule 2026』、Investing.com 經濟日曆（第三級，WebSearch 摘要，未讀 federalreserve.gov 原文）",
+   "asof": "2026-09-24"
+  },
   {
    "date": "2026-09-30",
    "title": "MU 財報",
@@ -19,44 +27,28 @@
    "asof": "2026-09-23"
   },
   {
-   "date": "2026-09-24",
-   "title": "Costco 財報（FY2026 Q4 及全年）",
-   "pxd": 0.45,
-   "basis": "IBKR 選擇權鏈重新自算（2026-09-24 美東開盤後約 09:45~09:52，財報當天盤中最後一次重估）：現貨最新 906.80（09-23 收盤前那趟是 904.49，回升約 0.26%）。取財報後最近到期 9/25，905 履約（call 15.36＋put 15.54）隱含變動 3.41%；907.5 履約（call 14.19＋put 16.87）隱含變動 3.43%，兩組相鄰履約交叉一致；四腳報價這次 IBKR 回傳的是收盤標記（is_close，bid/ask 皆空），這兩檔週選在開盤後 20 分鐘內顯然還沒有新成交，不是即時報價，跟現貨（即時，非收盤標記）不同源，老實記下來。跟歷史兩個參考點比（同前次）：最近一次財報單日跌 3.9%、過去 12 次開盤跳空絕對值平均約 2.6%。3.41~3.43% 仍落在這兩個參考值之間，維持 0.45 不變；隱含較 09-23 收盤前那趟（3.33~3.40%）小幅上升，方向與現貨回升一致，屬正常波動。今晚美股收盤後（台北時間 9/25 早上）財報公布，屆時由複盤 routine 接手。",
-   "src": "IBKR 選擇權鏈 2026-09-24（第二級市場數據，內部自算，美東開盤後約 20 分鐘，905／907.5 履約價四腳報價為收盤標記非即時，現貨為即時報價）／歷史單日反應與開盤跳空統計：延續 09-21／09-22／09-23 查證來源（TipRanks／WallStreetHorizon／Zacks，第三級，WebSearch 摘要）／財報時點三方交叉再確認：TipRanks、MarketBeat、Costco 投資人關係活動頁（WebSearch 摘要，2026-09-24）",
-   "cons": "6.55",
-   "prev": "5.87",
-   "unit": "USD",
-   "consSrc": "分析師共識彙整（TipRanks／MarketBeat，WebSearch 摘要，2026-09-17）",
-   "metrics": [
-    {"n": "EPS", "cons": "6.55", "unit": "USD"},
-    {"n": "營收", "cons": "94.85", "unit": "B"}
-   ],
-   "asof": "2026-09-24"
-  },
-  {
    "date": "2026-10-02",
    "title": "非農就業",
-   "pxd": 0.35,
-   "basis": "利率類事件，照規範直接讀 policy.json 的路徑移動。2026-09-23 再次核對：10/28 會議 cumBp=13.8、12/09=33.6、01/27=43.3，跟 09-22 查到的 14.4／34.1／43.9 相比只差約 0.6bp，落在雜訊範圍，路徑判定為持平。這一趟 hist 缺口已經恢復：generated 2026-09-22T23:58Z，hist 最後一筆 asof 也是 2026-09-22，兩者對齊，不再是前兩趟撞到的資料源斷更（該問題已在第三步檢查與 _shared.md 記錄過）。維持 nfp 的類型先驗 0.35 不變。共識數字（Capital Economics 50K）今天用 WebSearch 重新查了一次，沒有找到更新的具體預測值（一般性經濟日曆與 BLS 頁面都沒給出 9 月數字的共識），維持既有版本。",
-   "src": "聯邦資金期貨隱含路徑（data/policy.json，2026-09-23 檢視，generated 與 hist asof 皆為 2026-09-22，第一手內部資料）／共識：Capital Economics（經 TradingEconomics／CNBC 轉載，WebSearch 摘要，2026-09-20，僅單一來源，2026-09-23 重新查證未找到更新版本）",
+   "pxd": 0.40,
+   "basis": "利率類事件，照規範直接讀 policy.json 的路徑移動，這次改用程式重算 cumBp（原始 hist 裡的 m 值換算：(impliedRate-effr)*100）而不是抄舊note 的數字，發現前兩趟的『asof』標示其實對錯了一天——09-17～09-22 這五個交易日 10/28 會議 cumBp 一直在 13.8~14.4bp 之間窄幅震盪，是真正的『持平』；但 09-23 這天（Barr 理事鷹派談話，10:20 ET，data/curated.json 該筆）cumBp 跳到 17.2bp，12/09 會議同步跳到 37.6bp，單日跳動約 3~4bp，超出前五天的窄幅區間，是真的方向移動，不是雜訊。這代表 10/2 非農公布前，市場已經在往鷹派方向提前定價（不是非農本身被定價，是整體升息路徑被推），照規範『路徑在動代表市場正在提前定價』，pxd 從 0.35 上調到 0.40。共識數字（Capital Economics 50K）WebSearch 重新查沒有找到更新版本，沿用既有值。",
+   "src": "聯邦資金期貨隱含路徑（data/policy.json hist，2026-09-24 檢視，09-17 至 09-23 逐日重算，第一手內部資料）／09-23 跳動的驅動：data/curated.json 2026-09-23 Barr 理事談話條目（第一手內部資料，附完整來源）／共識：Capital Economics（經 TradingEconomics／CNBC 轉載，WebSearch 摘要，2026-09-20，僅單一來源，2026-09-24 重新查證未找到更新版本）",
    "cons": "50",
    "prev": "162",
    "unit": "K",
    "consSrc": "Capital Economics（WebSearch 摘要，2026-09-20，單一來源）",
-   "asof": "2026-09-23"
+   "asof": "2026-09-24"
   },
   {
    "date": "2026-09-30",
    "title": "PCE 物價指數",
-   "pxd": 0.55,
-   "basis": "2026-09-23 再查證：核心 PCE 年增共識維持 4.7%（Deutsche Bank／NBF／TDS／Commerzbank 三度確認過的區間，見 09-16／09-17／09-20 的查證紀錄），今天 WebSearch 重新查詢沒有找到更新的具體共識數字，也沒有再撞到上次那則口徑矛盾的搜尋結果。policy.json 的 hist 缺口已恢復（見同檔非農那筆的說明，09-23 這次 generated 與 hist asof 都對齊在 09-22），路徑本身近期變動幅度很小（10/28 會議 cumBp 13.8，較 09-22 的 14.4 只差 0.6bp），不足以支持上調或下調 pxd，維持 0.55 不變，理由同前：FOMC 已如預期升息且點陣圖偏鷹，市場對『鷹派路徑』這條主線已有一段時間的定價，但這是路徑公布後第一個通膨讀數的檢驗，故不給更高。",
-   "src": "聯邦資金期貨隱含路徑（data/policy.json，2026-09-23 檢視，generated 與 hist asof 皆為 2026-09-22）／FOMC 結果：CNBC 2026-09-16（第三級，WebSearch 摘要）／PCE 共識：Deutsche Bank／NBF／TDS／Commerzbank 多方彙整站一致落在 4.7-4.8%（第三級，WebSearch 摘要，2026-09-16／09-17／09-20／09-22／09-23 五度交叉再確認）",
+   "pxd": 0.60,
+   "basis": "同非農那筆的路徑重算：09-17～09-22 之間 10/28、12/09 會議 cumBp 窄幅震盪（13.8~14.4bp／32.9~34.1bp），09-23 因 Barr 談話同步跳到 17.2bp／37.6bp，單日跳動 3~4bp，是真的方向移動。核心 PCE 年增共識仍是 4.7%（Deutsche Bank／NBF／TDS／Commerzbank，WebSearch 重查沒有更新版本），但市場對『鷹派路徑持續加深』這條主線的定價比 09-22 那次評估時更深了一層，照規範上調 pxd，從 0.55 調到 0.60（不到 minutes 或 fomc 那麼滿，因為這一步的驅動是官員談話而不是 PCE 本身的共識分佈變化）。",
+   "src": "聯邦資金期貨隱含路徑（data/policy.json hist，2026-09-24 檢視，09-17 至 09-23 逐日重算，第一手內部資料）／09-23 跳動的驅動：data/curated.json 2026-09-23 Barr 理事談話條目（第一手內部資料）／PCE 共識：Deutsche Bank／NBF／TDS／Commerzbank 多方彙整站一致落在 4.7-4.8%（第三級，WebSearch 摘要，多次交叉再確認，2026-09-24 重查未見更新）",
    "cons": "4.7",
    "prev": "3.3",
    "unit": "%",
-   "consSrc": "Deutsche Bank／NBF／TDS 等銀行調查彙整（WebSearch 摘要，2026-09-16／09-17／09-20／09-22／09-23 五度交叉再確認）",
-   "asof": "2026-09-23"
+   "consSrc": "Deutsche Bank／NBF／TDS 等銀行調查彙整（WebSearch 摘要，多次交叉再確認）",
+   "asof": "2026-09-24"
   }
  ]
 }
