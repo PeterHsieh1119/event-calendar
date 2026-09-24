@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-09-24",
+  "text": "review: 複盤 5 筆（Oracle 財報、初領失業金 09-10、四巫日 09-18、Fed 理事 Barr 談話與標普全球 flash PMI 09-23）；09-10 claims 與 09-23 兩筆互為 confound，已在 memo 交叉標註；發現規則引擎重複產生一筆過期的『2026-09-10 AVGO 財報』幽靈事件（真實日期 09-02 已由 curated.json 更正並複盤過），未寫入複盤、已在回報中點名，需要 daily/weekly 或 index.html 端處理。"
+ },
+ {
   "date": "2026-09-23",
   "text": "daily: 更新定價 4 筆（Costco／MU 用 IBKR 選擇權鏈收盤前重算，兩者 pxd 皆不變；NFP／PCE 確認 policy.json hist 缺口已恢復、路徑持平，pxd 不變）；新增事件 2 筆、修正 1 筆（Fed 理事 Barr 鷹派發言推升 10/28 升息機率至 71%；CL=F 9/22 續跌 6.37% 補記進既有荷姆茲海峽條目）；五項檢查全綠；優化：daily.md 補一段改用 node 跑 score() 代替手算、並提醒窗口要用台北時區算。"
  },
