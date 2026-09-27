@@ -48,6 +48,32 @@ regime 值讀 `data/regime.json`），不要單看 `B` 就把整個類型排除�
 再對「未來 14 天」窗口內的每筆事件呼叫 `score(e).s`，一次就拿到跟網站上完全一致的數字，
 不必自己重算 `CAT[e.cat].w`、環境放大、推算日折扣這些疊在一起的項目。
 
+**「套上 `regime.json` 的 values」不是塞一個叫 `REGIME` 的變數。** `score()` 讀的是全域
+`R` 物件，只有 `applyRegime(regimeJson)` 這個函式會把 `regime.json` 的 `values` 寫進 `R`——
+`EXPORT` 那行要連 `applyRegime` 一起匯出並呼叫 `T.applyRegime(regime)`，直接指派
+`sandbox.REGIME=...` 什麼事都不會發生，算出來的還是程式內建的預設環境。同理，
+`spc`（政策意外倍數）要呼叫 `applyPolicy(policy.json)` 才會生效，不然 FOMC／CPI／
+非農這幾類的分數會少乘一段，也會跟基於 `betas.json` 的資產曝險脫鉤（雖然 `score()`
+本身不用 betas，但同一支 script 常常會順手也把 `assetImpact` 拉進來檢查，忘了套一樣會錯）。
+
+**同名事件會跨好幾個日期出現，用 `title` 單獨查一定會抓錯那一筆。** `minutes`（每次 FOMC
+會後都有一筆「FOMC 會議紀要」）、`earn3`／`earn2`（財報每季同名）、`nfp`／`cpi`（每月同名）
+這幾類，`EVENTS.find(e=>e.title===...)` 只會抓到陣列裡第一個同名的，日期通常對不上你要查
+的那一次。debug 或抽單筆核對時一定要同時比對 `date`，例如
+`EVENTS.find(e=>e.title===X && e.date===Y)`，否則印出來的 `score()` 分解會是另一次會議的數字，
+拿去對答案會對不起來、卻看不出哪裡錯。2026-09-27 這一趟就撞到：用 title 查「FOMC 會議紀要」
+先抓到 2027-02-18 那筆（est=true、mult=1.4），跟迴圈裡用日期窗口篩出來的 10/07 那筆（同樣
+est=true 但 `spc` 不同）數字對不上，多花了一輪才發現是查詢邏輯的問題，不是 `score()` 算錯。
+
+**這也連帶提醒：`conc`／`vol` 不是每個類型都會被環境放大。** `mult` 只加總
+`CAT[cat].w` 裡真的列出來的鍵，`minutes` 的 `w` 只有 `{pivot:.4}`，沒有 `conc`／`vol`——
+09-24 那筆 `priced.json` 的 `basis` 寫「`conc=0.5／vol=1` 的環境放大後」把 FOMC 會議紀要的分數
+推到 46，這個歸因本身是錯的（`minutes` 的 `w` 根本不含這兩個鍵，環境放大不到它）；
+真正把分數從基準推高的是 `spc`（政策意外倍數，來自 `polSurprise()` 抓到的近期路徑跳動），
+會隨最近幾個交易日的 `policy.json` 變化而升降，不是穩定作用力。下次看到某個事件的分數
+比 `raw=100*(B/100)^(1/mult)` 高出一截，先查 `c.w` 有沒有那個環境鍵，查不到的話答案幾乎都在
+`spc`，不要照抄「環境放大」這個說法套用到所有類型上。
+
 **這個窗口的「今天」要用台北時區算，不要用容器預設的 UTC。** 這台機器的
 `date`／node 的 `new Date()` 預設時區是 UTC，但使用者人在台北、「未來 14 天」
 這個窗口是相對台北日曆算的。容器 UTC 時間每天大約有 8 小時（到隔天台北 08:00 為止）
