@@ -974,6 +974,43 @@ catKeys.forEach((k) => {
   T.applyPolicy(null);
 }
 
+/* ── 21. 確認日更正確認日：推算日已經過去之後，那筆更正仍然要生效 ──
+   財報錨定日是 anchor+91k 推出來的，k=0 那一筆標成 est=false，看起來像官方確認，
+   但錨點只要沒釘在「已經開過的那一場」，這個日期就是錯的。
+   mergeRemote 上面的註解本來就寫著「確認日必須能被確認日更正」，也拿 AVGO
+   （推算 9/10、官方 9/2）當例子——可是那條路徑被 from 閘門擋著：推算日一旦被今天追過，
+   已經生效過的更正就悄悄失效，日曆上從此永久同名兩筆，當日分數重複計算，
+   回測也把同一件事算成兩筆。2026-09-27 在真實資料上量到 AVGO 與 MU 兩對。
+   下面三條把「已確認 vs 已確認」在過去也要收斂釘住，同時釘住它沒有放寬到 est
+   ——過去的推算日不被更正掉是 10b(4) 刻意的行為，這個修正不碰它。 */
+{
+  const base = T.getEVENTS();
+  const E = (date, est) => ({ date, title: "測試 錨定財報", kind: "N", cat: "earn2",
+    t: "AMC", est, note: "", checks: [], src: "" });
+
+  // (1) 推算日與更正日都已經過去，兩筆都標成已確認 → 必須收斂成一筆
+  T.setEVENTS([E(D(-5), false)]);
+  T.mergeRemote([E(D(-13), false)]);
+  let after = T.getEVENTS().filter((e) => e.title === "測試 錨定財報");
+  eq("過去的推算確認日會被確認的更正取代", after.length, 1);
+  eq("留下來的是更正後的那一天", after.length === 1 ? after[0].date : null, D(-13));
+
+  // (2) 推算日已經過去、實際日期還在未來（MU：錨點推 9/24、實際 9/30）
+  T.setEVENTS([E(D(-3), false)]);
+  T.mergeRemote([E(D(4), false)]);
+  after = T.getEVENTS().filter((e) => e.title === "測試 錨定財報");
+  eq("跨過今天的確認更正也要收斂成一筆", after.length, 1);
+  eq("留下來的是未來那一天", after.length === 1 ? after[0].date : null, D(4));
+
+  // (3) 但過去的「推算日（est）」仍然受保護，這個修正不可以放寬到它
+  T.setEVENTS([E(D(-5), true)]);
+  T.mergeRemote([E(D(-13), false)]);
+  eq("過去的 est 推算日仍然不被更正掉",
+    T.getEVENTS().filter((e) => e.title === "測試 錨定財報").length, 2);
+
+  T.setEVENTS(base);
+}
+
 /* ── 報告 ── */
 console.log("");
 if (fails.length) {

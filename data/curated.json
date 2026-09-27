@@ -1,6 +1,56 @@
 {
- "generated": "2026-09-23T23:13:55Z",
+ "generated": "2026-09-27T13:20:54Z",
  "items": [
+  {
+   "date": "2026-09-29",
+   "kind": "N",
+   "cat": "product",
+   "t": "13:00",
+   "est": false,
+   "title": "OpenAI DevDay 2026（Sam Altman 主題演講）",
+   "note": "【怎麼進來的】每週前瞻掃描（任務一），日曆上原本完全沒有這一筆。【事件】OpenAI 年度開發者大會，9/29（週二）於舊金山 Fort Mason 舉行，現場限約 1,500 名開發者，Sam Altman 的開場 Keynote 於 10:00 PT（美東 13:00）免費直播，其餘場次會後上線。今年另外擴充成八個城市的 DevDay Exchange 巡迴（Bengaluru 10/16、東京 10/20、首爾 10/22、柏林 10/26、巴黎 10/28、倫敦 11/3、聖保羅 11/6、墨西哥城 11/10）——那些是衛星場，規模與新資訊量都遠小於主場，不另立條目。【為什麼值得記】9/21 那天的歸因缺口就是 AI 應用端的消息（Meta Muse 登上 App Store 免費榜第一，QQQ +2.77%、z=3.33，見同檔 2026-09-21 條目），在目前這個部位擁擠、vol 在年度第 7 百分位的環境裡，AI 端的產品消息確實推得動費半與那斯達克。【cat 與 kind】product、分子端 N：動的是「未來能賺多少」的預期（模型能力與 API 定價會直接改變應用端與算力端的營收預估），不是折現率。【怎麼讀，不要高估】product 的 B 只有 18，這是刻意的：同檔 2026-09-09 Apple 秋季發表會那筆已經記過同一個結論——年度大場合當天的指數變動常常小到不顯著，真正的資訊在供應鏈與個股。這一筆要看的是次日費半與 AI 應用股，不是當天的 QQQ。",
+   "src": "OpenAI 官方（devday.openai.com、openai.com/index/devday-2026、events.openai.com/devdayexchange2026）為第一級，但該網域在此環境連不出去，內容轉引自 explainx.ai『OpenAI DevDay 2026: Sept 29 SF + Livestream Guide』、cynoteck.com、beri.net、AlphaSignal『OpenAI Takes DevDay 2026 Global With 8-City Developer Tour』、datastudios.org（多方獨立轉述交叉一致：9/29、Fort Mason、10:00 PT Keynote 免費直播、八城巡迴日期；皆第三級，WebSearch 摘要，未讀官方原文）"
+  },
+  {
+   "date": "2026-10-01",
+   "kind": "N",
+   "cat": "earn1",
+   "t": "AMC",
+   "est": false,
+   "title": "NKE 財報（FY2027 Q1）",
+   "note": "【怎麼進來的】每週前瞻掃描（任務一）。【事件】Nike 2027 財年第一季財報，10/1（週四）13:15 PT（美東 16:15）盤後公布，法說會 14:00 PT。公司 8/28 發新聞稿正式排定，日期屬已確認。【cat 為什麼是 earn1 而不是 earn2】NKE 在紐交所掛牌、不是那斯達克 100 成分股，對 QQQ 沒有權重貢獻，earn2 的 conc 權重（0.35）套在它身上會高估；earn1（B=26、conc 0.2）才對得上它的實際傳導路徑——它的資訊價值在「美國消費力道」這條分子端的總體線索，而不是指數權值。【怎麼讀】在目前 shock=1 的通膨主導環境裡，消費端數字要分兩層看：營收強＝分子端利多，但若毛利是靠提價撐住的，那同一份財報同時是通膨黏著的證據（分母端利空）。兩層方向相反，只看營收會判讀錯。【沒有寫進 priced.json】那是每日 routine 的檔案，這一趟不動別人那一欄。",
+   "src": "NIKE, Inc.『NIKE, Inc. Announces First Quarter Fiscal 2027 Earnings and Conference Call』2026-08-28（investors.nike.com 為第一級，該網域連不出去，經 Nasdaq 新聞稿轉載頁、finance.yahoo.com、webull.com 三方轉述交叉一致：10/1、13:15 PT 發布、14:00 PT 法說；第三級，WebSearch 摘要，未讀原文）／10/1 盤後亦見 FX168／新浪《下周外盘看点》2026-09-27 一週前瞻列為當週焦點財報（第三級）"
+  },
+  {
+   "date": "2026-10-13",
+   "kind": "N",
+   "cat": "earn1",
+   "t": "BMO",
+   "est": false,
+   "title": "JPM 財報（Q3，美國大型銀行財報季開場）",
+   "note": "【怎麼進來的】每週前瞻掃描（任務一）；日曆上原本 10 月只有 MU／ASML／台積電／INTC 四筆財報，整個 Q3 財報季的開場是空的。【事件】JPMorganChase 第三季財報，10/13（週二）約 07:00 ET 發布、08:30 ET 法說會——公司 IR 新聞稿明確排定，屬已確認。同日 Goldman Sachs 亦排定盤前公布（但這一筆只有第三級來源說是 confirmed，所以不另立條目，寫在這裡備查）。【為什麼記一筆銀行財報】不是為了 JPM 自己，而是因為它是每一季財報季的第一個實測點：信用成本、淨利差、以及對消費者與企業放款的展望，是「盈餘預估要往上還是往下修」的第一份硬資料，會重設整季分子端的基準。【cat 為什麼是 earn1】JPM 不在那斯達克 100 裡，對 QQQ 沒有權重貢獻，用 earn2 的 conc 權重會高估；earn1（B=26）對得上它的實際傳導路徑。【怎麼讀，也是它的限制】這一類事件對 QQQ 的單日作用通常很小，真正的資訊在它替整季財報季定的調子——不要期待當天的指數會動，要看的是隨後兩週盈餘修正的方向。",
+   "src": "JPMorganChase『JPMorganChase to Host Third-Quarter 2026 Earnings Call』（jpmorganchaseco.gcs-web.com 為第一級，該網域連不出去，經 finance.yahoo.com 與 stocktitan.net『JPMorganChase Sets Oct. 13 Q3 2026 Earnings Call』兩方轉述交叉一致：10/13、約 07:00 ET 發布、08:30 ET 法說；第三級，WebSearch 摘要，未讀原文）／Goldman Sachs 同日盤前：TipRanks 標為 Confirmed、investmenthouse.com 2026-09-15（皆第三級，僅備查，未另立條目）"
+  },
+  {
+   "date": "2026-10-20",
+   "kind": "N",
+   "cat": "earn2",
+   "t": "AMC",
+   "est": false,
+   "title": "NFLX 財報（Q3）",
+   "note": "【怎麼進來的】每週前瞻掃描（任務一）。【事件】Netflix 第三季財報，10/20（週二）13:01 PT（美東 16:01）盤後於 IR 網站公布，13:45 PT 由共同執行長 Greg Peters／Ted Sarandos、財務長 Spence Neumann 與 VP Spencer Wang 進行分析師直播問答。公司公告日期，屬已確認。【cat 為什麼是 earn2】NFLX 是那斯達克 100 成分股、權重在個位數前段，conc 這條管道對它是實的（不像同批加進來的 JPM／NKE），但它不在前五大，也構不上 earn3 的權值財報；earn2（B=42、conc 0.35）是對得上的那一格。【怎麼讀】t 填 AMC 不是小事：16:01 公布打到的是 10/21 這個交易日，填成盤中會讓吸收日整個錯掉（見 _shared.md 第四節）。【沒有寫進 priced.json】那是每日 routine 的檔案；離現在還有三週，等它進入 14 天窗口再由每日那一趟估 pxd。",
+   "src": "Netflix IR『Netflix to Announce Third Quarter 2026 Financial Results』（netflixinvestor.com 為第一級，該網域連不出去，經 stocktitan.net『Netflix to Post Third-Quarter 2026 Results Oct. 20』、marketscreener.com、pluang.com 三方轉述交叉一致：10/20、13:01 PT 發布、13:45 PT 直播問答；第三級，WebSearch 摘要，未讀原文）"
+  },
+  {
+   "date": "2026-10-21",
+   "kind": "N",
+   "cat": "product",
+   "t": "BMO",
+   "est": false,
+   "title": "NVIDIA GTC Berlin 黃仁勳主題演講",
+   "note": "【怎麼進來的】每週前瞻掃描（任務一）；富途 10 月大事整理把 GTC Berlin 列為當月產業端看點之一。【事件】GTC Berlin 2026 於 10/20–10/22 在柏林 Tempodrom 與 STATION-Berlin 舉行，黃仁勳的主題演講排在 10/21（週三）11:00–13:00 CEST，換算美東是 05:00–07:00，落在美股盤前，故 t 填 BMO。預期與會 6,000–10,000 人、逾 100 場議程。【為什麼 t 是 BMO 很重要】演講在美股開盤前就講完了，所以它的內容是 10/21 開盤就吸收，不是盤中；填成美東盤中會讓吸收日與時序判斷整個錯掉（見 _shared.md 第四節）。【歷史反應：樣本兩次、方向相反，所以不要押方向】（任務二之二）px.json 只有兩年，GTC 一年一次，網站的「歷史反應」樣本不足以形成分布，手動補上自算數字：2026-03-16 聖荷西 GTC 黃仁勳 Keynote 當日 QQQ +1.12%、費半 +1.96%，次日 +0.49%／+0.52%；2025-03-18 那次 Keynote 當日 QQQ −1.70%、費半 −1.61%，次日 +1.34%／+0.99%。兩次符號相反、幅度也都在一般日波動範圍內，沒有可用的方向性優勢——這正是 cat 給 product（B=18）而不是往上抬的理由，跟同檔 2026-09-09 Apple 秋季發表會那筆記下的結論一致。【還有一層要折價】柏林場是 GTC 的歐洲場，規模遠小於三月的聖荷西主場（逾 30,000 人），重大架構發表照慣例留給主場，所以連上面那兩個樣本都算高估。",
+   "src": "NVIDIA 官方（nvidia.com/en-eu/gtc/）為第一級，該網域在此環境連不出去，經 baxtel.com、nebius.com、vdura.com、beri.net、eventbrowse.com 多方獨立轉述交叉一致（10/20–22、Tempodrom 與 STATION-Berlin、黃仁勳 Keynote 10/21 11:00–13:00 CEST；皆第三級，WebSearch 摘要，未讀原文）／富途《美股投資必備！10月重磅大事搶先看》（news.futunn.com，該網域被 egress proxy 擋，第三級 WebSearch 摘要，未讀原文）／歷史反應的 2026-03-16 與 2025-03-18 兩個 Keynote 日期：CNBC 2026-03-16、TechCrunch 2026-03-16、nvidianews.nvidia.com 轉述（第三級，搜尋摘要）；當日與次日的 QQQ／費半變動由 data/px.json 自算（第一手內部資料）"
+  },
   {
    "date": "2026-09-23",
    "kind": "D",

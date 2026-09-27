@@ -506,7 +506,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-a75d8767";
+const APP_VER = "evcal-b0660247";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -521,7 +521,7 @@ const WATCH=[
  {s:"KLAC",n:"KLAC",anchor:"2026-07-28",cat:"earn1",t:"AMC"},
  {s:"AMD",n:"AMD",anchor:"2026-08-04",cat:"earn2",t:"AMC"},
  {s:"AVGO",n:"AVGO",anchor:"2026-09-10",cat:"earn2",t:"AMC"},
- {s:"INTC",n:"INTC",anchor:"2026-10-22",cat:"earn1",t:"AMC"},
+ {s:"INTC",n:"INTC",anchor:"2026-07-23",cat:"earn1",t:"AMC"},
  {s:"MSFT",n:"微軟",anchor:"2026-07-29",cat:"earn3",t:"AMC"},
  {s:"GOOGL",n:"Google",anchor:"2026-07-28",cat:"earn2",t:"AMC"},
  {s:"AMZN",n:"Amazon",anchor:"2026-07-30",cat:"earn2",t:"AMC"},
@@ -1886,7 +1886,16 @@ function mergeRemote(list){
     let best=null,bd=Infinity;
     for(const e of EVENTS){
       if(e.title!==f.title||e.date===f.date||drop.has(e))continue;
-      if(e.date<from)continue;              // 已經過去的不動，那是歷史紀錄
+      /* 已經過去的日期原則上不動，那是歷史紀錄。唯一的例外是「兩筆都標成已確認」：
+         同一件事不可能同時有兩個已確認、又只差十天內的日期，其中一筆必然是錯的，
+         而更正層才是知道它實際上哪一天發生的那一方。
+         上面那段註解本來就寫著「確認日必須能被確認日更正」，還拿 AVGO（錨點推 9/10、
+         官方 9/2）當例子——但那條路徑只有在推算日還沒被今天追過時才走得到：
+         這個 from 閘門會隨著日期前進讓已經生效的更正悄悄失效，
+         於是日曆上永久留著同名兩筆，當日分數重複計算，回測也多算一筆事件。
+         2026-09-27 實測到 AVGO（9/10 vs 9/2）與 MU（9/24 vs 9/30）兩對就是這樣長出來的。
+         est 的推算日在過去依然受保護，那是 10b(4) 刻意釘住的行為，這裡不放寬。 */
+      if(e.date<from&&(e.est||f.est))continue;
       if(!e.est&&f.est)continue;            // 猜測蓋不掉已確認的日期
       if(exact.has(e.date+"|"+e.title))continue;   // 更正層自己也列了這一天
       const d=Math.abs(parse(f.date)-parse(e.date));
