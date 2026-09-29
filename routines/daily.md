@@ -74,6 +74,13 @@ est=true 但 `spc` 不同）數字對不上，多花了一輪才發現是查詢�
 比 `raw=100*(B/100)^(1/mult)` 高出一截，先查 `c.w` 有沒有那個環境鍵，查不到的話答案幾乎都在
 `spc`，不要照抄「環境放大」這個說法套用到所有類型上。
 
+**2026-09-29 這一趟撞到：`mergeRemote(list)` 要的是純陣列，不是 `{items:[...]}`。**
+自己寫最小 harness 時，`events.json`／`curated.json` 都要先解開外層包裝再傳進去——
+`events.json` 的外層鍵是 `events`（不是 `items`），`curated.json` 才是 `items`，
+兩份鍵名不一樣。傳成 `{items:[...]}` 整包，`mergeRemote` 內部的
+`list.filter(...)` 會直接對物件呼叫 `.filter` 而丟出 `TypeError`，錯誤訊息只會指到
+`mergeRemote` 內部那一行，看不出來是呼叫端傳錯形狀，容易誤以為是 `score()` 本身壞了。
+
 **這個窗口的「今天」要用台北時區算，不要用容器預設的 UTC。** 這台機器的
 `date`／node 的 `new Date()` 預設時區是 UTC，但使用者人在台北、「未來 14 天」
 這個窗口是相對台北日曆算的。容器 UTC 時間每天大約有 8 小時（到隔天台北 08:00 為止）
