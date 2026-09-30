@@ -267,7 +267,7 @@ FOMC、CPI、非農、PCE 這些走分母端的事件，「已經被 price in �
 |---|---|---|---|
 | 1 | 兩道閘門 | 第零步已經跑過 | 照 `_shared.md` 第八節 |
 | 2 | 驗證器的**警告** | `validate_data.py` 最後那行的警告數 | 警告不會擋 commit，但每一條都要在回報裡講，不要當作沒看到 |
-| 3 | Actions 有沒有在跑 | `events.json`／`px.json`／`policy.json` 的 `generated` 幾天沒動（驗證器超過 3 天會警告） | 抓取排程掛了，回報裡明講，不要自己去補那些檔案 |
+| 3 | Actions 有沒有在跑 | `events.json`／`px.json`／`policy.json` 的 `generated` 幾天沒動（驗證器超過 3 天會警告）。**`generated` 新不代表資料本身新**（見 `_shared.md` 二之二）：`policy.json` 要另外比對 `hist` 最後一個 key 的日期，`px.json` 要比對七個標的各自 `series[k]` 最後一個日期——2026-09-30 這一趟撞到 `policy.json.generated` 是當天，`hist` 卻停在 09-28（漏了 09-29／09-30 兩個交易日）；同一趟 `px.json` 也是 `QQQ` 停 09-28、`^TWII` 停 09-24，`generated` 照樣顯示當天。驗證器只看 `generated`，這兩層落差目前只有人工比對才抓得到 | 抓取排程掛了，回報裡明講，不要自己去補那些檔案；用 `policy.json` 的 pxd 判讀時，在 `basis` 裡註明是用哪一天的 `hist` 算的，不要含糊寫「最新資料」 |
 | 4 | 複盤有沒有停擺 | `reviews.json` 最新一筆的日期（超過 10 天驗證器會警告） | 盤後那一趟在空轉，回報裡點名 |
 | 5 | 線上版本有沒有落後 | `WebFetch` 線上的 `data/changelog.json`，比對最上面那筆日期跟 repo 的 | 落後兩天以上代表部署壞了；連不出去（很可能）就跳過並說一句 |
 
