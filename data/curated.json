@@ -1,6 +1,16 @@
 {
- "generated": "2026-09-29T23:10:15Z",
+ "generated": "2026-10-01T23:17:53Z",
  "items": [
+  {
+   "date": "2026-09-29",
+   "kind": "D",
+   "cat": "minutes",
+   "t": "14:00",
+   "est": false,
+   "title": "紐約聯儲主席 Williams：政策行動後『不急』，10月升息機率單日腰斬",
+   "note": "【怎麼進來的】daily routine 例行掃描臨時 Fed 官員談話（任務二），這次是因為它直接驅動了本趟 priced.json 非農與 CPI 兩筆 pxd 的大幅調整，不只是補充背景。【事件】紐約聯儲主席 Williams 9/29（週二）14:00 ET 在紐約州水牛城大學（University at Buffalo）發表經濟展望與貨幣政策演說，核心一句是『在我們 9 月會議採取的政策行動之後，不需要急著動作』（with the policy action we took at our September meeting, there is no need for urgency），同時仍保留『今年稍晚可能還需要再一次升息』的基本情境，但強調這只是他自己的預測，要看後續數據。【市場反應】CME 聯邦資金期貨隱含的 10/28 會議單次結果升息機率，從 09-28 收盤的 70.8%（data/policy.json，cumBp 17.71）當天就跌到 09-29 的 50.9%（cumBp 12.73），Polymarket 的『10 月不動』合約同日跳升約 27 個百分點（從約 33% 到 60%）。【這不是唯一驅動，隔天還有疊加】09-30 公布的 8 月核心 PCE（3.0%，低於預期 3.3%）把這段鴿派重定價再往前推一段（10-28 cumBp 進一步降到 10-01 的 8.6，見同檔 2026-09-30 PCE 條目補記）——兩件事只隔一天，複盤與 priced.json 的 basis 都要把兩個來源分開記，不要只歸因給其中一個。【為什麼 cat 選 minutes】跟同檔既有的 Fed 官員談話事件（Barr 9/23、Williams／Jefferson 9/22、Waller 9/3）用同一個代碼，這一類事件動的是政策路徑，屬分母端。",
+   "src": "Reuters（經 Investing.com 轉載）2026-09-29『Fed's Williams sees no urgency for next Fed rate hike』、24/7 Wall St. 2026-09-30『Williams Says the Fed Has Time. October Rate Hike Odds Fell Below a Coin Flip』、New York Fed 官方新聞稿 2026-09-18（媒體顧問，確認 9/29 14:00 ET 水牛城場次，newyorkfed.org 為第一級但該網域連不出去）（皆第三級，WebSearch 摘要，未讀 newyorkfed.org 演講全文原文）／Polymarket 反應：Tech Insider『Polymarket Puts October Fed “No Change” at 60% as Rate-Hike Bets Collapse in 24 Hours』2026-09-30（第三級，WebSearch 摘要）／10/28 cumBp 逐日數字：data/policy.json hist（第一手內部資料）"
+  },
   {
    "date": "2026-09-26",
    "kind": "R",
@@ -328,8 +338,8 @@
    "title": "PCE 物價指數",
    "est": false,
    "t": "08:30",
-   "note": "日期確認（不是改期）：規則引擎推的是當月最後一個營業日，剛好也是 9/30，這裡只把 est 從推測改成確認。BEA 在 8/26 公布 7 月 PCE 時就載明 8 月數據於 9/30 公布，多家財經排程站一致。這是 9/16 FOMC 之後第一份核心通膨讀數，也是 12/9 會議前的第一個分母端錨點。",
-   "src": "BEA 8/26 新聞稿載明的下次發布日（見同檔 2026-08-26 PCE 那筆的第一級來源）／多家財經排程站交叉驗證（第三級，搜尋摘要，未讀原文）"
+   "note": "日期確認（不是改期）：規則引擎推的是當月最後一個營業日，剛好也是 9/30，這裡只把 est 從推測改成確認。BEA 在 8/26 公布 7 月 PCE 時就載明 8 月數據於 9/30 公布，多家財經排程站一致。這是 9/16 FOMC 之後第一份核心通膨讀數，也是 12/9 會議前的第一個分母端錨點。【10-01 補記，daily routine，結果已出爐】8 月核心 PCE 年增 3.0%、月增 0.2%，均低於預期的 3.3%／0.3%；頭條 PCE 年增 3.4%，亦低於預期 3.7%。市場解讀為通膨降溫、10 月升息急迫性下降，公布當天美股期貨走高、公債殖利率一度轉負。這份意外走低與前一天（9/29）紐約聯儲 Williams 的『不急』講話（見同檔 2026-09-29 條目）前後疊加，兩天內把 10/28 會議的隱含升息機率從 09-28 的 70.8% 壓到 10-01 的 34%（data/policy.json），是本趟 priced.json 非農與 CPI 兩筆 pxd 調整的主要依據。【口徑提醒，供複盤與下次對齊】這裡引的 3.0%／3.4% 是公布當下的數字，複盤與校準用的口徑以 reviews.json 實際記錄為準，這裡不重複寫判讀。",
+   "src": "BEA 8/26 新聞稿載明的下次發布日（見同檔 2026-08-26 PCE 那筆的第一級來源）／多家財經排程站交叉驗證（第三級，搜尋摘要，未讀原文）／09-30 實際結果：CNBC 2026-09-30『Fed's preferred gauge showed core inflation at 3.0% in August, much lighter than expected』、自由財經 2026-09-30『美核心PCE年增3％低於預期 10月升息機率大減』、鉅亨網 2026-09-30（皆第三級，WebSearch 摘要，未讀 bea.gov 原文）"
   },
   {
    "date": "2026-08-26",
