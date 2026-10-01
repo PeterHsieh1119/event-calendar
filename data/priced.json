@@ -1,18 +1,18 @@
 {
- "generated": "2026-09-30T23:19:09Z",
+ "generated": "2026-10-01T13:44:21Z",
  "note": "由每日 routine 覆蓋寫入。items 每筆對應日曆上的一個事件，pxd 是 0~1 的已定價程度。",
  "items": [
   {
    "date": "2026-10-02",
    "title": "非農就業",
-   "pxd": 0.40,
-   "basis": "利率類事件，policy.json hist 逐日重算 10/28 會議 cumBp：09-23 因 Barr 鷹派談話跳到 17.71 → 09-24 17.16 → 09-25 16.05（當時判讀為回吐 46%）→ 09-27（最新一筆）17.16——跟 09-24 的數字完全相同，代表 09-25 那次的回吐只是暫時的，最新資料顯示路徑已經完全收復、沒有繼續消退，之前『回吐 46%』的判讀被推翻。pxd 因此從 0.37 調回 09-24 當時給的 0.40。共識沿用：WebSearch 2026-09-28 再次確認 90K／4.1%（FinancialJuice、TradingEconomics 皆同），跟 09-26 查到的 Bloomberg 版本一致，未變動。【09-30 daily 補記】policy.json 頂層 generated 已到 09-30，但 hist 最後一筆仍停在 09-28（17.71bp，跟 09-23 幾乎打平），09-29／09-30 兩個交易日完全沒有新增——照 _shared.md 二之二的提醒，這代表 scripts/policy_path.py 抓到的期貨資料斷更了，不是『路徑真的沒動』，pxd 維持 0.40 不變，但這個結論建立在舊資料上，之後資料補上要重新核對。",
-   "src": "聯邦資金期貨隱含路徑（data/policy.json hist，2026-09-30 檢視，最新一筆停在 09-28，第一手內部資料）／09-23 跳動的驅動：data/curated.json 2026-09-23 Barr 理事談話條目（第一手內部資料）／共識覆核：FinancialJuice『US Nonfarm Payrolls Prep』2026-09-28、TradingEconomics（第三級，WebSearch 摘要，2026-09-28，與 09-26 Bloomberg 版本一致）",
+   "pxd": 0.46,
+   "basis": "【10-01 盤中更新】policy.json hist 缺口已補上（09-29、10-01 兩筆新進，僅 09-30 單日仍缺），10/28 會議 cumBp 逐日重算：09-28 17.71bp（單次結果機率 70.8%）→ 09-29 12.73bp（50.9%）→ 10-01 8.58bp（34.3%），三個交易日內腰斬，不是單日雜訊——下一次 12/09 會議 cumBp 同步從 38.85 降到 29.72，兩個會議同向同步下滑，確認是整條路徑在動，不是單一到期日的報價異常。WebSearch 交叉驗證找到驅動：Williams 09-30『Fed has no need for urgency』把 10 月升息機率從約 70% 打到腰斬以下，與 Kalshi／Polymarket 09-30 報價（約 37～42% 機率）、本檔 10-01 算出的 34.3% 走勢一致。依 daily.md 第一步『CPI／非農／PCE：路徑已經在往某個方向跑，代表市場正在提前定價，pxd 要往上調』，三天持續單向的大幅度repricing 符合這個情境，從 0.40 調高到 0.46（交叉核對：套用 FOMC 那組『單一結果機率對 pxd』的線性抓法，目前不升息機率約 65.7%，介於 50/50（pxd 中值 0.275）與近乎確定（pxd 約 0.9）之間內插，算出約 0.47，與本次調整一致）。共識不變：WebSearch 10-01 再次確認 90K／4.1%（Bloomberg 調查原文、TIOmarkets 兩方交叉一致），跟 09-26／09-28 查到的版本相同。",
+   "src": "聯邦資金期貨隱含路徑（data/policy.json hist，2026-10-01 檢視，最新一筆已到 10-01，第一手內部資料）／路徑下滑的驅動：Williams 談話與 10 月升息機率下修報導（247wallst.com『Williams Says the Fed Has Time』2026-09-30，第三級，WebSearch 摘要）、Kalshi／Polymarket 10 月機率彙整（predictionmarketspicks.com，第三級，WebSearch 摘要，2026-09-30～10-01）／共識覆核：Bloomberg『US Jobs Report Seen Showing 90,000 Payrolls, 4.1% Unemployment Rate』2026-09-26、TIOmarkets NFP Preview（第三級，WebSearch 摘要，2026-10-01 再確認，與 09-26／09-28 一致）",
    "cons": "90",
    "prev": "162",
    "unit": "K",
-   "consSrc": "Bloomberg 調查（WebSearch 摘要，2026-09-26，2026-09-28 再確認）",
-   "asof": "2026-09-29"
+   "consSrc": "Bloomberg 調查（WebSearch 摘要，2026-09-26，2026-10-01 再確認）",
+   "asof": "2026-10-01"
   },
   {
    "date": "2026-10-14",
