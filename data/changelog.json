@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-10-02",
+  "text": "review: 複盤 4 筆（Williams 09-29 演說、MU 財報、初領失業金、ISM 製造業 PMI），範圍為上次複盤後 15 天內已公布但未複盤的事件。"
+ },
+ {
   "date": "2026-10-01",
   "text": "daily: priced.json 4 筆全部重算（CPI pxd 0.50→0.45、ASML 0.68→0.67、台積電與非農維持），curated.json 新增 Williams 09-29 演說、PCE 09-30 補記結果，共 2 筆。"
  },
