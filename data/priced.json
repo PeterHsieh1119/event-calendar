@@ -1,19 +1,7 @@
 {
- "generated": "2026-10-01T23:17:53Z",
+ "generated": "2026-10-02T13:46:51Z",
  "note": "由每日 routine 覆蓋寫入。items 每筆對應日曆上的一個事件，pxd 是 0~1 的已定價程度。",
  "items": [
-  {
-   "date": "2026-10-02",
-   "title": "非農就業",
-   "pxd": 0.46,
-   "basis": "【daily 07:00，延續今日凌晨 intraday 的重算，未再變動】policy.json 最新一筆已到 10-01（hist 中間 09-30 這個交易日缺一筆，見五項檢查第 3 項，不影響這裡的結論），10/28 會議 cumBp 現為 8.6bp（單次結果升息機率 34%），跟 intraday 當時算出的 8.58bp／34.3% 幾乎完全一致，三個交易日的鴿派重定價（09-28 70.8%→09-29 50.9%→10-01 34.3%）沒有進一步惡化也沒有反彈，維持 pxd 0.46 不變。這段重定價的真正驅動（見同檔 curated.json 2026-09-29 Williams 演說、2026-09-30 PCE 補記兩筆）是紐約聯儲主席 Williams 09-29 14:00 ET『政策行動後不急』的講話疊加 09-30 核心 PCE 意外走低（3.0% vs 預期 3.3%），兩件事同天附近疊加，不是單一來源，basis 已分開記清楚，避免下一個人誤以為只有一件事在動。共識仍是 90K／4.1%（Bloomberg，10-01 再次核對，與 09-26／09-28／intraday 版本一致）。",
-   "src": "聯邦資金期貨隱含路徑（data/policy.json hist，2026-10-01 檢視，最新一筆 10-01，第一手內部資料）／路徑下滑的兩個驅動：Williams 09-29 演說（見 curated.json 同日條目來源）、08 月 PCE 09-30 公布結果（見 curated.json 2026-09-30 條目補記來源）／共識覆核：Bloomberg『US Jobs Report Seen Showing 90,000 Payrolls, 4.1% Unemployment Rate』2026-09-26，10-01 再確認",
-   "cons": "90",
-   "prev": "162",
-   "unit": "K",
-   "consSrc": "Bloomberg 調查（WebSearch 摘要，2026-09-26，2026-10-01 再確認）",
-   "asof": "2026-10-01"
-  },
   {
    "date": "2026-10-14",
    "title": "CPI",
