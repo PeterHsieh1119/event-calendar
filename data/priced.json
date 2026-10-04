@@ -1,7 +1,19 @@
 {
- "generated": "2026-10-02T13:46:51Z",
+ "generated": "2026-10-04T23:13:43Z",
  "note": "由每日 routine 覆蓋寫入。items 每筆對應日曆上的一個事件，pxd 是 0~1 的已定價程度。",
  "items": [
+  {
+   "date": "2026-10-05",
+   "title": "ISM 非製造業 PMI",
+   "pxd": 0.45,
+   "basis": "【10-04 daily 新進榜】規則引擎原本的 B 只有 30，看起來過不了 45 門檻，但這週環境 vol=1 把 mult 往上推，用 score() 實際算出來是 46，剛好過線（index.html 574 行附近 CAT.ism.w 只有 shock 一項，conc 對它不放大）。pxd 維持 PXD0 的類型先驗 0.45：兩個共識來源不完全一致（Investing.com 55.7、另一彙整站 55.0），但都貼近前值 55.4，屬於『幾乎沒變』的共識，沒有單邊傾向；Polymarket 的區間分布也很平——55.0~55.9 這一檔只佔 23.5%，沒有哪個區間明顯領先，代表市場對這次結果沒有強烈一致的押注，不是『已經充分定價』也不是『完全沒防』的極端情境，落在中性。",
+   "src": "Investing.com 經濟日曆（共識 55.7，WebSearch 摘要，2026-10-04 查詢，未讀原文）／另一彙整站共識 55.0（WebSearch 摘要）／Polymarket『ISM Services PMI - September 2026』區間賠率（第三級，WebSearch 摘要）",
+   "cons": "55.0",
+   "prev": "55.4",
+   "unit": "",
+   "consSrc": "泛用財經日曆站彙整給出的『consensus forecast』為 55.0（WebSearch 摘要，2026-10-04），取這個而不是 Investing.com 自家日曆頁顯示的 55.7——後者沒有標明是哪家機構調查或多少家預測的中位數，前者明確以『consensus』字樣呈現；兩者皆貼近前值 55.4，差異不影響這筆的判讀",
+   "asof": "2026-10-04"
+  },
   {
    "date": "2026-10-14",
    "title": "CPI",

@@ -1,6 +1,16 @@
 {
- "generated": "2026-10-04T13:20:41Z",
+ "generated": "2026-10-04T23:13:43Z",
  "items": [
+  {
+   "date": "2026-10-06",
+   "kind": "R",
+   "cat": "quad",
+   "t": "09:30",
+   "est": false,
+   "title": "S&P 500 成分股異動（Twilio 取代 Warner Bros. Discovery）",
+   "note": "【怎麼進來的】每日前瞻掃描（任務二），日曆上原本完全沒有這一筆。【事件】S&P Global 10/1 公告一串連鎖性成分股異動，10/6（週二）開盤前生效：Twilio（NYSE: TWLO，原為 S&P MidCap 400 成分股）取代 Warner Bros. Discovery（NASD: WBD）進入 S&P 500；WBD 退出的原因未在公告中特別說明分拆或併購細節，與 9/21 那筆（Corteva 分拆出 Vylor 連動的一系列調整）屬於同一波但不同的替換動作，故另立一筆而非合併。【cat 為什麼選 quad】合法清單裡沒有「指數調整」專用代碼，沿用 9/21 那筆的理由：被動資金流驅動、不改變現金流或折現率，屬風險溢酬事件。單一個股權重遠小於整個指數，衝擊分數應該很低，這裡記錄主要是為了不讓 WBD／TWLO 當天的被動賣壓／買壓被誤判成別的原因。【t】S&P Global 公告的生效時點是「開盤前」，09:30 代表開盤那一刻的機械性再平衡。",
+   "src": "S&P Global 官方新聞稿 2026-10-01『Vylor Added to the S&P 500; Twilio Set to Join S&P 500...』（press.spglobal.com，第一級，WebSearch 摘要，未讀原文全文——該網域連不出去）／Barchart／Yahoo Finance 2026-10-01 轉述交叉驗證（第三級，WebSearch 摘要）"
+  },
   {
    "date": "2026-09-29",
    "kind": "D",

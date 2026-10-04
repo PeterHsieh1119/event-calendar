@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-10-04",
+  "text": "daily: priced.json 新增 1 筆（10/05 ISM 非製造業 PMI，score() 實算 46 分剛過 45 門檻，pxd 0.45，B 看起來只有 30 但 vol=1 放大後過線，見 basis）；CPI／ASML／台積電三筆既有估計核對過 policy.json（10/02 最後交易日，週末不算斷更）與財報基本面後維持不動。curated.json 新增 1 筆（10/06 S&P 500 成分股異動 Twilio 取代 WBD，quad，score 40 未過門檻故未進 priced.json）。近三個交易日（9/30～10/2）七個標的逐日核對，僅 DXY 10/1 +0.64% 觸及 1.5 倍 20 日標準差，歸因到當天已有的 ISM 製造業物價支付分項跳升（regime.json 已記），非新缺口。五項檢查：兩道閘門過、0 警告、Actions 新鮮（px/policy 停在 10/02 是週末非斷更）、reviews.json 最新 10/01（4 天內不算停擺）、線上版本 WebFetch 被擋（EGRESS_BLOCKED，略過）。優化：_shared.md 補一條「泛用財經日曆的 forecast 不要直接當共識，優先選有明確自稱共識/調查的來源」，這次查 ISM 共識時兩個站給的數字不一致且都沒標方法論才發現這個坑。"
+ },
+ {
+  "date": "2026-10-04",
   "text": "weekly: 補上「意外空間」公式的分子端那一半（emSurprise：選擇權隱含單日變動 ÷ 歷史實際反應中位數，吃 priced.json 新增的 em／emBase 欄位，與利率端共用 ±12% 上限），路線圖第 3 項兩半皆完成；煙霧測試加 17 項斷言（542→559）。regime.json：infl 1→0.5（8 月核心 PCE 3.0%，離目標剛好 1.0pp）、pivot 1→0.6（10/28 按兵不動 78%、升息 22%，轉折挪到 12/09 的 81.6%），shock／vol／conc 不動，basis 與 asof 全部重寫。curated.json 新增 2 筆（10/05 ISM 非製造業 PMI、10/21 TSLA Q3 財報，兩者規則引擎都不會產生）、COMPUTEX 2027（6/1–6/4）官方已公布檔期故 est 改為確認。backtest.json 每週重跑（454 筆事件、rank IC 0.042，仍接近零）。校正：headline 達門檻但有同日共用變動與選樣偏誤，不建議改 B，詳見回報。"
  },
  {
