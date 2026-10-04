@@ -506,7 +506,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-b0660247";
+const APP_VER = "evcal-12f59292";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -745,8 +745,11 @@ function score(e){
   const dd=Math.round((parse(e.date)-TODAY)/864e5);
   const disc = e.est?clamp(0.94-Math.max(0,dd-90)/275*0.09,0.85,0.94):1;
   const cal = (CALIB[e.cat]&&CALIB[e.cat].n>=3)?CALIB[e.cat].adj:1;
-  // 意外空間：利率端事件才算得出來，算不出來就是 1（退回類型先驗），見 polSurprise
-  const sp = (typeof polSurprise==="function")?polSurprise(e):null;
+  // 意外空間：利率端走政策路徑的重定價速度（polSurprise），分子端走選擇權隱含變動
+  // （emSurprise）。兩者的類型閘門互斥，所以不會有同一筆事件兩段都算到的情況；
+  // 都算不出來就是 1，退回類型先驗。
+  const sp = ((typeof polSurprise==="function")?polSurprise(e):null)
+          || ((typeof emSurprise==="function")?emSurprise(e):null);
   const spc = sp?sp.mult:1;
   // 環境放大作用在「離滿分的距離」上，mult=1 時就等於基準，不會爆表
   const raw = 100*Math.pow(c.B/100, 1/Math.max(mult,.4));
@@ -1188,7 +1191,7 @@ const polDelta=(a,b,k)=>(b.m[k]-a.m[k])*100;
    這一段補上利率端的那一半（routines/weekly.md 任務四第 3 項）：事件公布前，
    整條政策路徑平均每天被重定價幾 bp，就是市場對它的意外空間預期。
    基準不是寫死的常數，是同一條序列自己的中位數，序列變長時基準自己跟著走。
-   分子端事件（財報、月營收）要走選擇權隱含變動，那一半還沒做，所以那些事件回 null。
+   分子端事件（財報、月營收）走選擇權隱含變動，在 emSurprise，兩半共用同一組 K 與 CAP。
    刻意跟環境的「波動定價水位」分開算：那一格看的是 VIX 的年度分位（部位有沒有避險墊），
    這裡看的是利率被重定價的速度，兩者在同一週可以指向相反方向，不是同一件事的兩種寫法。 */
 const SPC={WIN:10,MIN:20,K:0.15,CAP:0.12};
@@ -1228,8 +1231,36 @@ function polSurprise(e){
   const ratio=recent/base;
   // 取對數才對稱：ratio 2 與 ratio 0.5 給出大小相同、方向相反的調整
   const mult=clamp(1+SPC.K*Math.log(ratio),1-SPC.CAP,1+SPC.CAP);
-  return put({recent,base,ratio,mult,n:win.length,from:win[0].d,to:win[win.length-1].d,
+  return put({kind:"rate",recent,base,ratio,mult,n:win.length,from:win[0].d,to:win[win.length-1].d,
           all:before.length});
+}
+
+/* 分子端的意外空間（routines/weekly.md 任務四第 3 項的後半）。
+   利率端有 policy.json 的日頻序列可以自己算重定價速度，分子端沒有這種東西——
+   px.json 只有七個指數標的，沒有個股，所以「這一檔過去財報平均走幾 %」算不出來。
+   能代表市場對單一檔「預期會走多大」的只有選擇權隱含變動，而那要盤中去撈報價鏈。
+   所以這一半的資料由每日 routine 從 IBKR 選擇權鏈算好寫進 priced.json：
+     em     ＝這次財報的隱含單日變動 %（平價跨式 ÷ 現貨）
+     emBase ＝同一檔過去實際單日反應的中位數 %（至少三次，來源寫在 emSrc）
+   前端只做比值與上下限，不自己生數字。兩個欄位缺一個就回 null，退回類型先驗。
+
+   跟 pxd 不是同一件事，不要在這裡重複扣一次：
+   pxd 問的是「結果有多少已經在價格裡」，這裡問的是「市場預期這次會走多大」。
+   隱含變動是歷史的兩倍，意思是市場在等一個大變動（意外空間大），
+   不等於結果已經被 price in——後者要看共識與實際值的落差，是 pxd 在管。
+   跟環境的 vol 也不同：vol 看 VIX 的年度分位（整個市場有沒有避險墊），
+   這裡看單一檔自己的隱含對實現比值，同一週可以指向相反方向。 */
+const EMCAT=e=>["earn1","earn2","earn3","twrev"].includes(e&&e.cat);
+function emSurprise(e){
+  if(!EMCAT(e))return null;
+  const em=+e.em,base=+e.emBase;
+  if(!(isFinite(em)&&em>0&&isFinite(base)&&base>0))return null;
+  const ratio=em/base;
+  // 比值離 1 兩個數量級以上，幾乎一定是單位填錯（把 0.08 當成 8%，或把 bp 當成 %），
+  // 不是真的有 100 倍的意外空間。寧可整段不給，也不要把錯的放大寫進分數。
+  if(ratio<0.1||ratio>10)return null;
+  const mult=clamp(1+SPC.K*Math.log(ratio),1-SPC.CAP,1+SPC.CAP);
+  return {kind:"earn",em,base,ratio,mult,src:e.emSrc||""};
 }
 /* 一次會議的隱含變動換算成一碼的機率。超過一碼講機率沒有意義，改講碼數。 */
 function polOdds(bp){
@@ -1253,9 +1284,28 @@ function policyLine(){
 
 /* 意外空間那一小段。算不出來就整段不顯示，不要放一個寫著「資料不足」的空殼。 */
 function spcHTML(e){
-  const sp=polSurprise(e);
+  const sp=polSurprise(e)||emSurprise(e);
   if(!sp)return "";
   const up=sp.mult>1.005,dn=sp.mult<0.995;
+  if(sp.kind==="earn")return `<h4 style="margin-top:16px">意外空間（分子端）</h4>`
+    +`<div class="kv"><span class="k">選擇權隱含單日變動</span>`
+    +`<span class="v">${sp.em.toFixed(2)}%</span></div>`
+    +`<div class="kv"><span class="k">過去實際單日反應中位數</span>`
+    +`<span class="v">${sp.base.toFixed(2)}%</span></div>`
+    +`<div class="kv"><span class="k">比值 → 衝擊分數</span>`
+    +`<span class="v">${sp.ratio.toFixed(2)} × → ×${sp.mult.toFixed(3)}</span></div>`
+    +`<div class="note">選擇權報出來的隱含變動，就是市場對「這次會走多大」的定價；`
+    +`拿它跟同一檔過去實際走過的中位數比，比值越高代表市場在等一個越大的變動——`
+    +`這就是分數裡的「意外空間」那一段。`
+    +(up?`目前是<b>放大</b>：市場為這次財報買的保護比這一檔平常該有的貴。`
+        :dn?`目前是<b>縮小</b>：市場預期的變動比這一檔平常走的還小。`
+           :`目前跟平常差不多，等於沒有調整。`)
+    +`這一段跟「已定價程度」是兩件事：隱含變動大只代表市場在等大變動，`
+    +`不代表結果已經被 price in（那是 pxd 在管）；跟環境的「波動定價水位」也不同，`
+    +`那一格看的是整個市場 VIX 的年度分位，這裡看的是單一檔自己的隱含對實現比值。`
+    +`上限 ±${Math.round(SPC.CAP*100)}%。兩個數字由每日 routine 從選擇權鏈算好寫進 `
+    +`data/priced.json 的 em／emBase，缺一個就整段不顯示。`
+    +(sp.src?` 來源：${esc(sp.src)}`:``)+`</div>`;
   return `<h4 style="margin-top:16px">意外空間（利率端）</h4>`
     +`<div class="kv"><span class="k">前 ${sp.n} 個交易日，路徑平均每天被推</span>`
     +`<span class="v">${sp.recent.toFixed(2)}bp</span></div>`
@@ -1264,8 +1314,8 @@ function spcHTML(e){
     +`<div class="kv"><span class="k">比值 → 衝擊分數</span>`
     +`<span class="v">${sp.ratio.toFixed(2)} × → ×${sp.mult.toFixed(3)}</span></div>`
     +`<div class="note">公布前幾天市場把政策路徑改得越多，代表它對這條線越敏感，`
-    +`同樣一份數據能造成的變動空間就越大——這就是分數裡的「意外空間」那一段，`
-    +`算得出來的只有利率端，分子端（財報、月營收）要走選擇權隱含變動，還沒做。`
+    +`同樣一份數據能造成的變動空間就越大——這就是分數裡的「意外空間」那一段。`
+    +`分子端（財報、月營收）走的是另一條：選擇權隱含變動對歷史實際反應的比值。`
     +(up?`目前是<b>放大</b>：最近的重定價比這條序列平常快。`
         :dn?`目前是<b>縮小</b>：最近市場幾乎沒在改路徑，同一份數據的殺傷力比平常小。`
            :`目前跟平常差不多，等於沒有調整。`)
@@ -1855,6 +1905,13 @@ function applyPriced(items){
       e.pxd=clamp(+hit.pxd,0,1);e.pxdBasis=hit.basis||"";e.pxdSrc=hit.src||"";e.pxdAsof=hit.asof||"";
       e.cons=hit.cons||"";e.prev=hit.prev||"";e.punit=hit.unit||"";e.consSrc=hit.consSrc||"";
       e.metrics=Array.isArray(hit.metrics)?hit.metrics:[];
+      /* 分子端的意外空間（見 emSurprise）：em＝選擇權隱含單日變動 %，
+         emBase＝同一檔過去實際單日反應的中位數 %。兩個都要是正數才帶過去，
+         缺一個就整組不帶——半套資料算出來的比值沒有意義。 */
+      e.em=null;e.emBase=null;e.emSrc="";
+      if(hit.em!=null&&isFinite(+hit.em)&&+hit.em>0&&hit.emBase!=null&&isFinite(+hit.emBase)&&+hit.emBase>0){
+        e.em=+hit.em;e.emBase=+hit.emBase;e.emSrc=hit.emSrc||"";
+      }
     }
   });
 }

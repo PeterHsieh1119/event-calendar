@@ -163,7 +163,7 @@
 | `data/betas.json` | GitHub Actions | 60 日滾動嶺迴歸的資產曝險係數。**不要手改**，要改的是 `scripts/rolling_beta.py` |
 | `data/policy.json` | GitHub Actions | 聯邦資金期貨反推的升降息定價與每日序列。**絕對不要手改**（見下）|
 | `data/curated.json` | 每日 07:00、當日校正、每週 | 新事件與日期更正 |
-| `data/priced.json` | 每日 07:00、當日校正 | 已定價程度 pxd |
+| `data/priced.json` | 每日 07:00、當日校正 | 已定價程度 pxd、分子端的隱含變動 em／emBase |
 | `data/reviews.json` | 盤後複盤 | 複盤結果，校正的輸入 |
 | `data/regime.json` | 每週 | 五格環境設定 |
 | `data/changelog.json` | 全部 | 每次改動一行紀錄 |

@@ -1011,6 +1011,72 @@ catKeys.forEach((k) => {
   T.setEVENTS(base);
 }
 
+/* ── 22. 分子端的意外空間：選擇權隱含變動 ÷ 歷史實際反應中位數 ──
+   任務四路線圖第 3 項的後半。利率端（polSurprise）早就有了，分子端一直回 null，
+   所以財報事件的分數裡「意外空間」那一段永遠是 1，等於首頁文案寫了一段公式裡沒有的東西。
+   資料由每日 routine 寫進 priced.json（em／emBase），前端只做比值與上下限。
+   下面這幾條釘住的是前端的那一段：比值方向、上下限、以及「資料不全就退回 1」。
+   驗證過這些斷言會隨改動一起紅：把 score() 裡的 emSurprise 那一段退掉，
+   隱含變動放大與縮小兩條會立刻失敗（spc 恆為 1）。 */
+{
+  const mk = (over) => Object.assign({
+    date: D(20), kind: "N", cat: "earn2", t: "AMC", est: false,
+    title: "測試 意外空間財報", note: "", checks: [], src: "",
+  }, over || {});
+
+  // 沒有 em／emBase 的財報：意外空間那一段必須是 1，不可以憑空生出調整
+  eq("財報沒有隱含變動資料時意外空間為 1", T.score(mk()).spc, 1);
+
+  // 隱含變動是歷史中位數的兩倍 → 市場在等大變動 → 放大
+  const big = T.score(mk({ em: 8, emBase: 4 }));
+  ok("隱含變動遠高於歷史中位數時意外空間放大", big.spc > 1,
+    "spc=" + big.spc);
+  // 隱含變動只有歷史的一半 → 縮小
+  const small = T.score(mk({ em: 2, emBase: 4 }));
+  ok("隱含變動低於歷史中位數時意外空間縮小", small.spc < 1,
+    "spc=" + small.spc);
+  // 對數比值要對稱：2 倍與 0.5 倍的調整幅度相同、方向相反
+  ok("兩倍與一半的調整幅度對稱",
+    Math.abs((big.spc - 1) + (small.spc - 1)) < 1e-9,
+    "big=" + big.spc + " small=" + small.spc);
+
+  // 上下限：比值再大也不能超過 CAP
+  const cap = T.score(mk({ em: 40, emBase: 4.5 }));
+  ok("意外空間不超過上限", cap.spc <= 1 + T.SPC.CAP + 1e-9, "spc=" + cap.spc);
+  const floor = T.score(mk({ em: 1, emBase: 9 }));
+  ok("意外空間不低於下限", floor.spc >= 1 - T.SPC.CAP - 1e-9, "spc=" + floor.spc);
+
+  // 比值差兩個數量級以上一律視為單位填錯，整段不給估計（而不是放大到上限）
+  eq("比值離 1 兩個數量級以上視為填錯，退回 1",
+    T.score(mk({ em: 0.08, emBase: 4 })).spc, 1);
+
+  // 只有一半的資料不算：半套比值沒有意義
+  eq("只有 em 沒有 emBase 時退回 1", T.score(mk({ em: 8 })).spc, 1);
+  eq("只有 emBase 沒有 em 時退回 1", T.score(mk({ emBase: 4 })).spc, 1);
+  // 零與負數是壞資料，不是「沒有變動」
+  eq("emBase 為 0 時退回 1（不可以除以零）", T.score(mk({ em: 8, emBase: 0 })).spc, 1);
+  eq("em 為負數時退回 1", T.score(mk({ em: -8, emBase: 4 })).spc, 1);
+
+  // 類型閘門：這一段只給分子端的個股事件
+  eq("CPI 不吃 em／emBase（那是利率端，走政策路徑）",
+    T.score(mk({ cat: "cpi", kind: "D", t: "08:30", em: 8, emBase: 4 })).spc,
+    T.score(mk({ cat: "cpi", kind: "D", t: "08:30" })).spc);
+  ok("月營收也算分子端", T.score(mk({ cat: "twrev", t: "TW", em: 8, emBase: 4 })).spc > 1);
+  eq("雲端財報週是彙總事件，沒有單一選擇權鏈，不吃 em",
+    T.score(mk({ cat: "cloud", em: 8, emBase: 4 })).spc, 1);
+
+  // 兩端互斥：利率端事件拿到的 sp 必須還是 rate，不會被分子端那段蓋掉
+  const rate = T.score(mk({ cat: "cpi", kind: "D", t: "08:30" }));
+  ok("利率端事件的意外空間仍由政策路徑產生",
+    !rate.sp || rate.sp.kind === "rate", JSON.stringify(rate.sp && rate.sp.kind));
+  ok("分子端事件的意外空間標記為 earn",
+    big.sp && big.sp.kind === "earn", JSON.stringify(big.sp && big.sp.kind));
+
+  // 分數本身要真的被乘到，不是只有欄位有值
+  ok("意外空間放大時分數高於沒有資料時",
+    big.s >= T.score(mk()).s, "big=" + big.s + " none=" + T.score(mk()).s);
+}
+
 /* ── 報告 ── */
 console.log("");
 if (fails.length) {
