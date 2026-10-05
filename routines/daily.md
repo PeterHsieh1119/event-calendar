@@ -96,7 +96,13 @@ est=true 但 `spc` 不同）數字對不上，多花了一輪才發現是查詢�
 1. `ToolSearch` 載入 `Interactive_Brokers` 的 `search_contracts`、`get_option_parameters`、
    `get_option_data`、`get_price_snapshot`
 2. `search_contracts` 查標的，取 **symbol 完全相符**那一列的 `underlying_contract_id`
-   （很多槓桿型 ETF 也有 OPT，光看 sections 會挑錯）
+   （很多槓桿型 ETF 也有 OPT，光看 sections 會挑錯）。**雙重掛牌的標的（例如 ASML：
+   NASDAQ 的 USD ADR 與 AEB 阿姆斯特丹本地股同時都查得到）要固定用同一個掛牌**，
+   不要每次隨機換——換了掛牌，現貨與歷史基準的幣別、價格量級都會跟著變，
+   跟舊一筆的 `em`／`emBase` 對不起來。2026-10-05 這一趟沿用之前一直用的 AEB（EUR）。
+   同一個到期日常常有好幾個 `trading_class`（例如 AEB 的 `AS9`／`ASL` 等）同時存在，
+   工具本身不會告訴你哪個是「標準」合約，**選一個固定用、記錄下來**（這次用 `ASL`），
+   不要每趟重新猜一次。
 3. `get_price_snapshot` 取現貨 `last`
 4. `get_option_parameters` 找出**財報日之後最近的**到期日
 5. `get_option_data` 取現貨上下各兩檔 strike，拿 call 與 put 的 `contract_id`

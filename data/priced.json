@@ -1,66 +1,79 @@
 {
- "generated": "2026-10-04T23:13:43Z",
+ "generated": "2026-10-05T23:20:00Z",
  "note": "由每日 routine 覆蓋寫入。items 每筆對應日曆上的一個事件，pxd 是 0~1 的已定價程度。",
  "items": [
   {
-   "date": "2026-10-05",
-   "title": "ISM 非製造業 PMI",
-   "pxd": 0.45,
-   "basis": "【10-04 daily 新進榜】規則引擎原本的 B 只有 30，看起來過不了 45 門檻，但這週環境 vol=1 把 mult 往上推，用 score() 實際算出來是 46，剛好過線（index.html 574 行附近 CAT.ism.w 只有 shock 一項，conc 對它不放大）。pxd 維持 PXD0 的類型先驗 0.45：兩個共識來源不完全一致（Investing.com 55.7、另一彙整站 55.0），但都貼近前值 55.4，屬於『幾乎沒變』的共識，沒有單邊傾向；Polymarket 的區間分布也很平——55.0~55.9 這一檔只佔 23.5%，沒有哪個區間明顯領先，代表市場對這次結果沒有強烈一致的押注，不是『已經充分定價』也不是『完全沒防』的極端情境，落在中性。",
-   "src": "Investing.com 經濟日曆（共識 55.7，WebSearch 摘要，2026-10-04 查詢，未讀原文）／另一彙整站共識 55.0（WebSearch 摘要）／Polymarket『ISM Services PMI - September 2026』區間賠率（第三級，WebSearch 摘要）",
-   "cons": "55.0",
-   "prev": "55.4",
-   "unit": "",
-   "consSrc": "泛用財經日曆站彙整給出的『consensus forecast』為 55.0（WebSearch 摘要，2026-10-04），取這個而不是 Investing.com 自家日曆頁顯示的 55.7——後者沒有標明是哪家機構調查或多少家預測的中位數，前者明確以『consensus』字樣呈現；兩者皆貼近前值 55.4，差異不影響這筆的判讀",
-   "asof": "2026-10-04"
-  },
-  {
    "date": "2026-10-14",
    "title": "CPI",
-   "pxd": 0.45,
-   "basis": "【10-01 daily 下修】原 09-29 給 0.50，這趟往下修到 0.45，理由分兩層：(1) 利率端路徑本身在這三個交易日發生了大幅鴿派重定價——10/28 會議 cumBp 從 09-28 的 18.0bp（升息機率 72%）腰斬到 10-01 的 8.6bp（34%）；但驅動這段重定價的是 09-29 Williams 演說與 09-30 PCE 意外走低（核心 3.0% vs 預期 3.3%），不是 CPI 這一筆自己的訊息，不能把 FOMC 自己的 pxd 直接套到 CPI 頭上。(2) 真正該往下修 CPI 的理由是另一個落差：PCE 已經意外走低，但 Nowflation／Cleveland Fed 10-01 查到的 9 月 CPI 街頭共識仍停在頭條 3.7%／核心 2.4%，跟 PCE 公布前的版本幾乎沒有變——市場還沒把 PCE 的降溫訊號等比例轉移到 CPI 共識上。這代表如果 9 月 CPI 真的延續 PCE 的降溫方向，共識沒跟著下修就是意外空間，pxd 應該往下調而不是往上；如果 CPI 反而回溫（能源傳導，見同一批搜尋到的 Fool.com／Cleveland Fed 報導提到中東地緣推升能源價格、AI 需求撐住商品通膨），那就是跟 PCE 方向背離的真正意外，一樣是落差大的情境。兩種情境都指向『共識沒跟上，落差比上次估的大』，所以下修到 0.45。頭條與核心共識數字本身沒有變動（見 cons/metrics）。",
-   "src": "聯邦資金期貨隱含路徑（data/policy.json hist，2026-10-01 檢視，最新一筆 10-01，第一手內部資料）／PCE 意外走低觸發重定價：CNBC『Fed's preferred gauge showed core inflation at 3.0% in August, much lighter than expected』2026-09-30、自由財經／鉅亨網 2026-09-30（第三級，WebSearch 摘要，未讀 BEA 原文）／頭條 CPI 共識 3.7%：nowflation.com『September 2026 CPI Report: Forecast 3.58% vs Consensus 3.7%』（第三級，WebSearch 摘要，2026-10-01 查詢，與 09-29 版本一致）／核心 CPI 共識 2.4%：Cleveland Fed Inflation Nowcasting（2.39%，更新於 2026-09-30，第二級機構模型，WebSearch 摘要）／能源與 AI 需求推升通膨的反方論點：Fool.com 2026-10-01 報導摘要（第三級，WebSearch 摘要，原文網域被 egress proxy 擋下未讀全文）",
+   "pxd": 0.42,
+   "basis": "【10-05 daily 續追】10/28 FOMC 的隱含路徑持續往鴿派方向drift：data/policy.json hist 2026-10-02 這筆，effr 3.8746、10/28 會議隱含 3.93，cumBp 只剩 5.5（升息機率 22%），比 10-01 查到的 cumBp 8.58 又降了一段——路徑還在往『按兵不動』收斂，不是反彈。但街頭共識仍沒跟上：nowflation.com 彙整的頭條 CPI 共識維持 3.7%（前值 3.4%），Cleveland Fed nowcast 核心 CPI 2.39%（≈2.4%，跟前值一致）——跟 10-01 查到的版本幾乎沒變，共識沒有因為利率路徑鴿化而跟著下修。路徑持續偏離、共識原地不動，這個落差比上次估的時候更明確，pxd 從 0.45 再下修到 0.42。",
+   "src": "聯邦資金期貨隱含路徑（data/policy.json hist，asof 2026-10-02，第一手內部資料）／頭條 CPI 共識 3.7%：nowflation.com『September 2026 CPI Report: Forecast 3.58% vs Consensus 3.7%, Released October 14, 2026』（第三級，WebSearch 摘要，2026-10-05 查詢，與 09-29／10-01 版本一致）／核心 CPI 共識 2.39%：Cleveland Fed Inflation Nowcasting，更新於 2026-10-02（第二級機構模型，WebSearch 摘要）",
    "cons": "2.4",
    "prev": "2.4",
    "unit": "%",
-   "consSrc": "Cleveland Fed Inflation Nowcasting 核心 PCE/CPI 模型（WebSearch 摘要，2026-10-01，與 09-29 版本一致）",
+   "consSrc": "Cleveland Fed Inflation Nowcasting 核心 CPI 模型（WebSearch 摘要，2026-10-02，與 09-29／10-01 版本一致）",
    "metrics": [
     {"n": "頭條CPI年增率", "cons": "3.7", "unit": "%"},
     {"n": "核心CPI年增率", "cons": "2.4", "unit": "%"}
    ],
-   "asof": "2026-10-01"
+   "asof": "2026-10-02"
   },
   {
    "date": "2026-10-14",
    "title": "ASML 財報",
-   "pxd": 0.67,
-   "basis": "【10-01 重新用 IBKR 選擇權鏈算過】現貨最新 1808.00（09-29 是 1836.19，兩天跌約 1.5%，屬正常波動）。取同一個 10/16 到期：1800 履約（call 80.00＋put 60.70）隱含變動 7.78%；1820 履約（call 71.40＋put 76.55）隱含變動 8.18%，兩組相鄰履約交叉差 0.4pp，比 09-29 那次的 0.15pp 鬆一些，但方向一致，取均值約 8.0%。比 09-29 算出的 8.74~8.89% 略降，但仍落在『歷史實際反應中位數（約 4%，樣本信心度低，見 09-29 備註）的兩倍左右』這個區間的下緣，維持『市場已充分防範』的判讀，pxd 從 0.68 小幅下修到 0.67，反映隱含變動本身略降溫。EPS／營收共識沿用 09-29 查到的版本，未再重查（兩週內分析師共識變動通常很小，沒有新財測或財報前瞻報導）。",
-   "src": "IBKR 選擇權鏈 2026-10-01（第二級市場數據，內部自算，1800／1820 履約價四腳報價皆為 last trade）／歷史單日反應基準沿用 2026-09-29 查到的版本（BigGo Finance／TradingKey 2026-07-15、CNBC／SEC 6-K 各季新聞稿轉述，第三級，WebSearch 摘要）",
+   "pxd": 0.64,
+   "basis": "【10-05 重新用 IBKR 選擇權鏈算過，改用阿姆斯特丹（FTA，EUR）掛牌，跟前幾趟同一口徑】現貨最新 1656.20（10-01 是 1808.00，4 天跌約 8.4%）——這段下跌不是財報前的新消息，是 WebSearch 查到的通用 AI 支出放緩疑慮延續（Yahoo Finance／QuiverQuant『ASML slides as investors weigh 2026 growth uncertainty』），跟財報本身的公司特定訊息無關。取同一個 10/16 到期：1640 履約（call 65.84＋put 47.18）隱含變動 6.83%；1660 履約（call 55.53＋put 56.88）隱含變動 6.79%，兩組相鄰履約交叉差 0.04pp，比對過去兩趟（0.15pp／0.4pp）更緊，報價品質穩定，取均值約 6.81%。比 10-01 算出的約 8.0% 明顯降了一段——現貨已經先跌掉一截，隱含波動金額沒有跟著股價跌幅等比例放大，代表選擇權市場沒有把這幾天的下跌解讀成『財報風險變大』，比較像是估值重定價。對過去實際單日反應中位數（約 4%，樣本信心度低，沿用前幾趟備註）的比值降到約 1.7 倍，比前兩趟的 2.0～2.2 倍略低，但仍落在『市場已充分防範』這一側的下緣，pxd 從 0.67 小幅下修到 0.64。公司 Q3 指引（€11–12B 淨銷售、毛利率 55–57%）作為對照基準，EPS／營收共識沿用前次查到的版本（兩週內變動通常很小）。",
+   "src": "IBKR 選擇權鏈 2026-10-05（第二級市場數據，內部自算，FTA 交易所 EUR 計價，1640／1660 履約價四腳報價皆為 last trade）／現貨下跌背景：Yahoo Finance『ASML stock drops as China segment takes hit from export bans』、QuiverQuant『ASML slides 5.3% as investors weigh 2026 growth uncertainty and guidance concerns』（皆第三級，WebSearch 摘要，2026-10-05 查詢，未讀原文）／Q3 指引與法說日期：invezz／techi 等轉述 2026-10（第三級，WebSearch 摘要）／歷史單日反應基準沿用 2026-09-29 查到的版本（BigGo Finance／TradingKey 2026-07-15、CNBC／SEC 6-K 各季新聞稿轉述，第三級，WebSearch 摘要）",
    "cons": "10.38",
    "prev": "7.58",
    "unit": "EUR",
-   "consSrc": "ChartMill／247WallSt 分析師共識彙整（WebSearch 摘要，2026-09-29；EUR 計價，與公司 7 月營收指引區間一致）",
+   "consSrc": "ChartMill／247WallSt 分析師共識彙整（WebSearch 摘要，2026-09-29；EUR 計價，與公司 7 月營收指引區間一致，本趟未再重查）",
    "metrics": [
     {"n": "EPS", "cons": "10.38", "unit": "EUR"},
     {"n": "營收", "cons": "11.31", "unit": "B EUR"}
    ],
-   "asof": "2026-10-01"
+   "em": 6.81,
+   "emBase": 4.0,
+   "emSrc": "IBKR 選擇權鏈 2026-10-05（1640／1660 履約交叉均值）／歷史單日反應中位數沿用 09-29 估的約 4%（樣本信心度低，第三級，WebSearch 摘要）",
+   "asof": "2026-10-05"
   },
   {
    "date": "2026-10-15",
    "title": "台積電 財報",
-   "pxd": 0.68,
-   "basis": "【10-01 重新用 IBKR 選擇權鏈算過】TSM 現貨最新 459.10（09-30 是 457.59，基本持平）。取同一個 10/16 到期：457.5 履約（call 13.80＋put 12.20）隱含變動 5.66%；460 履約（call 13.15＋put 13.70）隱含變動 5.85%，兩組相鄰履約交叉差 0.19pp，與 09-30 那次（0.1pp 內）量級一致。比 09-30 算出的 5.97~6.07% 略降約 0.2pp，對過去兩季可信樣本中位數約 2.6% 的比值約 2.2 倍，仍落在『兩倍以上、市場已充分防範』一側，pxd 維持 0.68 不變。法說會時間另外查到確認：10/15（週四）台北時間 14:00–15:30（美東 02:00–03:30），跟 curated.json 既有的 BMO 判斷一致（法說早於美股開盤前結束，當天盤前就吸收完畢），這裡不需要更正 curated.json。EPS／營收共識沿用 09-30 查到的版本，未再重查。",
-   "src": "IBKR 選擇權鏈 2026-10-01（第二級市場數據，內部自算，457.5／460 履約價四腳報價皆為 last trade）／歷史單日反應基準沿用 2026-09-30 查到的版本（TradingKey、SEC 6-K、Digitimes／Yahoo Finance 轉述，第三級，WebSearch 摘要）／法說會時間：財報狗、TVBS 新聞網 2026-10（第三級，WebSearch 摘要，未讀 investor.tsmc.com 原文——該網域連不出去）",
+   "pxd": 0.67,
+   "basis": "【10-05 重新用 IBKR 選擇權鏈算過】TSM 現貨最新 486.10（10-01 是 459.10，4 天漲約 5.9%，創歷史新高）——這段漲勢有明確催化：馬斯克 TeraFab 德州 168 億美元專案傳可能找台積電參與（FXLeaders 2026-10-05）、NVDA 先進製程需求維持強勁、同時公司確認 10/8 配發每股 1.11 美元 ADR 股息，三件事疊加把股價推上歷史新高，不是財報前的消息真空式上漲。取同一個 10/16 到期：485 履約（call 13.10＋put 11.10）隱含變動 4.98%；487.5 履約（call 12.12＋put 12.85）隱含變動 5.14%，兩組相鄰履約交叉差 0.16pp，量級跟前兩趟一致，取均值約 5.06%。比 10-01 算出的 5.66~5.85% 續降約 0.7pp，對過去兩季可信樣本中位數約 2.6% 的比值約 1.95 倍，仍落在『兩倍左右、市場已充分防範』這一側，pxd 由 0.68 小幅下修到 0.67（隱含變動持續降溫，但幅度不足以跳到下一個分檔）。股價站上歷史新高同時意味著這次財報的『預期門檻』被墊高——即使數字本身不差，不如預期的幅度也可能被放大解讀，這一層判讀寫在 note 供複盤參考，不改變 pxd 的量化依據。EPS／營收共識沿用 09-30 查到的版本，未再重查。",
+   "src": "IBKR 選擇權鏈 2026-10-05（第二級市場數據，內部自算，485／487.5 履約價四腳報價皆為 last trade）／股價創新高背景：FXLeaders『New Record in TSM Stock, Eyeing $500 as TSMC Explores Role in Musk TeraFab』2026-10-05、Invezz『TSMC hits another record but Nvidia and Apple demand may become its next problem』2026-10-05、TradersUnion『TSM rallies as quarterly ADR dividend of $1.11 per share confirmed』（皆第三級，WebSearch 摘要，未讀原文）／歷史單日反應基準沿用 2026-09-30 查到的版本（TradingKey、SEC 6-K、Digitimes／Yahoo Finance 轉述，第三級，WebSearch 摘要）",
    "cons": "4.46",
    "prev": "4.31",
    "unit": "USD",
-   "consSrc": "Yahoo Finance 分析師共識（9 位分析師平均，WebSearch 摘要，2026-09-30；Zacks 給 4.45，兩者一致）",
+   "consSrc": "Yahoo Finance 分析師共識（9 位分析師平均，WebSearch 摘要，2026-09-30；Zacks 給 4.45，兩者一致，本趟未再重查）",
    "metrics": [
     {"n": "EPS", "cons": "4.46", "unit": "USD"},
     {"n": "營收", "cons": "45.2", "unit": "B"}
    ],
-   "asof": "2026-10-01"
+   "em": 5.06,
+   "emBase": 2.6,
+   "emSrc": "IBKR 選擇權鏈 2026-10-05（485／487.5 履約交叉均值）／歷史單日反應中位數沿用 09-30 估的約 2.6%（第三級，WebSearch 摘要）",
+   "asof": "2026-10-05"
+  },
+  {
+   "date": "2026-10-20",
+   "title": "NFLX 財報（Q3）",
+   "pxd": 0.45,
+   "basis": "【10-05 daily 新進榜，分數過門檻（earn2，B=42，conc 把它推過 45）】用 IBKR 選擇權鏈自算：NFLX 現貨最新 67.53（10-for-1 分割後的價位量級），取財報後最近到期 10/23。67 履約（call 3.42＋put 2.80）隱含變動 9.21%；68 履約（call 2.85＋put 3.30）隱含變動 9.10%，兩組相鄰履約交叉差 0.11pp，報價品質正常，取均值約 9.15%。歷史基準：The Motley Fool 2026-10-01『Netflix Reports Oct. 20. Its Stock Has Fallen After Each of Its Last 4 Reports』明確列出近四次財報次日跌幅——10%（2025-10）、2%（2026-01）、10%（2026-04）、7%（2026-07），四筆中位數取 7% 與 10% 的均值 8.5%，樣本數剛好達到三次以上的門檻。隱含變動 9.15% 對歷史中位數 8.5% 的比值約 1.08 倍，落在『大致相當、正常定價』這一區，pxd 給 0.45。這次的意外空間集中在毛利率與廣告營收成長（過去四季連續四次財報後下跌，市場已經學會對『guidance 不夠好』保持警戒，但隱含變動沒有顯著放大到兩倍以上，代表還沒到『過度防範』的程度）。",
+   "src": "IBKR 選擇權鏈 2026-10-05（第二級市場數據，內部自算，67／68 履約價四腳報價皆為 last trade）／歷史單日反應：The Motley Fool『Netflix Reports Oct. 20. Its Stock Has Fallen After Each of Its Last 4 Reports』2026-10-01（第三級，WebSearch 摘要，列出近四次次日跌幅 10%／2%／10%／7%）；個別季度細節交叉驗證：Investing.com（2026-07 法說會逐字稿）、CNBC（2026-04-16 Q1 報導）、CNBC／Benzinga（2026-01-20 Q4 報導）（皆第三級，WebSearch 摘要，未讀原文）",
+   "cons": "0.82",
+   "prev": "0.80",
+   "unit": "USD",
+   "consSrc": "Yahoo Finance 34 位分析師共識均值（WebSearch 摘要，2026-10-05）；公司自身 Q2 財報信也點名 Q3 指引 EPS 約 0.82（The Fly／TipRanks 轉述，與分析師共識一致）",
+   "metrics": [
+    {"n": "EPS", "cons": "0.82", "unit": "USD"},
+    {"n": "營收", "cons": "12.88", "unit": "B"}
+   ],
+   "em": 9.15,
+   "emBase": 8.5,
+   "emSrc": "IBKR 選擇權鏈 2026-10-05（67／68 履約交叉均值）／歷史單日反應中位數：The Motley Fool 2026-10-01 列出的近四次次日跌幅 10%／2%／10%／7%（第三級，WebSearch 摘要）",
+   "asof": "2026-10-05"
   }
  ]
 }
