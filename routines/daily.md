@@ -107,6 +107,16 @@ est=true 但 `spc` 不同）數字對不上，多花了一輪才發現是查詢�
 4. `get_option_parameters` 找出**財報日之後最近的**到期日
 5. `get_option_data` 取現貨上下各兩檔 strike，拿 call 與 put 的 `contract_id`
 6. `get_price_snapshot` 分別取 call 與 put 的 `last`
+   **2026-10-08 這一趟撞到：歐股掛牌（ASML 的 AEB／FTA）在台北 07:00 執行時，
+   阿姆斯特丹盤已收，`get_price_snapshot` 對選擇權合約回空物件 `{}`（現貨本身能拿到，
+   因為它回的是上一個收盤價，但選擇權合約沒有即時報價）。** 這不是合約選錯，
+   是當地市場真的沒開盤。回空時改用 `get_price_history`（`security_type:"OPT"`、
+   `step:"ONE_DAY"`、`period:"ONE_WEEK"`、`outside_rth:false`、`exchange` 填該合約的
+   交易所，例如 `FTA`）拿最近一個交易日的 `close` 當作 `last` 用，`src` 要寫清楚是
+   「收盤價」不是「即時報價」。NYSE／NASDAQ 掛牌（TSM、NFLX、TSLA 等）在台北早上
+   執行時美股雖然也已收盤，但 `get_price_snapshot` 通常還能回最後一次成交的 `last`
+   （時間戳落在前一晚美股收盤附近），不需要這個 fallback——只有歐股這種當地盤已經
+   收盤超過一段時間、連最後成交都查不到的才會回空。
 7. 隱含變動 % ＝（call 權利金 ＋ put 權利金）÷ 現貨。**用兩個相鄰 strike 各算一次交叉檢查**，
    差太多代表報價有問題，那就不要寫這一筆
 8. 跟過去四季實際單日變動的中位數比：
