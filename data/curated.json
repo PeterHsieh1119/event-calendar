@@ -1,6 +1,16 @@
 {
- "generated": "2026-10-06T23:15:15Z",
+ "generated": "2026-10-08T23:19:18Z",
  "items": [
+  {
+   "date": "2026-10-08",
+   "kind": "N",
+   "cat": "headline",
+   "t": "12:00",
+   "est": false,
+   "title": "FT報導OpenAI年化營收僅約500億美元、遠低於傳聞700億，AI供應鏈股全面重挫",
+   "note": "【怎麼進來的】每日歸因缺口掃描（任務二）＋IBKR 選擇權鏈作業時發現 TSM 現貨從 10/7 收 472.20 跳到 10/8 收 457.99（-3.01%，FMP／IBKR 自算，第二級），同一時段 NVDA 收跌 -2.94%（FMP 自算），兩者都不在財報或任何既有排程事件上，回頭查到的就是這則。【事件】《金融時報》10/8 美股盤中（約美東中午，確切發布時刻未查到分鐘數）報導 OpenAI 的年化營收（annualized revenue run rate）約為 500 億美元，明顯低於此前媒體與投資人簡報中流傳的約 700 億美元（Axios 2026-09 曾報導 OpenAI 營收年化跑率接近 700 億美元，可作為對照基準）。市場解讀為 AI 基礎設施資本支出的回報能力出現疑慮，拖累整條供應鏈。【反應，多方交叉但數字有出入】那斯達克綜合指數收跌約 -1.25%（CNN 稱是 8 月中以來最差單日），標普 500 約 -0.5%，道瓊小漲約 +0.1%（Yahoo Finance 2026-10-08 盤後報導）。晶片股普遍重挫但各家媒體給的百分比不一致：CNN 給 NVDA -2.9%、Intel -5.3%、Oracle -5.5%；Kiplinger 給 NVDA -2.9%、AMD -3.9%、Micron -4.8%；Crypto Briefing 給 NVDA 約 -3%、AMD／Broadcom／Intel 約 -4~5%（同時誤標成『週三』，但月曆與其他來源都指向週四 10/8，這個來源的日期本身不可靠，數字僅供參考不採用其唯一值）；如實記錄區間、不挑單一數字。TSM 本身沒有被任何搜到的報導個別點名，但 -3.01% 的跌幅與同日晶片股普遍重挫的量級一致，判斷是被同一條供應鏈敘事帶著走，不是獨立的 TSM 利空。【為什麼 kind 選 N、cat 選 headline】這份報導改寫的是市場對 AI 資料中心資本支出能否被下游（OpenAI 等）營收撐住的預期，直接影響晶片供應鏈的未來出貨與盈餘假設，屬分子端；合法清單裡沒有『科技業財務傳聞』專用代碼，headline 是最接近的一類（無排程、依定義先驗 0.15）。【OpenAI 官方回應】這一趟沒有查到 OpenAI 對這則 10/8 報導的具體回應；注意不要跟 2026-04 那一輪『OpenAI 未達內部營收與用戶目標』的 WSJ 報導（OpenAI 當時稱是 clickbait）搞混——兩則報導的那斯達克收盤點位差了超過 2,500 點（4 月那次收 24,609.57，這次是 27,193.34 附近），確認是兩個不同月份的獨立事件，不是同一則新聞被搜尋引擎重複索引。【這一筆對 priced.json 的意義】TSM（earn3，10/15 財報）與 ASML（earn2，10/14 財報）的選擇權鏈隱含變動本趟已經用 10/8 收盤後的報價重新算過（見 priced.json 同日筆記），這則報導本身沒有讓隱含變動明顯放大，判斷市場還沒把這次下修讀成會影響這兩家個股財報的程度。",
+   "src": "CNN 2026-10-08『Tech stocks drop after report that OpenAI's revenue is lower than expected』、Kiplinger 2026-10-08『Nasdaq Sinks 345 Points as OpenAI Revenue Woes Weigh on Tech Stocks』、GuruFocus／Yahoo Finance 2026-10-08『AI Warning Sends Nvidia, AMD, Micron and Intel Shares Tumbling』、Yahoo Finance 2026-10-08『Stock market today: S&P 500, Nasdaq fall for second day in a row as AI trade takes a hit』（皆第三級，WebSearch 摘要，未讀 FT 原文——該報導本身付費牆，且 ft.com 在此環境大概率連不出去，未測試）／OpenAI 年化營收約 700 億美元基準：Axios 2026-09 報導（第三級，WebSearch 摘要，未讀原文）／TSM -3.01%、NVDA -2.94%：FMP quote 2026-10-08（第二級市場數據，內部自算）／TSM 10/7→10/8 收盤 472.20→457.99：IBKR 歷史價 2026-10-08（第二級市場數據，內部自算）"
+  },
   {
    "date": "2026-10-05",
    "kind": "R",

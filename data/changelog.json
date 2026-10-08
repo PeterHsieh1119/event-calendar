@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-10-08",
+  "text": "daily: 新增事件 1 筆（FT 報導 OpenAI 年化營收約 500 億美元遠低於傳聞 700 億、帶動晶片股重挫，從 TSM/NVDA 價格異動反推出來的歸因缺口），更新定價 5 筆（CPI／ASML／台積電／NFLX／TSLA，policy.json 本趟 hist 已補上缺口與 generated 對齊，TSM 現貨因當天大盤新聞重挫但 pxd 判斷不變）。score() 重新跑過確認未來 14 天窗口內過 45 分門檻的仍是這 5 筆，無新增無移除。五項檢查：px.json 的 QQQ 落後到 10/06（其餘標的到 10/07～10/08），已在報告中點名；其餘正常。"
+ },
+ {
   "date": "2026-10-07",
   "text": "daily: 更新定價 5 筆（CPI／ASML／台積電／NFLX／TSLA 財報，全部沿用既有範圍、score() 重新跑過確認都仍過 45 分門檻），新增事件 0 筆，修正 0 筆。policy.json 的 hist 停在 10-05（比 generated 落後兩個交易日），CPI 的 basis 已註明用舊快照、不當成路徑確認平。daily.md 補一條優化：歐股掛牌（ASML/FTA）在台北 07:00 執行時市場已收盤，get_price_snapshot 對選擇權合約會回空，改用 get_price_history 拿收盤價。"
  },
