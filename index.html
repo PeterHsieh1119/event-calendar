@@ -232,6 +232,47 @@ table.tm td:first-child,table.tm th:first-child{text-align:left;color:var(--tx2)
 .calrow{display:grid;grid-template-columns:1fr 60px 60px 52px;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px;align-items:center}
 .calrow .v{font-family:var(--mono);font-size:12px;text-align:right;color:var(--tx2)}
 pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:12px;font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--tx2);white-space:pre-wrap;overflow-x:auto;margin:8px 0 0}
+/* ── 手機：觸控目標與最小字級 ──
+   桌機用滑鼠，28px 高的按鈕按得到；手機用手指按不準。Apple HIG 與 WCAG 2.5.5
+   的下限都是 44×44 CSS px，這一段把真正可點的控制項墊到 44px，
+   並把 9.5–10.5px 的輔助字墊到 11px。只在窄螢幕生效，桌機版面完全不動。
+   button／select 的文字由 UA 自己垂直居中，所以只給 min-height、不改 display，
+   也不覆寫 padding——#pxPick 的 padding 是行內樣式，覆寫不過去反而會不一致。
+
+   刻意不動的四個，都是「放大反而更糟」而不是漏掉：
+   - .dlab 年軸的日期標籤。renderYear 用 bottom:3px／14px 兩排錯開避開彼此，
+     兩排只差 11px，字級一放大兩排就疊在一起。
+   - .tlmon 總覽軸的月標籤。它卡在頂部 0–20px，20px 以下就是 .thit 的點擊區，
+     放大會蓋住並搶走日期的點擊。
+   - .tlnow 「今天」徽章。position:absolute 貼在 bottom:3px，放大會壓到標記。
+   - .hit 月列的感應區。它只有 data-tip，而 .tip 在 hover:none 的裝置本來就
+     display:none，手機上根本不會被點到，加寬沒有意義。
+   還沒解的兩個，留給之後：.thit 的寬度是 max(10,PPD) px，PPD 小的時候只有
+   10px，但它用 translateX(-50%) 定位，盲目加寬會跟鄰日互相重疊、搶走點擊，
+   要改得連 JS 的定位一起改；月格 .cell 在 320px 寬的螢幕上只有 39px 寬，
+   七欄格線擠不出 44px，WCAG 2.5.8 的 24px 下限是過的。 */
+@media (max-width:560px){
+  .seg button{min-height:44px}
+  .chip{min-height:44px}
+  .ghost{min-height:44px}
+  .opt{min-height:44px;font-size:12.5px}
+  .btn{min-height:44px}
+  input[type=text]{min-height:44px}
+  .fld input{min-height:44px}
+  .eyebrow{font-size:11px}
+  .statusbar{font-size:11px}
+  .legend{font-size:11px}
+  .section h3{font-size:11px}
+  .block h4{font-size:11px}
+  .tag{font-size:11px}
+  .pill{font-size:11px}
+  .est{font-size:11px}
+  .done{font-size:11px}
+  .dow{font-size:11px}
+  .acell .an{font-size:11px}
+  .chk .src{font-size:11px}
+  .fld label{font-size:11px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -506,14 +547,18 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-12f59292";
+const APP_VER = "evcal-afcf6473";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
- /* anchor 釘在「最後一場已經開過的法說」，不是下一場的推算日——k!==0 的那幾筆才會標 est，
-    釘在未來的話那個推算日會被當成已確認。2026Q2 是 7/16（已舉行），Q3 的 10/15 因此退回 est，
-    等台積電 IR 公告再把 anchor 往前搬。t 是台北下午 14:00 的法說，不是美東盤前。 */
- {s:"TSM",n:"台積電",anchor:"2026-07-16",cat:"earn3",t:"TPE:14:00"},
+ /* anchor 釘在「日期已經確認的那一場」，k!==0 的那幾筆才會標 est。規矩是釘在最後一場
+    已經開過的法說，因為推算日沒有官方公告就不該顯示成確認——2026-09-20 就是踩到這個
+    （anchor 當時釘在未確認的 10/15）。2026-10-11 往前搬到 10/15：台積電 IR 已公告
+    Q3 法說為 2026-10-15（四）台北 14:00，並以 10/5–10/14 為緘默期，所以這個日期是
+    官方確認的，不是推算的。日期網格沒有變（10/15＝7/16＋91），只有 est 旗標從 10/15
+    換到 7/16；7/16 是已開過的場次、顯示成 ≈ 只是小瑕疵，10/15 這場四天後就到、
+    分數 70，把它標成確認的價值大得多。t 是台北下午 14:00 的法說，不是美東盤前。 */
+ {s:"TSM",n:"台積電",anchor:"2026-10-15",cat:"earn3",t:"TPE:14:00"},
  {s:"ASML",n:"ASML",anchor:"2026-10-14",cat:"earn2",t:"BMO"},
  {s:"MU",n:"MU",anchor:"2026-09-24",cat:"earn2",t:"AMC"},
  {s:"AMAT",n:"AMAT",anchor:"2026-08-13",cat:"earn2",t:"AMC"},

@@ -1077,6 +1077,79 @@ catKeys.forEach((k) => {
     big.s >= T.score(mk()).s, "big=" + big.s + " none=" + T.score(mk()).s);
 }
 
+/* ── 23. 手機的觸控目標與最小字級 ──
+   這一段守的是 CSS，不是 JS：桌機用滑鼠，28px 高的按鈕按得到，手機用手指按不準。
+   Apple HIG 與 WCAG 2.5.5 的下限都是 44×44 CSS px。斷言直接讀 index.html 的
+   <style>，不經 DOM——這支測試沒有版面引擎，量不到實際算出來的高度，
+   所以守的是「規則有寫、而且寫對」。 */
+{
+  const styleM = html.match(/<style>([\s\S]*?)<\/style>/);
+  ok("index.html 有 <style> 區塊", !!styleM);
+  const css = styleM ? styleM[1] : "";
+
+  // 把 @media (max-width:560px){...} 的內容整段抓出來（巢狀只有一層，數大括號就夠）
+  function mediaBlock(src, head) {
+    const i = src.indexOf(head);
+    if (i < 0) return null;
+    let j = src.indexOf("{", i);
+    if (j < 0) return null;
+    let depth = 0;
+    for (let k = j; k < src.length; k++) {
+      if (src[k] === "{") depth++;
+      else if (src[k] === "}") { depth--; if (depth === 0) return src.slice(j + 1, k); }
+    }
+    return null;
+  }
+  const mob = mediaBlock(css, "@media (max-width:560px)");
+  ok("有窄螢幕的 @media 區塊", mob !== null);
+
+  if (mob !== null) {
+    // 每一個真正可點的控制項都要在這個區塊裡拿到 >= 44px 的 min-height
+    const TARGETS = [".seg button", ".chip", ".ghost", ".opt", ".btn",
+                     "input[type=text]", ".fld input"];
+    for (const sel of TARGETS) {
+      // 這個區塊裡 `選擇器{...}` 的那一條規則
+      const re = new RegExp(
+        sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*\\{([^}]*)\\}");
+      const r = mob.match(re);
+      ok("手機區塊有 " + sel + " 的規則", !!r);
+      if (!r) continue;
+      const mh = r[1].match(/min-height\s*:\s*([\d.]+)px/);
+      ok(sel + " 的觸控高度至少 44px",
+        !!mh && parseFloat(mh[1]) >= 44, sel + " → " + r[1].trim());
+    }
+
+    // 手機區塊裡不准再出現小於 11px 的字級——這一段的目的就是把字墊上去，
+    // 在同一個區塊裡又寫一個 10px 等於自己抵銷掉自己。
+    const sizes = (mob.match(/font-size\s*:\s*([\d.]+)px/g) || [])
+      .map((x) => parseFloat(x.replace(/[^\d.]/g, "")));
+    ok("手機區塊至少調整了一個字級", sizes.length > 0, "n=" + sizes.length);
+    ok("手機區塊裡沒有小於 11px 的字級",
+      sizes.every((v) => v >= 11), "最小 " + Math.min.apply(null, sizes) + "px");
+
+    // 刻意不動的那幾個，不可以悄悄被放進來：
+    // .dlab 兩排只差 11px、.tlmon 會蓋住 .thit 的點擊區、.tlnow 會壓到標記。
+    for (const sel of [".dlab", ".tlmon", ".tlnow"]) {
+      ok("手機區塊沒有動 " + sel + "（幾何跟它綁在一起）",
+        mob.indexOf(sel) < 0, sel);
+    }
+  }
+
+  // 台積電法說的 anchor：IR 已公告 2026-10-15，所以那一筆不該再顯示成推算日。
+  // 這條同時守住兩件事——anchor 本身，以及「anchor 那一天 est 必須是 false」。
+  {
+    const tsm = T.getEVENTS().filter(
+      (e) => e.title === "台積電 財報" && e.date === "2026-10-15");
+    ok("日曆上有 2026-10-15 的台積電財報", tsm.length === 1, "n=" + tsm.length);
+    if (tsm.length === 1) {
+      ok("台積電 Q3 法說是官方確認日，不是推算日", tsm[0].est === false,
+        "est=" + tsm[0].est);
+      ok("台積電法說的時間是台北下午，不是美東盤前", tsm[0].t === "TPE:14:00",
+        "t=" + tsm[0].t);
+    }
+  }
+}
+
 /* ── 報告 ── */
 console.log("");
 if (fails.length) {
