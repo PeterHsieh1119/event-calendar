@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-11T13:17:58Z",
+ "generated": "2026-10-13T13:50:39Z",
  "items": [
   {
    "date": "2026-10-08",
@@ -560,6 +560,16 @@
    "title": "TSLA 財報（Q3）",
    "note": "【怎麼進來的】每週前瞻掃描（任務一）。TSLA 不在 index.html 的 WATCH 清單裡，所以錨定產生器不會生出這一筆——那斯達克 100 前十大裡唯一完全沒有被日曆覆蓋的一檔。【事件】特斯拉第三季財報，10/21（週三）美股收盤後公布，隨後 16:30 CT（美東 17:30）由 Musk 與 AI／工程／財務主管進行問答直播。公司自己公告的日期，屬已確認。【cat 為什麼是 earn2】TSLA 是那斯達克 100 權重前十、但不在前五大（NVDA 一檔就約 8.5%），conc 這條管道對它是實的，卻構不上 earn3 的權值財報；跟同為非前五大的 AAPL／AMZN／META／GOOGL／NFLX 同一格（earn2，B=42、conc 0.35）。【怎麼讀：意外空間已經被削掉一半】Q3 交車量 486,532 輛已經在 10/02 先公告並優於預期，營收那一條線因此在財報前就大致知道了——真正還沒定價的是毛利率、能源業務（10/02 那份公告裡能源部分低於預期）與資本支出指引。這類「量先公布、價後公布」的財報，意外空間集中在利潤率而不是營收，判讀時不要把交車量的強弱再算一次。【t 填 AMC 不是小事】收盤後公布打到的是 10/22 這個交易日（見 _shared.md 第四節）；同一天盤前還有 NVIDIA GTC Berlin 的 keynote，兩筆打的是不同交易時段，不要混在一起看。【沒有寫進 priced.json】那是每日 routine 的檔案（見 _shared.md 第二節），等它進入 14 天窗口再由每日那一趟估 pxd。",
    "src": "日期與時間：Tesla IR 公告（ir.tesla.com 為第一級，該網域在此環境連不出去），經 teslaoracle.com『Tesla announces the date and time for the Q3 2026 earnings call』2026-10-04 與 wallstreethorizon.com 財報行事曆兩方轉述一致：10/21 盤後、16:30 CT／17:30 ET 問答直播（第三級，WebSearch 摘要，未讀原文）／Q3 交車量 486,532 輛（優於預期、能源部分低於預期）：CNBC『Tesla Q3 2026 vehicle deliveries and production』2026-10-02、driveteslacanada.ca、stocktitan.net 轉述的 8-K 交叉一致（第三級，WebSearch 摘要）"
+  },
+  {
+   "date": "2026-10-13",
+   "kind": "R",
+   "cat": "headline",
+   "t": "BMO",
+   "est": false,
+   "title": "全球記憶體／AI晶片股重挫：中國CXMT技術進展＋AI資本支出疑慮",
+   "note": "【怎麼進來的】當日校正第一步之二，盤中出現沒有排程、但在真實報價上可辨識的大變動：IBKR 即時報價顯示 ASML（AEB，EUR）從 10/12 收盤 1575.80 跌到盤中（2026-10-13 13:31 UTC／美東 09:31）約 1527.60，單日 −3.06%；同一時段 TSM 現貨僅 442.11，較 10/12 收盤 444.62 微跌約 −0.56%，兩者明顯背離，代表這一波主要是記憶體／晶片設備族群的事，不是台積電法說前的訊號。【查到的內容】WebSearch 查到多篇 2026-10-13 當天報導（Forbes、Seeking Alpha、Investing.com 經 KuCoin 轉述）交叉一致：中國記憶體廠 ChangXin Memory Technologies（CXMT）傳出技術進展，疊加一名半導體業高層警告 AI 投資人『像在賭場一樣』、以及利率走升對 AI 資本支出可持續性的疑慮，亞股率先重挫——南韓 SK Hynix 約 −10%、Samsung 約 −7%，KOSPI 單日跌逾 5～6%（兩篇來源數字略有出入），日本 Kioxia 約 −13%；美股盤前 Micron −2.3%、Marvell／SanDisk 跌逾 2%，Nvidia／AMD同步走弱。歐股這端 ASML／ASMI／BESI 同屬半導體設備／記憶體供應鏈，本檔用 IBKR 即時報價確認ASML 盤中 −3.06%（第一手）。【為什麼 cat 選 headline、kind 選 R】沒有對應的排程事件，CXMT技術進展與『AI資本支出可持續性』疑慮改變的是市場對整個記憶體／AI晶片板塊的風險溢酬，不是單一公司的現金流指引，kind 標 R。【老實說清楚】目前查到的都是美股開盤前後的即時報導，還沒有收盤後的完整總結，南韓跌幅在不同來源間（5% vs 6%+）不完全一致；ASML 的 −3.06% 是本檔自己用IBKR 即時報價算出來的，相對可靠。這一筆主要是記下『今天有一個新的、沒有排程的板塊性風險事件'，不代表對 10/14 ASML 或 10/15 台積電財報本身的定價，兩者的 pxd／em 另外在本檔處理。",
+   "src": "Forbes『AI Chip Stocks Slide Amid China's Advances And CEO's Casino Warnings』forbes.com/sites/siladityaray/2026/10/13（第三級，WebSearch 摘要，未讀原文）／Seeking Alpha『Chip selloff deepens amid AI trade fears, rising Chinese competition』2026-10-13（第三級，WebSearch 摘要）／Investing.com 報導經 KuCoin『Chip stocks face sharp sell-off as AI trade sentiment shifts』轉述，Micron −2.3%、Marvell／SanDisk 跌逾 2%（第三級，WebSearch 摘要，未讀原文）／ASML −3.06%：IBKR 2026-10-13 13:31 UTC 即時報價（第一手內部資料，FTA 交易所 EUR 計價）／TSM −0.56%：IBKR 2026-10-13 13:55 UTC 即時報價（第一手內部資料，NYSE USD 計價）"
   }
  ]
 }
