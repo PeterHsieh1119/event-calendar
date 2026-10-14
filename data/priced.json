@@ -1,58 +1,7 @@
 {
- "generated": "2026-10-13T23:20:52Z",
+ "generated": "2026-10-14T13:50:37Z",
  "note": "由每日 routine 覆蓋寫入。items 每筆對應日曆上的一個事件，pxd 是 0~1 的已定價程度。",
  "items": [
-  {
-   "date": "2026-10-14",
-   "title": "CPI",
-   "pxd": 0.42,
-   "basis": "10-14 daily 校正：policy.json generated 2026-10-13T02:48:58Z，hist 最後一筆 asof 2026-10-12（跟 generated 差 1 天，屬正常落後，非斷更）。10/28 會議隱含利率連續 10 個交易日（10/02~10/12，排除 10/11 週日殘缺資料）持平在 3.925~3.935（effr 3.8802 不變），chgBp 僅 5.0bp、p.hold=80%／p.hike=20%／p.cut=0%——WebSearch 交叉查到 Fed 理事 Jefferson、紐約 Fed 主席 Williams、理事 Bowman 本週（10 月上旬）連續發言偏鴿（『有時間觀察、不急著再升息』），市場把 10 月升息機率從約 70% 壓到約 20~25%，方向跟 policy.json 的 p.hike=20% 一致。路徑沒有新移動，CPI 本身的 pxd 維持 0.42 不變。",
-   "src": "聯邦資金期貨隱含路徑（data/policy.json，generated 2026-10-13，hist asof 2026-10-12）／Fed 官員發言交叉查證：itiger.com『Fed Officials' Remarks Sway Markets as Rate Hike Bets for October Tumble』、roic.ai『Fed speakers in focus as rate hike timing debate intensifies』（皆 2026-10 上旬，第三級，WebSearch 摘要，未讀原文）／頭條 CPI 共識 3.7%、核心 CPI 共識 2.4%：沿用 Kalshi／Manifold Markets 預測市場 2026-10-06~10-07 查詢版本（第三級，WebSearch 摘要，本趟未再查）",
-   "cons": "2.4",
-   "prev": "2.4",
-   "unit": "%",
-   "consSrc": "Kalshi／Manifold 預測市場 2026-10-06～10-07 查詢，核心CPI年增集中在2.4%；與 Cleveland Fed Nowcasting 09-29～10-06 版本方向一致",
-   "metrics": [
-    {
-     "n": "頭條CPI年增率",
-     "cons": "3.7",
-     "unit": "%"
-    },
-    {
-     "n": "核心CPI年增率",
-     "cons": "2.4",
-     "unit": "%"
-    }
-   ],
-   "asof": "2026-10-12"
-  },
-  {
-   "date": "2026-10-14",
-   "title": "ASML 財報",
-   "pxd": 0.55,
-   "basis": "10-14 當日（ASML 本身尚未公布，台北 07:09 執行時美東還是 10/13 晚上 19:09，BMO 還沒到）重新拿 10/13 收盤（AEB，EUR，last trade，is_close=true）1509.6 算：1500 履約（call 62+put 34.75=96.75，6.41%）與 1520 履約（call 37.4+put 44.25=81.65，5.41%）兩組直接交叉差到 1.0pp，比平常 <0.2pp 大很多，懷疑 1500 call（量僅 13 口）是冷門成交的stale 報價。改用兩組更寬的桶（1480／1540，兩腳成交量各 6~105 口）分別對 1500／1520 各自線性內插到現貨 1509.6：窄桶內插 5.93%、寬桶內插 5.66%，兩者交叉差縮小到 0.27pp，取均值 5.80%。跟歷史中位數 4.0% 比值從上次（10-12）的 1.38 倍升到 1.45 倍，仍落在『大致相當到略高』區間，pxd 維持 0.55 不變——今天盤中的記憶體／AI 晶片族群重挫（見同日 headline 條目）在選擇權市場看起來已有適度反映，沒有額外的恐慌溢價。",
-   "src": "IBKR 2026-10-13 收盤 last trade（第二級市場數據，FTA 交易所 EUR 計價，1480／1500／1520／1540四組履約，10/16 到期 ASL 掛牌，內部自算；1500／1520 即時 snapshot 為空改用 get_price_history 拿收盤）／歷史中位數 4.0% 沿用前幾趟查到的版本（第三級，WebSearch 摘要，本趟未再查）",
-   "cons": "10.38",
-   "prev": "7.58",
-   "unit": "EUR",
-   "consSrc": "ChartMill／247WallSt 分析師共識彙整（WebSearch 摘要，2026-09-29；本趟未再重查）",
-   "metrics": [
-    {
-     "n": "EPS",
-     "cons": "10.38",
-     "unit": "EUR"
-    },
-    {
-     "n": "營收",
-     "cons": "11.31",
-     "unit": "B EUR"
-    }
-   ],
-   "em": 5.8,
-   "emBase": 4.0,
-   "emSrc": "IBKR 2026-10-13 即時報價（bid/ask 中價，1520／1540 履約交叉均值，FTA、ASL 掛牌）／歷史單日反應中位數沿用 09-29 估的約 4%（樣本信心度低，第三級，WebSearch 摘要）",
-   "asof": "2026-10-13"
-  },
   {
    "date": "2026-10-15",
    "title": "台積電 財報",
