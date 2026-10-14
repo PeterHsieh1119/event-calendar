@@ -1,6 +1,26 @@
 {
- "generated": "2026-10-13T13:50:39Z",
+ "generated": "2026-10-14T23:09:38Z",
  "items": [
+  {
+   "date": "2026-11-02",
+   "kind": "N",
+   "cat": "earn2",
+   "title": "Apple 財報",
+   "est": false,
+   "t": "AMC",
+   "note": "日期更正：規則引擎用上季 anchor 推到 10/29，但 Apple 10/6-10/7 透過 IR 官網公告（MacRumors／MacDailyNews／Beebom／iClarified 等多家科技媒體 10/6-10/7 轉載交叉一致）實際法說日是 **11/2（一）美東17:00／太平洋14:00**，晚了整整 4 天——這會是新任 CEO John Ternus 搭配 CFO Kevan Parekh 首次主持的法說會。用同名條目覆蓋掉推算日後，10/29 不再掛這筆財報，11/2 已超出未來 14 天定價窗口，這一趟不在 priced.json 收錄，等窗口推進到 11/2 附近再由每日那一趟估 pxd。",
+   "src": "MacRumors 2026-10-06『Apple to Report Q4 2026 Earnings on Nov. 2』、MacDailyNews 2026-10-07『Apple to report Q4'26 earnings on Monday, November 2nd』、Beebom／iClarified 同日轉載，均引述 Apple Investor Relations 官網公告（investor.apple.com，第一級，該網域在此環境連不出去，經四方第三級媒體交叉驗證、數字一致：11/2、14:00 PT／17:00 ET）"
+  },
+  {
+   "date": "2026-10-21",
+   "kind": "N",
+   "cat": "earn2",
+   "title": "Meta 財報",
+   "est": false,
+   "t": "AMC",
+   "note": "日期更正：規則引擎用上季 anchor 推到 10/28，但 Meta 10/12 透過官方新聞稿（PRNewswire 發布，經 Finviz／Pluang 轉載交叉一致）公告第三季財報實際排在 **10/21（三）美股盤後**，法說會 13:30 PT／16:30 ET——比規則引擎推算日整整早 7 天。用同名條目覆蓋掉推算日；priced.json 同一趟已用這個新日期重新抓選擇權鏈估 pxd／em／emBase，不是沿用舊的 10/28 版本。",
+   "src": "Finviz 2026-10-12『Meta to Announce Third Quarter 2026 Results』、Pluang 2026-10-12『Meta umumkan hasil kuartal tiga 2026』，均引述 Meta 官方新聞稿（investor.atmeta.com，第一級，該網域在此環境連不出去，經兩方第三級媒體交叉驗證：10/21、13:30 PT／16:30 ET 法說，投資人聯絡人 Rob Bevegni 一致）"
+  },
   {
    "date": "2026-10-08",
    "kind": "N",
@@ -568,7 +588,7 @@
    "t": "BMO",
    "est": false,
    "title": "全球記憶體／AI晶片股重挫：中國CXMT技術進展＋AI資本支出疑慮",
-   "note": "【怎麼進來的】當日校正第一步之二，盤中出現沒有排程、但在真實報價上可辨識的大變動：IBKR 即時報價顯示 ASML（AEB，EUR）從 10/12 收盤 1575.80 跌到盤中（2026-10-13 13:31 UTC／美東 09:31）約 1527.60，單日 −3.06%；同一時段 TSM 現貨僅 442.11，較 10/12 收盤 444.62 微跌約 −0.56%，兩者明顯背離，代表這一波主要是記憶體／晶片設備族群的事，不是台積電法說前的訊號。【查到的內容】WebSearch 查到多篇 2026-10-13 當天報導（Forbes、Seeking Alpha、Investing.com 經 KuCoin 轉述）交叉一致：中國記憶體廠 ChangXin Memory Technologies（CXMT）傳出技術進展，疊加一名半導體業高層警告 AI 投資人『像在賭場一樣』、以及利率走升對 AI 資本支出可持續性的疑慮，亞股率先重挫——南韓 SK Hynix 約 −10%、Samsung 約 −7%，KOSPI 單日跌逾 5～6%（兩篇來源數字略有出入），日本 Kioxia 約 −13%；美股盤前 Micron −2.3%、Marvell／SanDisk 跌逾 2%，Nvidia／AMD同步走弱。歐股這端 ASML／ASMI／BESI 同屬半導體設備／記憶體供應鏈，本檔用 IBKR 即時報價確認ASML 盤中 −3.06%（第一手）。【為什麼 cat 選 headline、kind 選 R】沒有對應的排程事件，CXMT技術進展與『AI資本支出可持續性』疑慮改變的是市場對整個記憶體／AI晶片板塊的風險溢酬，不是單一公司的現金流指引，kind 標 R。【老實說清楚】目前查到的都是美股開盤前後的即時報導，還沒有收盤後的完整總結，南韓跌幅在不同來源間（5% vs 6%+）不完全一致；ASML 的 −3.06% 是本檔自己用IBKR 即時報價算出來的，相對可靠。這一筆主要是記下『今天有一個新的、沒有排程的板塊性風險事件'，不代表對 10/14 ASML 或 10/15 台積電財報本身的定價，兩者的 pxd／em 另外在本檔處理。",
+   "note": "【怎麼進來的】當日校正第一步之二，盤中出現沒有排程、但在真實報價上可辨識的大變動：IBKR 即時報價顯示 ASML（AEB，EUR）從 10/12 收盤 1575.80 跌到盤中（2026-10-13 13:31 UTC／美東 09:31）約 1527.60，單日 −3.06%；同一時段 TSM 現貨僅 442.11，較 10/12 收盤 444.62 微跌約 −0.56%，兩者明顯背離，代表這一波主要是記憶體／晶片設備族群的事，不是台積電法說前的訊號。【查到的內容】WebSearch 查到多篇 2026-10-13 當天報導（Forbes、Seeking Alpha、Investing.com 經 KuCoin 轉述）交叉一致：中國記憶體廠 ChangXin Memory Technologies（CXMT）傳出技術進展，疊加一名半導體業高層警告 AI 投資人『像在賭場一樣』、以及利率走升對 AI 資本支出可持續性的疑慮，亞股率先重挫——南韓 SK Hynix 約 −10%、Samsung 約 −7%，KOSPI 單日跌逾 5～6%（兩篇來源數字略有出入），日本 Kioxia 約 −13%；美股盤前 Micron −2.3%、Marvell／SanDisk 跌逾 2%，Nvidia／AMD同步走弱。歐股這端 ASML／ASMI／BESI 同屬半導體設備／記憶體供應鏈，本檔用 IBKR 即時報價確認ASML 盤中 −3.06%（第一手）。【為什麼 cat 選 headline、kind 選 R】沒有對應的排程事件，CXMT技術進展與『AI資本支出可持續性』疑慮改變的是市場對整個記憶體／AI晶片板塊的風險溢酬，不是單一公司的現金流指引，kind 標 R。【老實說清楚】目前查到的都是美股開盤前後的即時報導，還沒有收盤後的完整總結，南韓跌幅在不同來源間（5% vs 6%+）不完全一致；ASML 的 −3.06% 是本檔自己用IBKR 即時報價算出來的，相對可靠。這一筆主要是記下『今天有一個新的、沒有排程的板塊性風險事件'，不代表對 10/14 ASML 或 10/15 台積電財報本身的定價，兩者的 pxd／em 另外在本檔處理。【10/15 補記，每日 routine】TSM 現貨本身在 10/13 當天只跌 −0.56%（如上），但隔一個交易日 10/14 單日重挫 −3.40%（445.12→430.00，IBKR 收盤自算），比 10/13 當天受到的衝擊大得多——看起來是記憶體／AI 晶片重挫的情緒延遲傳到 TSM，不是台積電自己另有新消息。這一趟用 WebSearch 查了「TSMC 10/14 下跌」「semiconductor selloff October 14 2026」等多個查詢，查不到任何 10/14 當天的具體觸發事件或新聞，只查到舊年份或其他月份的類似標題，找不到對應的新事件，老實記下查不到，不要硬掰。優先懷疑是部位／風險偏好的延續（見 _shared.md 一之三正回饋），不是漏掉了一件新聞；法說前一天現貨大跌，priced.json 的 pxd 已經把這個背景納入考量（見同日 priced.json 條目）。",
    "src": "Forbes『AI Chip Stocks Slide Amid China's Advances And CEO's Casino Warnings』forbes.com/sites/siladityaray/2026/10/13（第三級，WebSearch 摘要，未讀原文）／Seeking Alpha『Chip selloff deepens amid AI trade fears, rising Chinese competition』2026-10-13（第三級，WebSearch 摘要）／Investing.com 報導經 KuCoin『Chip stocks face sharp sell-off as AI trade sentiment shifts』轉述，Micron −2.3%、Marvell／SanDisk 跌逾 2%（第三級，WebSearch 摘要，未讀原文）／ASML −3.06%：IBKR 2026-10-13 13:31 UTC 即時報價（第一手內部資料，FTA 交易所 EUR 計價）／TSM −0.56%：IBKR 2026-10-13 13:55 UTC 即時報價（第一手內部資料，NYSE USD 計價）"
   }
  ]
