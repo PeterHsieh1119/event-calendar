@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-10-15",
+  "text": "daily: 移除priced.json已過期的台積電財報（10/15，法說已開完）。curated.json新增2筆日期更正：PCE物價指數與Q3 GDP初值，BEA官方排程（BEA 26-36/26-37）實際是10/29，不是規則引擎推算的10/30，兩者同日公布。priced.json新增PCE（pxd 0.35）與GDP（pxd 0.30）定價，皆因資料不足未填cons或用機構調查值。微軟財報用IBKR即時選擇權鏈與股價歷史重算：官方日期確認10/28不變，em/emBase首次填滿（5.99%/6.96%，四季close-to-close自算），pxd由先驗0.45下調到0.42。FOMC重算但維持0.75，同時發現policy.json抓取從10/14起已經斷更（generated與hist都卡在10-13附近，距今超過1天），px.json也類似（QQQ/^TWII停10/12）。五項檢查：閘門過、0警告、Actions資料管線疑似斷更（見上）、複盤未停擺（10/14）、線上版本連不出去照常跳過。優化：把今天驗證到的手法寫回daily.md——財報歷史中位數優先用IBKR股價歷史自算close-to-close，不要先查媒體轉述湊數字。"
+ },
+ {
+  "date": "2026-10-15",
   "text": "intraday: 日期更正1筆，零售銷售（9月數據）規則引擎推成當月第三個週二10/20，普查局實際排程是10/15（週四）08:30，跟PPI同一天公布，差了5天（WebSearch三方交叉：fedratecalc/thetrading.tools/akrostec，census.gov連不出去）。PPI本身規則引擎推算10/15與官方排程一致，未更正。retail基準敏感度28、本週regime shock=1，算出衝擊分數約37，低於45門檻，不寫入priced.json。TSMC法說（今日台北14:00）已過，但t欄位非美東HH:MM格式，不在本任務四之二清理範圍內，未動priced.json既有那筆。events.json窗口內（10/15-10/20）無官方確認事件需要核對。"
  },
  {

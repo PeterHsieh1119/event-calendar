@@ -1,6 +1,26 @@
 {
- "generated": "2026-10-15T13:49:38Z",
+ "generated": "2026-10-15T23:17:31Z",
  "items": [
+  {
+   "date": "2026-10-29",
+   "kind": "D",
+   "cat": "pce",
+   "title": "PCE 物價指數",
+   "est": false,
+   "t": "08:30",
+   "note": "日期更正：規則引擎用 lastBiz(月) 推到 10/30，但 BEA 官方排程（BEA 26-37，Personal Income and Outlays, September 2026）把 9 月個人收支（含 PCE 物價指數）排在 **10/29（四）08:30 ET**，跟同一天的 Q3 GDP 初值（BEA 26-36）同日發布，早規則引擎推算日一天。用同名條目覆蓋掉推算日。",
+   "src": "BEA 官方發布排程 BEA 26-37（透過搜尋摘要讀到的 bea.gov 排程頁，該網域在此環境連不出去，原文未讀），經 eco3min.fr／fedratecalc.com／financecalendar.com 三方第三級轉述交叉一致：10/29、08:30 ET（第一至三級混合，排程本身引自 BEA 頁面但未讀原文，標第三級）"
+  },
+  {
+   "date": "2026-10-29",
+   "kind": "D",
+   "cat": "gdp",
+   "title": "Q3 GDP 初值",
+   "est": false,
+   "t": "08:30",
+   "note": "日期更正：規則引擎用 lastBiz(月) 推到 10/30，但 BEA 官方排程（BEA 26-36，GDP Advance Estimate, 3rd Quarter 2026）把初值排在 **10/29（四）08:30 ET**，跟同一天的 9 月 PCE 物價指數（BEA 26-37）同日發布，早規則引擎推算日一天。用同名條目覆蓋掉推算日。",
+   "src": "BEA 官方發布排程 BEA 26-36（透過搜尋摘要讀到的 bea.gov 排程頁，該網域在此環境連不出去，原文未讀），經 eco3min.fr／fedratecalc.com／financecalendar.com 三方第三級轉述交叉一致：10/29、08:30 ET（第一至三級混合，排程本身引自 BEA 頁面但未讀原文，標第三級）"
+  },
   {
    "date": "2026-11-02",
    "kind": "N",
