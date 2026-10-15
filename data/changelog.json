@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-10-15",
+  "text": "intraday: 日期更正1筆，零售銷售（9月數據）規則引擎推成當月第三個週二10/20，普查局實際排程是10/15（週四）08:30，跟PPI同一天公布，差了5天（WebSearch三方交叉：fedratecalc/thetrading.tools/akrostec，census.gov連不出去）。PPI本身規則引擎推算10/15與官方排程一致，未更正。retail基準敏感度28、本週regime shock=1，算出衝擊分數約37，低於45門檻，不寫入priced.json。TSMC法說（今日台北14:00）已過，但t欄位非美東HH:MM格式，不在本任務四之二清理範圍內，未動priced.json既有那筆。events.json窗口內（10/15-10/20）無官方確認事件需要核對。"
+ },
+ {
+  "date": "2026-10-15",
   "text": "review: 複盤 2 筆（CPI 10/14、ASML 財報 10/14）。CPI核心月增0.3%高於共識0.2%，energy driven；ASML獲利與財測皆優於預期但股價仍跌3.94%，與CPI同日confound，無法乾淨拆分。px.json的QQQ/^TNX/GC=F/CL=F/DX-Y.NYB截至執行時都落後到10/14之前，改用IBKR的QQQ/IEF/TLT/UUP/GLD歷史K線補齊ndx/y10/dxy/gld四欄（y10為ETF經存續期間換算的估計值，非官方TNX）。發現10Y附近殖利率（IEF/TLT）在CPI當天其實下跌，與前端升息機率同時上升形成『路徑上移、長端跌』的背離組合，判為本輪最具資訊量的訊號，寫進CPI那筆的memo。另確認規則引擎推算的10/13 JOLTS與實際BLS排程不符（下一筆是11/3），本輪不寫入，留給daily/weekly處理curated.json的date mismatch。priced.json均無這兩筆的事前pxd記錄（已被每日routine移除），pxd檢討項留空說明。"
  },
  {
