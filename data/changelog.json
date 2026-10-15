@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-10-15",
+  "text": "review: 複盤 2 筆（CPI 10/14、ASML 財報 10/14）。CPI核心月增0.3%高於共識0.2%，energy driven；ASML獲利與財測皆優於預期但股價仍跌3.94%，與CPI同日confound，無法乾淨拆分。px.json的QQQ/^TNX/GC=F/CL=F/DX-Y.NYB截至執行時都落後到10/14之前，改用IBKR的QQQ/IEF/TLT/UUP/GLD歷史K線補齊ndx/y10/dxy/gld四欄（y10為ETF經存續期間換算的估計值，非官方TNX）。發現10Y附近殖利率（IEF/TLT）在CPI當天其實下跌，與前端升息機率同時上升形成『路徑上移、長端跌』的背離組合，判為本輪最具資訊量的訊號，寫進CPI那筆的memo。另確認規則引擎推算的10/13 JOLTS與實際BLS排程不符（下一筆是11/3），本輪不寫入，留給daily/weekly處理curated.json的date mismatch。priced.json均無這兩筆的事前pxd記錄（已被每日routine移除），pxd檢討項留空說明。"
+ },
+ {
   "date": "2026-10-14",
   "text": "daily: 日期更正2筆（Apple財報10/29→11/2、Meta財報10/28→10/21，均為官方公告對規則引擎anchor推算的更正），priced.json更新3筆（TSM重算pxd0.59→0.60反映法說前現貨-3.4%、Meta改用10/21正確到期日重算、新增Amazon財報pxd0.45），curated.json補記TSM 10/14-3.4%的歸因缺口（查無具體觸發事件，判斷是記憶體/AI晶片重挫情緒延遲傳導）。五項檢查：px.json/policy.json落後1-2個交易日但在3天門檻內，reviews.json最新10/13未停擺，線上版本連不出去跳過。優化：daily.md補一條，est:true的財報日要先查官方日期再做選擇權鏈分析，避免像今天Apple那樣白做一輪。"
  },
