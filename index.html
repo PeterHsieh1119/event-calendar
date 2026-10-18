@@ -547,7 +547,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-afcf6473";
+const APP_VER = "evcal-d410b8fa";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -1201,8 +1201,45 @@ function histHTML(e){
    而且事後回頭看根本查不到當天移動了多少——FedWatch 只給現在，不給歷史。
    這一段就是為了把那個數字補上：事件當天，整條政策路徑被重新定價了幾 bp。 */
 let POLICY=null;
+/* 非交易日的殘列：資料源偶爾會多塞一列週日（聯邦資金期貨美東週日傍晚就開始有報價），
+   而且那一列常常只帶到最前面一兩次會議。真實資料裡「會議數」只會隨時間遞減——
+   開過的場次會掉出名單，不會自己長回來——所以一列的會議數比後面那一列少，
+   只有一個解釋：這一列不完整。data/policy.json 實際撞到兩次：2026-10-11（週日）
+   只帶 1 次會議、2026-09-06（週日）只帶 6 次，兩邊鄰居都是 8 次。
+   留著它們有兩個靜默後果，閘門都不會紅：
+     1. polMoves() 的每日推力會拿 1 次會議去充當「前四次會議的平均」，
+        而且週五→週日那一段算出 0.0bp，把基準中位數整條拉歪；
+     2. polPrev(週一) 會回傳那一列，於是抽屜裡「事件當天路徑動了幾 bp」
+        與餵進 verdict() 的 polMoveBp 都是跟週日比，不是跟上一個交易日比——
+        2026-10-12 這天會顯示 +0.5bp（只剩 10/28 一次會議），
+        跟週五 10/09 比的正確值是 +1.43bp，差了 2.9 倍。
+   所以在進檔這一關就濾掉，後面五個使用端（polOn／polPrev／polMoves／
+   policyHTML／polMoveBp）不必各自防一次。序列最後一列沒有下一列可比，
+   只能留著；完整的週日列（9/13、9/27）這一關不處理，它們不會truncate平均，
+   只會讓序列多兩列，影響小得多。 */
+function polClean(hist){
+  const ks=Object.keys(hist).sort(), cnt=k=>(hist[k]&&hist[k].m)?Object.keys(hist[k].m).length:0;
+  const out={};
+  for(let i=0;i<ks.length;i++){
+    const n=cnt(ks[i]);
+    if(!n)continue;                       // 連 m 都沒有的列本來就沒用
+    let drop=false;
+    for(let j=i+1;j<ks.length;j++){
+      const nx=cnt(ks[j]);
+      if(!nx)continue;
+      drop=n<nx;                          // 只跟下一個有效列比：遞減是對的，遞增代表這列缺東西
+      break;
+    }
+    if(!drop)out[ks[i]]=hist[ks[i]];
+  }
+  return out;
+}
 function applyPolicy(j){
   POLICY=(j&&j.hist&&Object.keys(j.hist).length)?j:null;
+  if(POLICY){
+    const h=polClean(POLICY.hist);
+    POLICY=Object.keys(h).length?Object.assign({},POLICY,{hist:h}):null;
+  }
 }
 /* 這個事件會不會撼動政策路徑：看它在前端利率那條管道上的推力 */
 const POLCAT=e=>Math.abs(((CAT[e.cat]||CAT.ism).ch||{}).front||0)>=0.25;

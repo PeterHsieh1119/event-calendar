@@ -91,6 +91,7 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "polMoveBp:polMoveBp,verdict:verdict,reviewForm:reviewForm,reactionMag:reactionMag," +
   "backtestHTML:backtestHTML,icVerdict:icVerdict," +
   "polSurprise:polSurprise,spcHTML:spcHTML,polMoves:polMoves,SPC:SPC," +
+  "polClean:polClean," +
   "getBETAS:function(){return BETAS;}};\n";
 
 try {
@@ -1148,6 +1149,80 @@ catKeys.forEach((k) => {
         "t=" + tsm[0].t);
     }
   }
+}
+
+/* ── 25. policy.json 的非交易日殘列：不完整的那一列不可以進到序列裡 ──
+   資料源偶爾會多塞一列週日（聯邦資金期貨美東週日傍晚就有報價），而且那一列
+   常常只帶到最前面一兩次會議。真實檔案撞到兩次：2026-10-11（週日）只帶 1 次會議、
+   2026-09-06（週日）只帶 6 次，兩邊鄰居都是 8 次。
+   留著它的後果是靜默的——閘門不會紅，只有「路徑動了幾 bp」會悄悄少算，
+   因為 polPrev(週一) 回傳的是那列週日，而且兩列的交集只剩一次會議。
+   下面兩組斷言：一組釘 polClean 這個純函式的規則，一組釘它在 polMoveBp 上的實際效果。 */
+{
+  // 會議數隨時間遞減是對的（開過的場次掉出名單），遞增代表中間那列缺東西
+  const H = {
+    "2026-10-09": { effr: 3.88, m: { a: 1, b: 2, c: 3, d: 4 } },
+    "2026-10-11": { effr: 3.88, m: { a: 1 } },
+    "2026-10-12": { effr: 3.88, m: { a: 1, b: 2, c: 3, d: 4 } },
+  };
+  const cleaned = T.polClean(H);
+  eq("不完整的那一列被濾掉", Object.keys(cleaned).join(","), "2026-10-09,2026-10-12");
+
+  // 單調遞減的序列一列都不准丟——真實資料大多數日子就是這個形狀
+  const mono = {
+    "2026-09-15": { m: { a: 1, b: 2, c: 3 } },
+    "2026-09-16": { m: { b: 2, c: 3 } },
+    "2026-09-17": { m: { c: 3 } },
+  };
+  eq("合法的遞減序列一列都不丟", Object.keys(T.polClean(mono)).length, 3);
+
+  // 最後一列沒有下一列可以比，只能留著（不要為了乾淨把最新的一天丟掉）
+  const tailShort = {
+    "2026-10-15": { m: { a: 1, b: 2 } },
+    "2026-10-16": { m: { a: 1 } },
+  };
+  eq("序列最後一列即使看起來短也要留著", Object.keys(T.polClean(tailShort)).length, 2);
+
+  // 連 m 都沒有的列沒有任何用處
+  eq("沒有 m 的列直接丟掉",
+    Object.keys(T.polClean({ "2026-10-15": { effr: 3.8 },
+                             "2026-10-16": { m: { a: 1 } } })).join(","), "2026-10-16");
+
+  /* 實際效果：用真實檔案 2026-10-09（五）／10-11（日）／10-12（一）那三天的數字。
+     濾掉週日之後，週一事件是跟週五比、四次會議平均 +1.4275bp；
+     沒濾掉的話交集只剩 10/28 一次會議，會得到 +0.5bp，差 2.9 倍。 */
+  const POLSUN = {
+    asof: "2026-10-12", histFrom: "2026-10-09", effr: 3.8774, source: "測試",
+    meetings: [{ date: "2026-10-28", rate: 3.93, chgBp: 5, cumBp: 5 }],
+    hist: {
+      "2026-10-09": { effr: 3.8807, m: { "2026-10-28": 3.925, "2026-12-09": 4.1293,
+                                         "2027-01-27": 4.23, "2027-03-17": 4.4071 } },
+      "2026-10-11": { effr: 3.8779, m: { "2026-10-28": 3.925 } },
+      "2026-10-12": { effr: 3.8774, m: { "2026-10-28": 3.93, "2026-12-09": 4.1414,
+                                         "2027-01-27": 4.25, "2027-03-17": 4.4271 } },
+    },
+  };
+  T.applyPolicy(POLSUN);
+  const mon = { date: "2026-10-12", title: "CPI", cat: "cpi", kind: "D", t: "08:30" };
+  const bp = T.polMoveBp(mon);
+  ok("週一事件是跟上一個交易日比，不是跟週日殘列比",
+    bp !== null && Math.abs(bp - 1.4275) < 1e-6, String(bp));
+  ok("所以不會退化成只剩一次會議的 +0.5bp",
+    bp !== null && Math.abs(bp - 0.5) > 0.9, String(bp));
+
+  // 序列本身也不可以留下那一列：否則 polMoves 會多出一列週五→週日的 0.0bp，
+  // 把 polSurprise 的基準中位數拉歪
+  const days = T.polMoves().map((r) => r.d);
+  ok("每日推力序列裡沒有週日那一列", days.indexOf("2026-10-11") < 0, days.join(","));
+  eq("三天只產生一列推力（週五→週一）", days.length, 1);
+
+  // 抽屜裡那段表格也要是四次會議，不是一次
+  const html = T.policyHTML(mon);
+  ok("抽屜的政策路徑表列出四次會議",
+    (html.match(/<tr><td>1[02]\/\d\d<\/td>|<tr><td>0[13]\/\d\d<\/td>/g) || []).length === 4,
+    String((html.match(/<tr><td>/g) || []).length));
+
+  T.applyPolicy(null);
 }
 
 /* ── 報告 ── */
