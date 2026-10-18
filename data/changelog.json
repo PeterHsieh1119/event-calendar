@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-10-18",
+  "text": "daily: 更新定價 4 筆（FOMC 上調 0.75→0.80／NFLX／TSLA／Meta 改用週五收盤口徑重算 em，Meta pxd 0.40→0.42），新增定價 2 筆（BOJ 10/30 pxd=0.35、Apple 財報 11/2 窗口首次覆蓋 pxd=0.70），新增事件 0 筆、修正 0 筆；curated.json 掃過一輪（合法 cat／t 格式／60 天過期）沒有需要改的，當天沒有 commit 那一檔；五項檢查：1-4 綠（generated／hist／px 三者同步、複盤 10-15 未停擺），第 5 項 WebFetch 連不出去線上版本，照慣例跳過；優化：daily.md 補記週一執行時 IBKR STK 即時報價與選擇權報價時間點不一致的坑（現貨改用上週五收盤修正）。"
+ },
+ {
+  "date": "2026-10-18",
   "text": "weekly: regime 兩格換檔（vol 1→0，VIX 19.99＝年度第81.3百分位、上週第7.2；shock 1→0，20日股債相關係數鬆到−0.080、10/14偏熱CPI當天長端反而跌）；新增事件4筆（微軟財報10/28轉確認、Google財報10/27→10/28仍est、10/16荷姆茲油價與AI融資賣壓兩筆headline補歸因缺口）；工程改進：濾掉policy.json hist裡不完整的週日殘列（polClean，修正10/12路徑移動由+0.5bp→+1.43bp），補9條煙霧斷言；校正：headline與claims名目上達門檻但樣本全被同日confound汙染，不建議改任何B。"
  },
  {
