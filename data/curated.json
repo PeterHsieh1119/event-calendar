@@ -1,6 +1,26 @@
 {
- "generated": "2026-10-18T13:24:06Z",
+ "generated": "2026-10-19T23:13:59Z",
  "items": [
+  {
+   "date": "2026-11-03",
+   "kind": "N",
+   "cat": "earn2",
+   "title": "AMD 財報",
+   "est": false,
+   "t": "AMC",
+   "note": "「確認日期」而非改期：規則引擎推算 11/3（二）美股收盤後，AMD 官方新聞稿 10/6 公告的日期就是 11/3，法說 5:00pm ET／2:00pm PT。日期網格完全不變，只把 est 從推算改成確認，做法同 2026-10-28 微軟那一筆的理由——earn2 的 B 本來就只有 42，但這次 score() 算出來已經過 14 天窗口的 45 分門檻，priced.json 同一趟已用這個確認日期做選擇權鏈分析估 pxd／em／emBase。",
+   "src": "AMD 官方新聞稿 2026-10-06『AMD to Report Fiscal Third Quarter 2026 Financial Results』（ir.amd.com，第一級，WebSearch 摘要讀到新聞稿內容，原文未直接讀取），經 finviz.com 2026-10-06 轉載交叉確認（第三級）"
+  },
+  {
+   "date": "2026-10-29",
+   "kind": "N",
+   "cat": "earn2",
+   "title": "Amazon 財報",
+   "est": false,
+   "t": "AMC",
+   "note": "「確認日期」而非改期：規則引擎推算 10/29（四）美股收盤後，Amazon 官方新聞稿（aboutamazon.com）10-20 查到已公告同一天、法說 2:00pm PT／5:00pm ET，跟推算日完全一致。日期網格不變，只把 est 從推算改成確認——10-14 那趟收錄進 priced.json 時還查不到官方確認，這趟補上。",
+   "src": "Amazon 官方新聞稿『Amazon will share its Q3 2026 earnings on October 29』（aboutamazon.com/md/news/company-news/amazon-earnings-q3-2026-report，第一級，2026-10-20 查詢）"
+  },
   {
    "date": "2026-10-28",
    "kind": "N",
