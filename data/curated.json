@@ -1,6 +1,26 @@
 {
- "generated": "2026-10-19T23:13:59Z",
+ "generated": "2026-10-22T23:13:19Z",
  "items": [
+  {
+   "date": "2026-10-21",
+   "kind": "N",
+   "cat": "earn1",
+   "title": "LRCX 財報",
+   "est": false,
+   "t": "AMC",
+   "note": "日期更正（財報已結束，不是改期）：規則引擎推算 10/28，但 Lam Research 官方 2026-09-30 公告法說會排在 10/21（三）美東17:00／美西14:00，SEC 8-K 顯示 non-GAAP EPS 2.20 美元（財測/共識約 2.15 美元附近）、營收 82.2 億美元，財報本身已經在 7 天前公布完畢。原推算日把一筆已結束的財報留在日曆上當成未來事件，用同名、正確日期覆蓋掉推算日。",
+   "src": "Lam Research 官方新聞稿『Lam Research Corporation Announces September Quarter Financial Conference Call』2026-09-30（lamresearch.com，第一級，WebSearch 摘要讀到新聞稿內容，原文未直接讀取）／SEC 8-K 2026-10-21（sec.gov，第一級性質，經搜尋摘要確認日期與數字，原文未直接讀取）"
+  },
+  {
+   "date": "2026-10-28",
+   "kind": "N",
+   "cat": "earn1",
+   "title": "KLAC 財報",
+   "est": false,
+   "t": "AMC",
+   "note": "日期更正：規則引擎推算 10/27，KLA 官方新聞稿『KLA Announces First Quarter Fiscal Year 2027 Earnings Date and Webcast』2026-10-01 公告確認法說會排在 10/28（三）美西14:00，晚了 1 天。財測：營收 40 億±2 億美元、non-GAAP EPS 1.16±0.10 美元。",
+   "src": "KLA Corporation 官方新聞稿 2026-10-01（ir.kla.com，第一級，WebSearch 摘要讀到新聞稿內容，原文網域未直接讀取）"
+  },
   {
    "date": "2026-11-03",
    "kind": "N",
