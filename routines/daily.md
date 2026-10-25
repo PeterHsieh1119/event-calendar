@@ -89,6 +89,10 @@ est=true 但 `spc` 不同）數字對不上，多花了一輪才發現是查詢�
 臨界的事件（例如衝擊分數剛好卡在窗口邊界那天）會被誤判進或退出範圍。
 跑上面那支 node script 時在指令前面加 `TZ=Asia/Taipei`。
 
+**2026-10-26 這一趟撞到：就算加了 `TZ=Asia/Taipei`，`new Date().toLocaleString(...).toISOString().slice(0,10)` 這種寫法還是會拿到 UTC 日期，不是台北日期。** `toISOString()` 不管 process 的時區設定是什麼，輸出永遠是 UTC——先把目前時刻轉成台北字串再塞回 `new Date()`，最後再呼叫 `toISOString()`，等於把「轉成台北」這一步做完之後又用 UTC 把它蓋掉，兩次轉換互相抵銷，結果跟完全沒轉時區一樣。這一趟撞到的具體後果：執行時 UTC 是 10/25 23:13、台北已經是 10/26 07:13，用這種寫法算出來的 `TODAY` 是 10/25，窗口跟著整個少算一天。**正確寫法是直接用 `new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Taipei"})`**（`en-CA` 這個 locale 剛好輸出 `YYYY-MM-DD`），不要先轉字串再建 `Date` 物件再呼叫 `toISOString()`——只要最後一步是 `toISOString()`，前面無論怎麼轉時區都會被打回 UTC。
+
+**同一趟還撞到：抄 `scripts/smoke_test.js` 的 `EXPORT` 字串時，`applyRegime` 並不在清單裡**（它在 index.html 裡是用 `applyRegime(j)` 直接呼叫，`smoke_test.js` 自己沒有測試這個函式，所以沒有匯出它）。照抄整段會在呼叫 `T.applyRegime(regime)` 時得到 `TypeError: T.applyRegime is not a function`。自己寫 harness 時要把 `applyRegime:applyRegime` 手動加進 `EXPORT` 字串最後一個 `};` 之前，不能假設 `smoke_test.js` 已經匯出了這支任務需要的每一個函式——那支檔案匯出的是『測試斷言用得到的』，不是『這份任務算分數用得到的』，兩份清單不保證重疊。
+
 ### 財報 — 用 IBKR 選擇權鏈自己算
 
 **第 0 步，比選擇權鏈還先做：`est:true` 的財報日，先花一次 WebSearch 確認官方日期，
