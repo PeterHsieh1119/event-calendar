@@ -113,7 +113,9 @@ h1{font-family:var(--serif);font-size:25px;margin:7px 0 5px;font-weight:700}
 .tlnow{position:absolute;bottom:3px;font-family:var(--mono);font-size:9px;color:var(--bg);
   background:var(--today);padding:2px 5px;border-radius:4px;z-index:4;
   transform:translateX(-50%);pointer-events:none;white-space:nowrap}
-.thit{position:absolute;top:20px;bottom:6px;transform:translateX(-50%);cursor:pointer;
+/* left／width 由 thitBox() 直接算成左緣與寬度（要吃掉與鄰居之間的空位，
+   左右半寬不對稱），所以這裡不能再 translateX(-50%) 把它推回去。 */
+.thit{position:absolute;top:20px;bottom:6px;cursor:pointer;
   border-radius:3px;z-index:2}
 .thit:hover{background:#ffffff0f}
 .tlpx{position:absolute;left:0;top:0;pointer-events:none}
@@ -547,7 +549,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-d410b8fa";
+const APP_VER = "evcal-d6207412";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -2122,6 +2124,29 @@ const TLH=108, TLZERO=62;
 let PPD=9;                       // 總覽軸每天幾 px
 const MN=["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
 
+/* 年度軸上每個事件日的點擊區。原本是固定 max(10,PPD) px 寬、置中，
+   「年」與「季」兩個縮放下都只有 10px——手機上按不準，WCAG 2.5.8 的下限是 24px。
+   有事件的日子在軸上是稀疏的（低於 MINS 的小事件連標記都不畫），所以多數標記
+   左右都有空位可以吃。但不能盲目加寬：兩個點擊區一重疊就會互相搶走點擊，
+   這正是 2026-10-18 那一趟把它列為「還沒解」的原因。
+
+   作法是「只吃到與鄰居的中線為止」——每一側的半寬取 min(想要的半寬, 到鄰居的一半)，
+   再用原本的半寬當地板，所以鄰日相連（gap 只有 PPD/2）的地方行為跟以前完全一樣，
+   不會比現在更糟；兩端再夾一次，避免點擊區掉到軸外去。
+   xs 必須是已排序的 x 座標，W 是軸的總寬。
+
+   THIT_WANT 是 Apple HIG／WCAG 2.5.5 的 44px；THIT_MIN 是 WCAG 2.5.8 的 24px 下限，
+   這裡不當程式的地板用（連續事件日被鄰居夾住時只能退回原本的 10px，那是幾何限制，
+   不是可以選的），它存在是給煙霧測試當「有空位時必須過的標準」的那個數字。 */
+const THIT_WANT=44, THIT_MIN=24;
+function thitBox(xs,i,ppd,W){
+  const x=xs[i], want=THIT_WANT/2, base=Math.max(10,ppd)/2;
+  const gapL=(i>0)?(x-xs[i-1])/2:want, gapR=(i<xs.length-1)?(xs[i+1]-x)/2:want;
+  const hl=Math.min(Math.max(base,Math.min(want,gapL)),x);
+  const hr=Math.min(Math.max(base,Math.min(want,gapR)),Math.max(0,W-x));
+  return {left:x-hl,width:hl+hr};
+}
+
 /* 頂部總覽軸：一整年拉成一條，只放事件標記與月份定位，不放日期與事件名——
    那些文字在連續軸上一定會擠在一起，細節留給下面的月列。 */
 function renderTimeline(){
@@ -2188,9 +2213,11 @@ function renderTimeline(){
       h+=`<div class="tlnow" style="left:${todayX.toFixed(1)}px">今天</div>`;
     }
   }
-  Object.values(perDay).forEach(o=>{
+  const hits=Object.values(perDay).sort((a,b)=>a.x-b.x), hx=hits.map(o=>o.x);
+  hits.forEach((o,i)=>{
+    const b=thitBox(hx,i,PPD,W);
     h+=`<div class="thit" data-tip="${o.date}" data-d="${o.date}" `+
-       `style="left:${o.x.toFixed(1)}px;width:${Math.max(10,PPD).toFixed(0)}px"></div>`;});
+       `style="left:${b.left.toFixed(1)}px;width:${b.width.toFixed(1)}px"></div>`;});
 
   wrap.innerHTML=`<div class="tl" id="tlScroll"><div class="tlin" style="width:${W}px">${h}</div></div>`;
   const sc=$("tlScroll");

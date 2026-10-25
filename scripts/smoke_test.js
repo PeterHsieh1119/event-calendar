@@ -91,7 +91,7 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "polMoveBp:polMoveBp,verdict:verdict,reviewForm:reviewForm,reactionMag:reactionMag," +
   "backtestHTML:backtestHTML,icVerdict:icVerdict," +
   "polSurprise:polSurprise,spcHTML:spcHTML,polMoves:polMoves,SPC:SPC," +
-  "polClean:polClean," +
+  "polClean:polClean,thitBox:thitBox,THIT_WANT:THIT_WANT,THIT_MIN:THIT_MIN," +
   "getBETAS:function(){return BETAS;}};\n";
 
 try {
@@ -1223,6 +1223,80 @@ catKeys.forEach((k) => {
     String((html.match(/<tr><td>/g) || []).length));
 
   T.applyPolicy(null);
+}
+
+/* ── 26. 年度軸的點擊區：稀疏的事件日要吃掉旁邊的空位，但不准互相重疊 ──
+   2026-10-18 那一趟把觸控目標墊到 44px 時，.thit 被列為「還沒解」——它的寬度是
+   max(10,PPD)，「年」(PPD=5) 與「季」(PPD=9) 兩個縮放下都只有 10px，而它是
+   translateX(-50%) 置中的，盲目加寬會跟鄰日重疊、互相搶走點擊。
+   thitBox() 的作法是只吃到與鄰居的中線為止。這一組守三件事：
+   有空位時要真的變寬、沒空位時不可以重疊、兩端不可以掉到軸外。 */
+{
+  const W = 365 * 9; // 「季」縮放、一整年
+
+  // (a) 左右都空著的孤立標記：拿到完整的 44px
+  {
+    const b = T.thitBox([1000], 0, 9, W);
+    eq("孤立的事件日拿到完整寬度", b.width, T.THIT_WANT);
+    eq("孤立的事件日以 x 為中心", b.left + b.width / 2, 1000);
+  }
+
+  // (b) 相鄰的事件日：半寬各取到中線，兩個盒子剛好相接、不重疊
+  {
+    const xs = [1000, 1020, 1040];
+    const L = T.thitBox(xs, 0, 9, W), M = T.thitBox(xs, 1, 9, W),
+          R = T.thitBox(xs, 2, 9, W);
+    ok("左鄰的右緣不超過中間那個的左緣",
+      L.left + L.width <= M.left + 1e-9, L.left + L.width + " vs " + M.left);
+    ok("中間那個的右緣不超過右鄰的左緣",
+      M.left + M.width <= R.left + 1e-9, M.left + M.width + " vs " + R.left);
+    // 間距 20px 時，中間那個左右各吃 10px，合計 20px——比原本的 10px 寬一倍
+    eq("間距 20px 的標記寬度是 20px", M.width, 20);
+    ok("而且比改之前的 max(10,PPD) 寬", M.width > Math.max(10, 9), String(M.width));
+  }
+
+  // (c) 連著三天的事件（間距就是 PPD）：中間那個左右都沒有空位可以吃，
+  //     寬度必須退回原本的 max(10,PPD)，不可以為了湊 44px 去重疊鄰居
+  {
+    const xs = [91, 100, 109];
+    const b = T.thitBox(xs, 1, 9, W);
+    eq("連續三天時中間那個維持原本的 10px", b.width, 10);
+    eq("而且仍然以 x 為中心", b.left + b.width / 2, 100);
+    const b18 = T.thitBox([82, 100, 118], 1, 18, 365 * 18);
+    eq("PPD=18 連續三天時維持原本的 18px", b18.width, 18);
+  }
+
+  // (d) 軸的兩端：點擊區不可以掉到 0 以左或 W 以右
+  {
+    const a = T.thitBox([4.5], 0, 9, W);
+    ok("最左邊的點擊區不會掉到軸外", a.left >= -1e-9, "left=" + a.left);
+    const z = T.thitBox([W - 4.5], 0, 9, W);
+    ok("最右邊的點擊區不會超出軸寬",
+      z.left + z.width <= W + 1e-9, "right=" + (z.left + z.width));
+  }
+
+  // (e) 每一種縮放下，有空位的標記都要過 WCAG 2.5.8 的 24px 下限
+  for (const ppd of [5, 9, 18]) {
+    const b = T.thitBox([500, 560], 0, ppd, 365 * ppd);
+    ok("PPD=" + ppd + " 時有空位的點擊區至少 " + T.THIT_MIN + "px",
+      b.width >= T.THIT_MIN, "width=" + b.width);
+  }
+
+  // (f) CSS 那一邊：left 已經是左緣了，.thit 不可以再 translateX(-50%) 推回去
+  {
+    const styleM = html.match(/<style>([\s\S]*?)<\/style>/);
+    const css = styleM ? styleM[1] : "";
+    const r = css.match(/\.thit\s*\{([^}]*)\}/);
+    ok("CSS 裡有 .thit 的規則", !!r);
+    ok(".thit 不再 translateX(-50%)（left 已經是左緣）",
+      !!r && r[1].indexOf("translateX") < 0, r ? r[1].trim() : "");
+  }
+
+  // (g) renderTimeline 真的用了 thitBox，不是留著舊的固定寬度
+  ok("renderTimeline 用 thitBox 算點擊區",
+    html.indexOf("thitBox(hx,") > 0);
+  ok("舊的固定寬度寫法已經移除",
+    html.indexOf('width:${Math.max(10,PPD)') < 0);
 }
 
 /* ── 報告 ── */
