@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-10-26",
+  "text": "review: 複盤 1 筆（10/22 初領失業金：194K vs 共識200K，續領人數回升）。本輪另一個候選（規則引擎推算的10/13 JOLTS）查無對應的實際公布——BLS八月JOLTS實際發布於9/29（已超出15天範圍，放掉），9月資料排在11/3，10/13這個日期是規則引擎『當月第二個週二』估算值沒有對上官方行事曆，不是漏查，誠實記錄不當成一筆複盤。判讀：claims本身意外幅度在正常週雜訊內，但10/22當天QQQ −2.86%／費半−6.72%／10Y −19.3bp的巨幅反應明確不是這筆B=16事件造成的，真正驅動已在同日Meta／LRCX財報兩筆memo與regime.json本週basis記過（AI資本支出侵蝕獲利＋信用利差擴大的系統性賣壓），特別在memo點名避免誤歸因。pxd：這筆從未進入priced.json（B=16遠低於45分門檻），無事前估計可檢討。"
+ },
+ {
   "date": "2026-10-25",
   "text": "daily: 清理 curated.json 1 筆過期（2026-08-26 PCE，61 天）；priced.json 無過期項目。score() 重算 14 天窗口（TZ=Asia/Taipei 2026-10-26～11-08）：13 筆既有收錄全部仍在範圍內，無新增，ECB 因本週 regime shock 0→−1 分數降到 40（低於 45 門檻但維持收錄，事件僅剩 3 天）。更新 4 筆定價：FOMC pxd 0.76→0.88（policy.json 10/28 會議 p.hold 83.2%→90.0%，跨過 85% 門檻，但主要驅動是 10/22 成長／信用恐慌外溢、不是會議本身新訊號，已在 basis 註明歸因）；GDP／PCE／ECB 三筆重查背景資料（GDPNow 3.6%、ECB 10/20 FXStreet 交叉驗證 Reuters 調查）、pxd 不變、basis 更新。Microsoft／Google／Amazon 財報選擇權鏈這趟沒更新：IBKR search_contracts 本趟持續回 -32400 錯誤（get_price_snapshot／whats_new 正常，只有這個端點壞），重試 6 次仍失敗，沿用上次版本。第二步 30 天掃描：Google／AMAT 財報日期重查，兩筆都跟現有日曆一致，未更動；Fed 處於會前靜默期、無新關稅公告、無新台灣端排程異動。歸因缺口：CL=F 10/21 −4.56%（z −1.96）、10/23 +3.82%（z +1.64），多輪 WebSearch 查無對應的具體事件報導，誠實記錄為缺口，未新增 headline（10/22 QQQ −2.86%／費半 −6.72%／TNX −3.75% 已由本週 regime.json 與複盤記過，不重複）。五項檢查：1-2 綠；3 events.json／px.json／policy.json generated 皆 10-24 批次、policy.json hist 與 px.json 七標的最新日期對齊到 10-23（台股如常落後一天到 10-22）；4 複盤最新 asof 10-23，3 天，未過 10 天警告線；5 WebFetch 連 peterhsieh1119.github.io ENOTFOUND，照例跳過。優化：daily.md 補兩條 node harness 坑——`toLocaleString().toISOString()` 算台北 TODAY 會被打回 UTC 日期（正確寫法是 toLocaleDateString('en-CA',{timeZone})）；抄 smoke_test.js 的 EXPORT 清單不含 applyRegime，要自己手動加進去。"
  },
