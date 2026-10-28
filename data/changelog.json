@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-10-28",
+  "text": "daily: priced.json 移除 3 筆已公布事件（FOMC利率決議/微軟財報/Google財報，均於10/28美東時段公布完畢，第0步日期複查發現發布時間已過，WebSearch確認MSFT／GOOGL官方8-K已出，FOMC決議結果查無法確認但依公布時鐘判斷已過，三筆均移除不留舊pxd誤導）；其餘10筆重查並更新basis（Amazon/PCE/GDP/ECB/BOJ/Apple/AMD/期中選舉/非農/CPI，pxd多數維持不動，ECB分數39分低於門檻但比照前例維持收錄）。14天窗口新發現AMAT財報(11/12)score過45分門檻但IBKR連接器market-data側連續第5天故障（whats_new正常、search_contracts/get_account_summary持續回-32400），無選擇權鏈資料暫不收錄，待連接器恢復後補。curated.json清理掃過：cat/t格式/60天過期/重複皆無問題。第二步30天掃描：NVDA(11/18)/WMT(11/19)兩筆est:true財報日期WebSearch複查仍無官方確認，與現有日曆一致未更動；查無新關稅/出口管制公告；台積電下一場法說預估落在2027年1月中旬週四（慣例推估非官方公告），與現有假設一致。歸因缺口：近三個交易日（QQQ到10-26/SOX到10-27/TNX到10-27/三商品期貨到10-28）逐標的自算，均未發現超過1.5倍門檻的新未歸因大變動，10/22巨幅波動與10/21、10/23 CL=F資料瑕疵皆已由前幾趟記錄，不重複。五項檢查：1-2綠；3黃——TWII停在10-22，落後QQQ(10-26)/SOX、TNX(10-27)/三商品期貨(10-28)達4個台灣交易日，比平常的1日時區落差明顯更大，但generated與hist日期本身對齊，屬於資料來源內部落後不是部署問題；policy.json本批次generated/hist雖同為10-28、但執行時間（UTC 00:56）早於今天FOMC決議公布時間（UTC 18:00）超過17小時，12/09之後的路徑數字是會前快照非會後定價，已在各筆basis註明；4複盤最新執行10-28（距今<1天），正常；5 WebFetch連peterhsieh1119.github.io仍ENOTFOUND，照例跳過。優化：_shared.md二之二補一條新坑——policy.json的generated與hist最後一筆日期彼此對齊，不代表已反映『當天』稍晚才公布的FOMC決議，要額外比對Actions執行時間與事件公布時間的先後順序。"
+ },
+ {
+  "date": "2026-10-28",
   "text": "review: 複盤 1 筆（月選擇權到期 10/16）。範圍是自 10-22 上次複盤以來最近 15 天內已公布事件：逐一核對後，10/13～10/27 之間排程事件幾乎全數已在之前各趟複盤完畢（JPM／記憶體股headline／CPI／ASML／PPI／claims×2／台積電財報／Hormuz headline／CoreWeave headline／NFLX／LRCX／Meta／TSLA／NVIDIA GTC），10/22 QQQ -2.86%／SOX -6.72% 的巨幅變動已在 10-21 批次四筆（LRCX/Meta/TSLA/GTC）memo 完整歸因為AI支出疑慮引發的去槓桿事件，未重複記錄。新增的這一筆是規則引擎會生成但從未進入複盤的機械性事件：月選擇權到期（10/16），確認其高pxd先驗（0.75）成立、當天的-2.50%/-3.83%應歸因於同日兩個已複盤的headline（Hormuz油價、CoreWeave信用），不是到期機制本身。另查到兩個需要留給其他routine處理的缺口：(1) 規則引擎推算的INTC財報日10/22是錯的，官方實際date是10/29（已公告，AMC），本趟還沒發生不列入複盤，但curated.json應該補一筆更正；(2) 規則引擎推算10/13 JOLTS，WebSearch查無當天實際公布紀錄，下一期JOLTS另有來源指向11/3，懷疑是政府資料延遲，這筆這趟沒有數字可寫，誠實跳過。"
  },
  {
