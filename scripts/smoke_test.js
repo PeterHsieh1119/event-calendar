@@ -1299,6 +1299,100 @@ catKeys.forEach((k) => {
     html.indexOf('width:${Math.max(10,PPD)') < 0);
 }
 
+/* ── 26. 規則引擎的休市日意識（2026-11-01 新增）──
+   原本 lastBiz／nextBiz 只跳週末，於是「每月最後一個營業日」「每月第一個營業日」
+   「每週四」「第三個週五」推出來的日期撞到美股休市日時會靜默排在市場沒開的那一天。
+   盤點當時 634 筆事件裡有 12 筆中獎（2027-01-01 的 ISM、2027-05-31 國殤日的 PCE、
+   2026-06-19 六月節的四巫日、2026-11-26 感恩節的初領失業金……）。
+   錯日期不只是顯示問題：session() 判的吸收日會跟著錯，複盤就會去抓錯誤交易日的變動，
+   再被當成校準輸入寫進基準敏感度。
+
+   這一組斷言刻意**不**去讀 index.html 內部的 MKT_HOL，而是在測試裡自己擺一份獨立的
+   休市日清單當 oracle，兩邊對不上才有意義；也刻意全部從 EVENTS 的實際年份區間推導，
+   不寫死任何一個年份，否則 buildBaseline 的區間（今年±1）往前滾之後這一組會自己爛掉
+   （本檔開頭那段註解講的就是這個坑）。 */
+{
+  const MH = new Set([
+    "2025-01-01","2025-01-20","2025-02-17","2025-04-18","2025-05-26","2025-06-19",
+    "2025-07-04","2025-09-01","2025-11-27","2025-12-25",
+    "2026-01-01","2026-01-19","2026-02-16","2026-04-03","2026-05-25","2026-06-19",
+    "2026-07-03","2026-09-07","2026-11-26","2026-12-25",
+    "2027-01-01","2027-01-18","2027-02-15","2027-03-26","2027-05-31","2027-06-18",
+    "2027-07-05","2027-09-06","2027-11-25","2027-12-24",
+    "2028-01-17","2028-02-21","2028-04-14","2028-05-29","2028-06-19","2028-07-04",
+    "2028-09-04","2028-11-23","2028-12-25",
+  ]);
+  const GF = new Set(["2025-04-18","2026-04-03","2027-03-26","2028-04-14"]);
+  const EV = T.getEVENTS();
+  const dates = EV.map((e) => e.date).sort();
+  const lo = dates[0], hi = dates[dates.length - 1];
+  const inRange = (d) => d >= lo && d <= hi;
+  const isoOf = (dt) => dt.getFullYear() + "-" +
+    String(dt.getMonth() + 1).padStart(2, "0") + "-" +
+    String(dt.getDate()).padStart(2, "0");
+  const nth = (y, m, wd, n) => {
+    const f = new Date(y, m, 1);
+    return new Date(y, m, 1 + ((wd - f.getDay() + 7) % 7) + (n - 1) * 7);
+  };
+  const has = (d, title) => EV.some((e) => e.date === d && e.title === title);
+  const years = [];
+  for (let y = +lo.slice(0, 4); y <= +hi.slice(0, 4); y++) years.push(y);
+
+  // (a) 由規則引擎排日期的這幾類，一筆都不准落在美股休市日
+  const RULED = ["claims", "opex", "quad", "pce", "gdp", "ism"];
+  const bad = EV.filter((e) => RULED.includes(e.cat) && MH.has(e.date));
+  ok("規則引擎排的 claims/opex/quad/pce/gdp/ism 沒有一筆落在美股休市日",
+    bad.length === 0,
+    bad.map((e) => e.date + " " + e.cat + " " + e.title).join("; "));
+
+  // (b) 初領失業金：週四碰到聯邦假日才提前到週三，而且是往前挪不是往後延
+  for (const y of years) {
+    const thanks = isoOf(nth(y, 10, 4, 4));          // 11 月第四個週四＝感恩節
+    if (!MH.has(thanks) || !inRange(thanks)) continue;
+    const wed = isoOf(new Date(nth(y, 10, 4, 4).getTime() - 864e5));
+    ok(y + " 感恩節當週的初領失業金提前到週三 " + wed, has(wed, "初領失業金"));
+    ok(y + " 感恩節那一天不再掛初領失業金", !has(thanks, "初領失業金"));
+  }
+
+  // (c) 到期日：第三個週五休市時提前到週四（六月節那幾年）
+  for (const y of years) {
+    for (let m = 0; m < 12; m++) {
+      const fri = nth(y, m, 5, 3);
+      const friIso = isoOf(fri);
+      if (!MH.has(friIso) || !inRange(friIso)) continue;
+      const thu = isoOf(new Date(fri.getTime() - 864e5));
+      const title = [2, 5, 8, 11].includes(m) ? "四巫日" : "月選擇權到期";
+      ok(y + "-" + (m + 1) + " 第三個週五休市，" + title + " 提前到週四 " + thu,
+        has(thu, title));
+      ok(y + "-" + (m + 1) + " 休市的那個週五不再掛 " + title, !has(friIso, title));
+    }
+  }
+
+  // (d) 耶穌受難日是市場休市但聯邦政府上班，BLS 照常發布非農——
+  //     所以第一個週五剛好是受難日的那一年，非農就是要留在那一天，不准被「修」掉。
+  for (const gf of GF) {
+    if (!inRange(gf)) continue;
+    const d = new Date(+gf.slice(0, 4), +gf.slice(5, 7) - 1, +gf.slice(8, 10));
+    if (isoOf(nth(d.getFullYear(), d.getMonth(), 5, 1)) !== gf) continue;
+    ok("耶穌受難日 " + gf + " 的非農沒有被移走（市場休市但 BLS 照常發布）",
+      has(gf, "非農就業"));
+  }
+
+  // (e) 台積電月營收走的是台股行事曆，不可以被美國假日挪動——
+  //     所以 nextBiz 本身必須維持只跳週末。改動它會讓這條紅。
+  ok("index.html 仍保留只跳週末的 nextBiz（台積電月營收用）",
+    /const nextBiz=d=>\{const x=new Date\(d\);while\(x\.getDay\(\)%6===0\)/.test(html));
+  ok("台積電月營收改用的是 nextBiz 而不是休市日版的 nextBizH",
+    html.indexOf('nextBiz(new Date(y,m,10))') > 0);
+
+  // (f) 兩張假日表要分開存在：市場休市看 MKT_HOL、政府停班看 FED_HOL（扣掉受難日）
+  ok("index.html 有 MKT_HOL 休市日表", html.indexOf("const MKT_HOL=new Set([") > 0);
+  ok("index.html 有 GOOD_FRI 例外表（受難日不是聯邦假日）",
+    html.indexOf("const GOOD_FRI=new Set([") > 0);
+  ok("isFedHol 是用 MKT_HOL 扣掉 GOOD_FRI 算出來的，不是另外一張手抄表",
+    /isFedHol=s=>MKT_HOL\.has\(s\)&&!GOOD_FRI\.has\(s\)/.test(html));
+}
+
 /* ── 報告 ── */
 console.log("");
 if (fails.length) {

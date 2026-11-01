@@ -549,7 +549,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-d6207412";
+const APP_VER = "evcal-0332b0b6";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -733,6 +733,45 @@ const addD=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d);};
 const nthWd=(y,m,wd,n)=>{const f=new Date(y,m,1);return new Date(y,m,1+((wd-f.getDay()+7)%7)+(n-1)*7);};
 const lastBiz=(y,m)=>{let d=new Date(y,m+1,0);while(d.getDay()%6===0)d.setDate(d.getDate()-1);return d;};
 const nextBiz=d=>{const x=new Date(d);while(x.getDay()%6===0)x.setDate(x.getDate()+1);return x;};
+/* ═══ 美股休市日 ═══
+   規則引擎原本只跳週末（上面兩支的 getDay()%6===0），所以任何「每月最後一個營業日」
+   「每月第一個營業日」「每週四」「第三個週五」推出來的日期，只要撞到假日就會靜默地
+   排在一個市場根本沒開的日子。2026-11-01 盤點整個顯示區間（2025-11 ~ 2027-12，共 634 筆）
+   抓到 12 筆這種事件，例如 2027-01-01 的 ISM 製造業 PMI、2027-05-31（美國國殤日）的 PCE、
+   2026-06-19（六月節）的四巫日、以及 2026-11-26（感恩節）的初領失業金。
+   這一類錯誤特別貴，因為它不只讓日曆顯示錯日期：session() 判的吸收日會跟著錯，
+   複盤抓到的就是錯誤交易日的變動，然後這個錯誤會被當成校準的輸入寫進基準敏感度。
+
+   MKT_HOL＝紐交所／那斯達克全日休市日。FED_HOL＝聯邦假日，等於 MKT_HOL 扣掉耶穌受難日
+   （那天市場休市但聯邦政府上班，所以 BLS 照常發布——2026-04-03 的非農就是這種情形，
+   它排在休市日是對的，不要「修」掉它）。兩張表要分開，因為市場休市與政府停班
+   影響的是不同類型的事件：到期日看市場，數據發布看政府。 */
+const MKT_HOL=new Set([
+ "2025-01-01","2025-01-20","2025-02-17","2025-04-18","2025-05-26","2025-06-19",
+ "2025-07-04","2025-09-01","2025-11-27","2025-12-25",
+ "2026-01-01","2026-01-19","2026-02-16","2026-04-03","2026-05-25","2026-06-19",
+ "2026-07-03","2026-09-07","2026-11-26","2026-12-25",
+ "2027-01-01","2027-01-18","2027-02-15","2027-03-26","2027-05-31","2027-06-18",
+ "2027-07-05","2027-09-06","2027-11-25","2027-12-24",
+ "2028-01-17","2028-02-21","2028-04-14","2028-05-29","2028-06-19","2028-07-04",
+ "2028-09-04","2028-11-23","2028-12-25"]);
+/* 耶穌受難日是唯一「市場休市但不是聯邦假日」的那一天。 */
+const GOOD_FRI=new Set(["2025-04-18","2026-04-03","2027-03-26","2028-04-14"]);
+const isMktHol=s=>MKT_HOL.has(s);
+const isFedHol=s=>MKT_HOL.has(s)&&!GOOD_FRI.has(s);
+/* 休市日版的 lastBiz／nextBiz。刻意不去改 lastBiz／nextBiz 本身：
+   nextBiz 還被台積電月營收用著，那是台股的行事曆，套美國假日會錯得更離譜。 */
+const lastBizH=(y,m)=>{let d=new Date(y,m+1,0);
+  while(d.getDay()%6===0||isMktHol(iso(d)))d.setDate(d.getDate()-1);return d;};
+const nextBizH=d=>{const x=new Date(d);
+  while(x.getDay()%6===0||isMktHol(iso(x)))x.setDate(x.getDate()+1);return x;};
+/* 選擇權到期：每月第三個週五，但那個週五休市時到期日提前到週四
+   （2026-06-19 六月節、2027-06-18 六月節都是這種情形）。 */
+const expiry=(y,m)=>{const d=nthWd(y,m,5,3);
+  return isMktHol(iso(d))?addD(iso(d),-1):iso(d);};
+/* 初領失業金：勞工部的慣例是每週四 08:30 發布，而且**只有在週四碰到聯邦假日時**
+   才提前到週三（感恩節那一週就是）。方向是往前挪不是往後延，這一點跟其他數據相反。 */
+const claimsDay=s=>isFedHol(s)?addD(s,-1):s;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 /* 雲端 JSON 的字串內容有一部分是 routine 從網路搜尋結果抄回來的（views、driver、note、
    共識來源）。那些字最終會進 innerHTML，所以一律要跳脫——不然一段被搜尋摘要夾帶進來的
@@ -924,6 +963,13 @@ function buildBaseline(y0,y1){
     });
     P(iso(nthWd(y,7,4,4)),"D","Jackson Hole 年會","jackson",y!==2026,"主席演說常被用來預告政策框架轉向。",ck("fomc"));
     for(let m=0;m<12;m++){
+      /* 非農刻意不接休市日修正（2026-11-01 盤點時想過，決定不做）：BLS 碰到假日的挪法
+         不是單一方向，推不出一條可靠的機械規則。第一個週五是耶穌受難日時市場休市但政府
+         上班，照常發布（2026-04-03 就是，留在那天是對的）；是聯邦假日時則兩種都發生過
+         ——2027-01-01 那場實際排在 1/8（往後 7 天），2025-07-04 那場排在 7/3（往前 1 天）。
+         所以 2027-01-01 這一筆目前仍是錯的、但標著 est，寧可留著一個看得出是推算的錯日期，
+         也不要用猜的規則把它蓋成一個看起來已確認的錯日期。2026 全年走的是下面 NFP26
+         那張官方日期表，不受影響；要修 2027 就去查 BLS 官方排程、用 curated 覆蓋。 */
       P((y===2026)?y+"-"+NFP26[m]:iso(nthWd(y,m,5,1)),"D","非農就業","nfp",y!==2026,
         "就業是雙重使命的另一半。薪資增速比新增人數更影響利率路徑。",ck("nfp"));
       const nfpD=(y===2026)?y+"-"+NFP26[m]:iso(nthWd(y,m,5,1));
@@ -932,15 +978,15 @@ function buildBaseline(y0,y1){
       const cpi=(y===2026)?y+"-"+CPI26[m]:iso(nthWd(y,m,2,2));
       P(cpi,"D","CPI","cpi",y!==2026,"核心服務與房租分項決定通膨黏性，比總數重要。",ck("cpi"));
       P(addD(cpi,1),"D","PPI","ppi",true,"上游價格，CPI 的前置指標。",ck("default"));
-      P(iso(lastBiz(y,m)),"D","PCE 物價指數","pce",true,"Fed 真正盯的通膨指標。",ck("cpi"));
+      P(iso(lastBizH(y,m)),"D","PCE 物價指數","pce",true,"Fed 真正盯的通膨指標。",ck("cpi"));
       P(iso(nthWd(y,m,2,3)),"D","零售銷售","retail",true,"消費動能，同時牽動分子的營收預期。",ck("default"));
-      P(iso(nextBiz(new Date(y,m,1))),"D","ISM 製造業 PMI","ism",true,"製造業循環位置，領先半導體庫存循環。",ck("default"));
+      P(iso(nextBizH(new Date(y,m,1))),"D","ISM 製造業 PMI","ism",true,"製造業循環位置，領先半導體庫存循環。",ck("default"));
       P(iso(nextBiz(new Date(y,m,10))),"N","台積電月營收","twrev",true,"月頻的 AI 供應鏈實際出貨，比季報早一步看到拐點。",ck("default"));
       // JOLTS：CAT 裡本來就有，但一直沒接上規則引擎，等於白定義。
       // BLS 通常在參考月結束後五到六週的週二公布，用當月第二個週二逼近。
       P(iso(nthWd(y,m,2,2)),"D","JOLTS 職缺","jolts",true,
         "職缺對失業人數的比值是 Fed 判斷勞動市場鬆緊的核心指標，比新增人數更慢但更結構性。",ck("default"));
-      if(![2,5,8,11].includes(m)) P(iso(nthWd(y,m,5,3)),"R","月選擇權到期","opex",true,"月度 gamma 翻轉，到期前後常有無基本面的方向性流動。",ck("quad"));
+      if(![2,5,8,11].includes(m)) P(expiry(y,m),"R","月選擇權到期","opex",true,"月度 gamma 翻轉，到期前後常有無基本面的方向性流動。",ck("quad"));
     }
     // 初領失業金：每週四。單週數字幾乎不動盤，但四週均線轉折是最早的衰退訊號，
     // 所以基準敏感度只給 16——它靠密度提供資訊，不靠單點。
@@ -948,13 +994,13 @@ function buildBaseline(y0,y1){
       const d=new Date(y,0,1);
       while(d.getDay()!==4)d.setDate(d.getDate()+1);      // 找到今年第一個週四
       while(d.getFullYear()===y){
-        P(iso(d),"D","初領失業金","claims",true,
+        P(claimsDay(iso(d)),"D","初領失業金","claims",true,
           "單週噪音大，要看四週移動平均的方向。連續三週走高才是勞動市場真的在鬆動。",ck("default"));
         d.setDate(d.getDate()+7);
       }
     }
-    [0,3,6,9].forEach((m,i)=>P(iso(lastBiz(y,m)),"D",`Q${i===0?4:i} GDP 初值`,"gdp",true,"成長率同時影響盈餘軌跡與政策路徑。",ck("default")));
-    [2,5,8,11].forEach(m=>P(iso(nthWd(y,m,5,3)),"R","四巫日","quad",true,"四種衍生品同日到期，gamma 曝險翻轉，常造成無基本面的方向波動。",ck("quad")));
+    [0,3,6,9].forEach((m,i)=>P(iso(lastBizH(y,m)),"D",`Q${i===0?4:i} GDP 初值`,"gdp",true,"成長率同時影響盈餘軌跡與政策路徑。",ck("default")));
+    [2,5,8,11].forEach(m=>P(expiry(y,m),"R","四巫日","quad",true,"四種衍生品同日到期，gamma 曝險翻轉，常造成無基本面的方向波動。",ck("quad")));
     [1,4,7,10].forEach(m=>P(iso(nthWd(y,m,3,1)),"D","財政部季度再融資","refund",true,"發債的期別配置直接決定長端供給。",ck("default")));
     [0,3,6,9].forEach(m=>{if(y>=y0&&y<=y1)P(iso(nthWd(y,m,2,4)),"N","大型雲端財報週","cloud",true,"四大的資本支出指引，是整條 AI 供應鏈分子端的源頭。",ck("cloud"));});
   }

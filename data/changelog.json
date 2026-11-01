@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-11-01",
+  "text": "weekly: 規則引擎補上美股休市日意識（MKT_HOL／GOOD_FRI／lastBizH／nextBizH／expiry／claimsDay，煙霧測試第 26 組 19 條斷言，退掉改動有 16 條轉紅）——顯示區間內落在休市日的事件由 12 筆降到 3 筆（2027-01-01 非農刻意不修、已在程式註解說明理由）；環境 infl 0.5→1（9 月核心 PCE 3.1%，偏離目標 1.1pp）、pivot 0→1（12/09 不動僅 29.6%、升息 70.4%），shock −1／vol 0／conc 0.5 不動；curated 三筆：NVDA 財報 11/18est→11/17 確認（官方新聞稿）、初領失業金 11/25（感恩節提前）、OPEC+ 第42屆部長級會議 11/29 新增；backtest 重跑到 10/30（497 筆、rank IC 0.032、十分位差 0.15σ，有事件與沒事件的日子仍同為 0.84σ）；校正：claims／earn2／headline 三類過 6 筆門檻但樣本彼此同日混雜，不建議改 B，理由寫在回報。"
+ },
+ {
   "date": "2026-10-30",
   "text": "review: 複盤 5 筆（Amazon財報/INTC財報/PCE物價指數/Q3 GDP初值/歐洲央行利率決議，皆10/29公布，從最近15天內未複盤事件中選最舊的5筆，初領失業金10/29與尚未召開的BOJ 10/30留給下一趟）。ECB pxd=0.80估得準（結果正是市場普遍預期的維持2.50%不動）；GDP pxd=0.30驗證『意外確實很大』為真（3.4% vs SPF共識2.5%）但當天指數反應被PCE/Alphabet財報混雜，反應強度測不乾淨；PCE意外本身接近零，沒測到pxd=0.35的區分力；Amazon/INTC因AMC吸收日未到（10/30尚未開盤），spx/ndx/y10/dxy/gld五欄依MSFT 10/28那筆慣例留空，sigma改用個股自身20日已實現波動（FMP歷史價自算，AMZN 2.06%／INTC 3.38%）。市場數據改用FMP直接指數/外匯/商品symbol自算：^GSPC/^IXIC（spx/ndx）、treasury-rates端點10年期（y10）、GCUSD（gld）、EURUSD反推（dxy，僅供方向參考）——比前一筆FOMC複盤留空的dxy多填了一格；GDP/PCE/ECB三筆同一天共用這組市場反應數字，並在memo交叉說明。INTC盤後報價（FMP aftermarket-quote顯示-23%）查無新聞佐證且與基本面方向不符，判斷為失真快照，未採用。INTC從未進過priced.json（score 33分未過門檻），如實記錄『沒有事前pxd可核對』。"
  },
