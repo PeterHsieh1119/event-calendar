@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-11-02",
+  "text": "daily: 清理curated.json 1筆過期（Fed理事Waller談通膨展望，UTC算60天剛好卡邊界、台北今天重算是61天，驗證器警告清單沒印出來，延續昨天同類坑）；priced.json移除1筆已過去的Apple財報（11/2美東17:00法說，執行時點美東已18:08，WebSearch確認官方8-K已出：營收1145億優於財測、EPS 2.10美元，不留舊pxd）。score()用TZ=Asia/Taipei重算14天窗口（11/3～11/17）：期中選舉(58)/AMD(48)/非農(82)/CPI(90)/AMAT(48)/NVDA(71)共6筆過45分門檻，NVDA是窗口推進後首次納入的新筆（原有Apple移除後剛好換成NVDA）。IBKR連接器market-data側連續第11天故障（whats_new正常，search_contracts本趟對NVDA/AAPL持續回-32400，重試一次後仍同）：AMD/AMAT沿用舊版本em/emBase不變；NVDA是第一次進窗口、從未分析過，沒有舊版本可沿用，pxd改用earn3類型先驗0.45、em/emBase留空並在basis寫明是『從未分析』不是『沿用』，兩者意義不同（已把這個區分寫回daily.md）。期中選舉（投票日就是今天11/3）盤口查到House/Senate兩組來源分歧擴大：DeFi Rate給House 90~93%/Senate 63~67%，Covers.com給House 80~88%/Senate 44~52%，參院端差近20pp，如實記錄分歧，pxd維持0.40不動。非農/CPI的policy.json批次仍停在10-30（週末無交易日，非斷更），pxd均不動。第二步30天掃描：WMT(11/19)唯一est:true財報，WebSearch複查仍無官方確認但與現有日曆一致，未更動；查無新關稅/政府關門公告。歸因缺口：px.json股市四標的（QQQ/SOX/TNX/TWII）本批次未推進新交易日（仍停10-30，上趟已完整歸因給INTC財報AI資本支出賣壓），三個商品期貨新增11/2一天、變動皆在1.5倍門檻內，無新缺口。五項檢查：1-2綠（6個警告，新增1筆是本趟清掉Waller那筆curated條目後reviews.json裡的對應記錄對不上，非daily檔案範圍，記錄供review routine參考）；3綠——events.json/px.json/policy.json的generated皆2026-11-02T01:12UTC同一批次，hist/series停10-30/11-02是正常批次時間差非缺口；4複盤最新asof 11-01，2天，正常；5WebFetch連peterhsieh1119.github.io仍ENOTFOUND，照例跳過。優化：daily.md補一條——IBKR故障拖到足夠長時，14天窗口會推進到『從未分析過的新財報』，這跟『已有舊版本可沿用』是不同情境，要分開寫清楚，不能都寫成『沿用上一趟版本』。"
+ },
+ {
+  "date": "2026-11-02",
   "text": "review: 複盤3筆（初領失業金10/29、日本央行利率決議10/30、OPEC+七國視訊會議11/1，皆從『最近15天內未複盤事件』挑出的最舊項目，延續上一趟『留給下一趟』的清單）。初領失業金194K符合弱共識196K，意外在正常雜訊範圍，10/29當天Nasdaq-1.38%等大動依GDP/PCE兩筆memo已交代是Alphabet財報拖累，不歸給這筆；另記錄Amazon CEO公開否認裁員與AI/財務相關，跟『AI驅動白領裁員潮』外部敘事矛盾。BOJ維持1.25%完全符合預期（會前升息機率僅2%），展望報告措辭轉鷹（『接近2%』改『穩定在2%』）但匯市反應溫和，當天SOX-7.20%/QQQ-3.47%/金價-3.29%全面重挫已由11/1daily routine查證是INTC財報引發的AI資本支出賣壓，非BOJ外溢（日圓本身僅小幅升值，不是2024/08式carry trade平倉連動）；黃金與股票同向重挫、殖利率同步下滑的組合判為去槓桿擠壓（正回饋）而非基本面消息，與daily routine記錄的『媒體歸因升息押注vs本站policy.json降溫讀法』矛盾再次交叉確認同一結論。OPEC+決定12月產量目標維持9月水準不變，完全符合預期；吸收日11/2尚未收盤，spx/ndx/y10/dxy/gld五欄留空，sigma改填CL=F自身20日波動2.28%。三筆皆從未進入過priced.json（B值偏低的常態），無事前pxd可檢討。"
  },
  {
