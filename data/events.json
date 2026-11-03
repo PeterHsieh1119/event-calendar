@@ -1,7 +1,7 @@
 {
- "generated": "2026-11-02T01:12:05+00:00",
+ "generated": "2026-11-03T03:15:55+00:00",
  "source": "官方排程（未設 FMP_API_KEY）",
- "count": 12,
+ "count": 13,
  "events": [
   {
    "date": "2026-11-06",
@@ -121,6 +121,16 @@
    "est": false,
    "src": "federalreserve.gov",
    "note": "只有聲明稿與記者會，市場靠措辭變化推斷傾向。",
+   "t": "14:00"
+  },
+  {
+   "date": "2027-12-08",
+   "kind": "D",
+   "cat": "fomc_sep",
+   "title": "FOMC 決議＋點陣圖",
+   "est": false,
+   "src": "federalreserve.gov",
+   "note": "除利率外更新經濟預測與點陣圖，是重新定價整條殖利率曲線的場合。",
    "t": "14:00"
   }
  ]
