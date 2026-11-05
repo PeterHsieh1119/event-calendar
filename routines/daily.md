@@ -451,6 +451,8 @@ px.json（Actions 的檔案）。
 「查無單一觸發事件」就直接寫成歸因缺口。** 這種情況一樣不能自己去補 px.json，只能在回報裡點名，
 且不要把這個百分比寫進任何 headline 事件的 note。
 
+**2026-11-06 這一趟撞到：NVDA 財報日期第三方日曆打架時，直接搜尋官方新聞稿標題字串比搜「NVIDIA earnings date」更快篩出官方來源。** 這次用「NVIDIA earnings date November 17 2026 confirmed」查到的結果一樣是 Earnings Whispers（11/17 已確認）跟 Wall Street Horizon／Days.to／FinanceCalendar（11/18，標 INFERRED／未確認）兩邊打架，跟 11-04 那趟撞到的坑一樣；換成直接搜官方新聞稿的標題模式「"NVIDIA Sets Conference Call" third quarter fiscal 2027 financial results」，第一個結果就是 nvidianews.nvidia.com／investor.nvidia.com 的官方頁面，一次性給出 11/17（二）美東 17:00、財季結束日 10/25、CFO 書面評論發布時間等細節，不用再在互相矛盾的第三方日曆之間比對取信度。**這類公司每季都會用固定句型發「Sets Conference Call for [Quarter] Financial Results」這種新聞稿標題，查official date 時直接把這個句型套進查詢比泛用的「X earnings date」有效。**
+
 **2026-11-05 這一趟撞到第四種變體，這次換成 `^TWII`、而且不是重複值也不是跳空，是日期標籤本身對不上真正的交易日。**
 `px.json` 的 `^TWII` 序列從 11/02（44920.14）直接跳到標成 **11/04** 的 43211.17，中間完全沒有 11/03
 這一列，算出來的『11/04 單日 −3.80%』一開始當成歸因缺口去查。但 WebSearch 查到多篇媒體交叉確認的
