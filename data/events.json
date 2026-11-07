@@ -1,18 +1,8 @@
 {
- "generated": "2026-11-06T01:57:41+00:00",
+ "generated": "2026-11-07T01:33:36+00:00",
  "source": "官方排程（未設 FMP_API_KEY）",
- "count": 13,
+ "count": 12,
  "events": [
-  {
-   "date": "2026-11-06",
-   "kind": "D",
-   "cat": "nfp",
-   "title": "非農就業",
-   "est": false,
-   "src": "bls.gov",
-   "note": "薪資增速比新增人數更影響利率路徑。",
-   "t": "08:30"
-  },
   {
    "date": "2026-11-10",
    "kind": "D",
