@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-11-09",
+  "text": "daily: 補做 11/06–11/08 連續三天缺的每日任務（確認上一筆 daily commit 是 11-05 23:14 UTC，差距由 git log 確認，寫回 daily.md 第零步）。priced.json：移除已公布過期的 11/06 非農，CPI／AMAT／NVDA／WMT 四筆重查（policy.json 最後交易日仍 11-06／週末無缺口，pxd 皆不動），IBKR 連接器 market-data 側連續第 17 天故障（whats_new 正常、get_account_summary／search_contracts 仍回 -32400，已重試），用 node harness 跑 index.html 的 score() 確認 CoreWeave 財報（11/10 earn2）本趟過 45 分門檻（48 分）新收錄進 priced.json，em／emBase 同故障留空。curated.json：清掉 2 筆逾 60 天過期條目（Apple 秋季發表會／伊朗油輪衝突，皆 9/9，台北日期算已 61 天）。WebSearch 複查 WMT 11/19 仍未經官方確認（est 維持 true）、CPI 10 月核心共識仍查不到帶時間戳的機構調查數字。五項檢查：兩道閘門綠、驗證器 10 個警告（皆 reviews.json 對應事件早被清理的舊紀錄，非本趟範圍）、Actions 新鮮（events/px/policy 皆 11-08T01:01 UTC 生成，資料到 11-06 週五，11-07/08 週末無缺口）、reviews.json 最新 11-06（3 天內不紅）、線上版本比對因 peterhsieh1119.github.io 連不出去跳過。優化：把「先確認 daily routine 自己上次 commit 日期」寫回 daily.md 第零步，避免 basis 裡『重查』字樣造成『昨天有人來過』的錯覺。"
+ },
+ {
   "date": "2026-11-08",
   "text": "weekly: 閘門兩道綠。健康檢查抓到每日 routine 連續三天（11/06–11/08）沒有 commit，priced.json 還留著 11/06 非農已公布的 pxd，該檔不在本趟職權內只回報。curated.json：清掉 2 筆逾 60 天過期條目（閘門已警告兩天）、PPI 日期更正 2 筆（11/11→11/13、12/11→12/15，11/11 是退伍軍人節 BLS 不發布但美股照常交易）、新增 3 筆（11/05 AI 資料中心政策風險重定價 headline、11/10 CoreWeave 財報、11/12 Cisco 財報，後兩筆皆官方新聞稿確認）。regime.json：五格全部不動（shock −1／infl 1／pivot 1／vol 0／conc 0.5），basis 與 asof 重寫——shock 連四週成長主導（20 日 corr(QQQ,10Y bp) +0.522、政策路徑遠端 2027/09 週內 −10.0bp 而近端 +1.5bp、11/06 非農優於預期當天股漲債跌）；vol 仍 0 但 VIX 25.64 已是一年第 94.8 百分位、而 20 日已實現波動年化 32.7%，隱含低於已實現的落差從 2.7pp 擴大到 7.1pp，下次動這一格的條件寫進 basis；conc 連四週卡在拿不到新權重檔。校準：首度有三類跨過六筆門檻但三類都不能用（claims 8 筆裡 7 筆 memo 自承歸因到別的事件、earn2 挑乾淨後剩 5 筆、headline 是用結果選樣本），不建議改任何 B，判準與算法寫進 weekly.md 任務三。工程改進（路線圖第 5 項，手機可讀性）：改用 Chromium/Playwright 實際量 390×780 與 320×780，抓到 6 處 11px 以下字級（4 處後代選擇器＋2 處行內 style），行內 style 蓋得過媒體查詢所以先收成 .barlab 類別並拿掉 .est 的行內 9px，煙霧測試新增第 31 組把「基礎 CSS 的小字級必須被墊高或列進白名單」與「全檔不准有行內 11px 以下字級」變成不變量（657 項，退掉改動後 5 項轉紅已驗證）。backtest.js 本週已跑：501 筆事件／321 個交易日，事件層級 rank IC 0.027、落差 0.017、日層級 0.021，第十分位減第一分位 +0.14σ。"
  },

@@ -1,26 +1,6 @@
 {
- "generated": "2026-11-08T13:30:00Z",
+ "generated": "2026-11-08T23:30:00Z",
  "items": [
-  {
-   "date": "2026-09-09",
-   "kind": "N",
-   "cat": "product",
-   "title": "Apple 秋季發表會",
-   "est": false,
-   "t": "13:00",
-   "note": "Apple 8/26 發出邀請函，主題「Surprise and shine」，9/9 上午 10:00 PT（美東 13:00）於 Apple Park 的 Steve Jobs Theater 舉行，是新任執行長 John Ternus 的第一場發表會。首款折疊機 iPhone Fold／Ultra 與 iPhone 18 Pro 亮相，搭載首顆 2nm 手機 SoC A20 Pro；折疊機首季產能傳僅 50–100 萬支，良率與備貨節奏會直接牽動台系供應鏈與費半。【歷史脈絡】這是年度事件，px.json 只有兩年，網站的「歷史反應」樣本不足以形成分布，所以手動補：2025-09-09（iPhone 17／Awe Dropping）當日那斯達克 100 +0.28%、費半 +0.18%；2024-09-09（iPhone 16／It's Glowtime）+1.29%／+2.15%。兩次都不是指數級事件——2024 那天的漲幅是當週大盤反彈的一部分，不該歸因給發表會本身。要看的是台系供應鏈個股與費半的次日反應，不是發表會當天的指數；這也是 cat 給 product（B=18）而不是往上抬的理由。",
-   "src": "Apple 官方邀請函，經 Numerama、Deccan Herald、Wccftech 等多家同步轉述（第三級，未直接讀 apple.com）／歷史脈絡：發表會日期經 Apple Newsroom、CNBC 報導確認（第三級，搜尋摘要），當日指數變動由 data/px.json 自算（第一手內部資料）"
-  },
-  {
-   "date": "2026-09-09",
-   "kind": "R",
-   "cat": "headline",
-   "title": "美軍摧毀5艘伊朗油輪、伊朗飛彈反擊約旦美軍基地，布蘭特站上107美元",
-   "est": false,
-   "t": "BMO",
-   "note": "9/8（週二）美軍中央司令部在阿曼灣與荷姆茲海峽摧毀 5 艘伊朗油輪（Kivik、Charminar、Horizon 1、Riesco 於阿曼灣，Derya 於哈爾克島附近），因伊朗革命衛隊兩日內兩度以彈道飛彈瞄準一艘美國軍艦（美艦未受損）；伊朗 9/8 夜間至 9/9 凌晨（美東時間）以約 20 枚彈道飛彈報復約旦 Prince Hassan 空軍基地（美軍 RQ-4／MQ-9 無人機庫所在地），約旦攔截 18 枚、2 枚落於無人區。同時伊朗宣稱攻擊荷姆茲海峽附近 10 艘船隻，路透形容是開戰以來雙方最大規模的一波船運互擊。反應：WTI 收 102.48 美元（+6.7%）、布蘭特收 107.63 美元（+5.9%），均為 5/19 以來新高；道瓊收 52064.10（-0.6%）、標普 500 收 7591.70（-0.58%）、那斯達克收 26081.72（-0.65%），連續第 4 個交易日收黑。與 9/1 已記錄的荷姆茲油輪遭飛射物事件、9/8 已記錄的胡塞攻擊沙國 Aramco 事件皆不同（不同攻擊方、不同目標），是本週最直接的一次美伊軍事對撞，故另立一筆而非合併。est/pxd 沿用 headline 類型先驗（0.15），突發事件不另立 priced.json 條目。",
-   "src": "NPR 2026-09-09（U.S. military destroys 5 Iranian oil tankers）、Al Jazeera 2026-09-09、Washington Post 2026-09-08、CNBC／TheStreet 2026-09-09 收盤數據等多家報導交叉驗證（第三級，經 WebSearch 摘要，未直接讀取 CENTCOM／白宮原文）"
-  },
   {
    "date": "2026-09-10",
    "kind": "D",
