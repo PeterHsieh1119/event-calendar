@@ -35,6 +35,9 @@ h1{font-family:var(--serif);font-size:25px;margin:7px 0 5px;font-weight:700}
 .dot.live{background:#3FD68C;box-shadow:0 0 8px #3FD68C88}
 
 .bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:11px 0}
+/* 工具列的欄位標籤。本來是三處行內 style，行內樣式的優先序高過媒體查詢，
+   手機那一段怎麼寫都蓋不過去（跟 #pxPick 的 padding 同一個坑），所以收成一個類別。 */
+.barlab{font-family:var(--mono);font-size:10.5px;color:var(--tx3)}
 .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
 .seg button{padding:7px 12px;font-size:12.5px;border-radius:7px;color:var(--tx2);white-space:nowrap}
 .seg button.on{background:var(--panel);color:var(--tx);box-shadow:inset 0 0 0 1px var(--line2)}
@@ -252,7 +255,28 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
    還沒解的兩個，留給之後：.thit 的寬度是 max(10,PPD) px，PPD 小的時候只有
    10px，但它用 translateX(-50%) 定位，盲目加寬會跟鄰日互相重疊、搶走點擊，
    要改得連 JS 的定位一起改；月格 .cell 在 320px 寬的螢幕上只有 39px 寬，
-   七欄格線擠不出 44px，WCAG 2.5.8 的 24px 下限是過的。 */
+   七欄格線擠不出 44px，WCAG 2.5.8 的 24px 下限是過的。
+
+   2026-11-08 補上第二輪。前幾輪都是用肉眼讀 CSS 挑出來的，這一輪改用真的瀏覽器量
+   （Chromium 390×780 與 320×780，deviceScaleFactor 1，量 getComputedStyle 的實際值），
+   量出來還有六個 11px 以下的字沒被這一段蓋到——用讀 CSS 的方式會漏掉，因為其中四個
+   是 .mlabel small／.fnode small／.mtab th／table.tm th 這種後代選擇器、另外兩個
+   根本不在 CSS 裡而是行內 style（工具列的三個標籤與資產表的「估 R²」）。
+   行內樣式的優先序高過媒體查詢，所以那兩類不是「加一行覆寫」能解的，
+   必須先把行內 style 收成類別（.barlab）或直接拿掉（.est 那個 font-size:9px），
+   才蓋得動——這跟上面 #pxPick padding 那句講的是同一個坑，只是方向相反。
+   順手量到的兩件好消息：320px 下 document.scrollWidth 等於視窗寬度（沒有版面層級的
+   橫向溢出，溢出的那幾十個節點全在總覽軸自己的橫向捲動容器裡，那是刻意的），
+   以及 thitBox() 在有空位的地方確實放大到 18.5–23px、沒空位時退回 10px，
+   跟它的註解一致，不是壞掉。
+
+   刻意留在 11px 以下的白名單（煙霧測試第 31 組會逐項對照這份清單）：
+   .dlab／.tlmon／.tlnow 是上面四個「放大反而更糟」裡的三個；
+   .tip .td 與 .tip .tp 在 hover:none 的裝置上，.tip 整個 display:none（見上面
+   @media (hover:none)），手機上根本不會顯示，放大它等於改一段看不到的樣式。
+   這份清單是白名單而不是「忘了處理」——新加一個 11px 以下的字級時，
+   要嘛在手機那一段覆寫，要嘛寫進白名單並說明理由，煙霧測試兩者都接受、
+   但不接受兩者都沒做。 */
 @media (max-width:560px){
   .seg button{min-height:44px}
   .chip{min-height:44px}
@@ -274,6 +298,11 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
   .acell .an{font-size:11px}
   .chk .src{font-size:11px}
   .fld label{font-size:11px}
+  .mlabel small{font-size:11px}
+  .fnode small{font-size:11px}
+  .mtab th{font-size:11px}
+  table.tm th{font-size:11px}
+  .barlab{font-size:11px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -311,7 +340,7 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
   <button class="chip n on" data-f="N">分子端</button>
   <button class="chip d on" data-f="D">分母端</button>
   <button class="chip r on" data-f="R">風險溢酬</button>
-  <span style="font-family:var(--mono);font-size:10.5px;color:var(--tx3);margin:0 2px 0 6px">指標</span>
+  <span class="barlab" style="margin:0 2px 0 6px">指標</span>
   <button class="chip on" data-met="s">衝擊</button>
   <button class="chip" data-met="gap">落差</button>
   <span class="spacer"></span>
@@ -338,14 +367,14 @@ pre.seed{background:var(--bg);border:1px solid var(--line2);border-radius:8px;pa
     <div class="legend"><span><i style="background:var(--num)"></i>分子</span><span><i style="background:var(--den)"></i>分母</span><span><i style="background:var(--risk)"></i>風險</span></div>
   </div>
   <div class="bar" style="padding:0 0 8px">
-    <span style="font-family:var(--mono);font-size:10.5px;color:var(--tx3);margin-right:4px">顯示日期</span>
+    <span class="barlab" style="margin-right:4px">顯示日期</span>
     <button class="chip" data-lab="35">35+</button>
     <button class="chip on" data-lab="50">50+</button>
     <button class="chip" data-lab="70">只看關鍵</button>
     <span class="spacer"></span>
     <button class="chip on" id="pxToggle">背景走勢</button>
     <select id="pxPick" class="chip" style="padding:6px 9px;cursor:pointer"></select>
-    <span style="font-family:var(--mono);font-size:10.5px;color:var(--tx3);margin:0 2px 0 8px">總覽</span>
+    <span class="barlab" style="margin:0 2px 0 8px">總覽</span>
     <button class="chip" data-ppd="5">年</button>
     <button class="chip on" data-ppd="9">季</button>
     <button class="chip" data-ppd="18">月</button>
@@ -549,7 +578,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-0332b0b6";
+const APP_VER = "evcal-e0b248ea";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -2484,7 +2513,7 @@ function renderMatrix(){
     return `<tr><td>${c.label}</td>${CH.map(([ch])=>{const v=c.ch[ch]||0;
       return `<td style="color:${v>.15?"var(--dn)":v<-.15?"var(--up)":"var(--tx3)"}">${v?(v>0?"+":"")+v.toFixed(2):"·"}</td>`;}).join("")}</tr>`;}).join("");
   $("betaTable").innerHTML=`<tr><th>資產</th>${CH.map(([,n])=>`<th>${n}</th>`).join("")}</tr>`+
-   ASSETS.map(a=>`<tr><td>${a.n}${a.est?` <span class="est" style="font-size:9px">估 R²${a.est.r2.toFixed(2)}</span>`:""}</td>`
+   ASSETS.map(a=>`<tr><td>${a.n}${a.est?` <span class="est">估 R²${a.est.r2.toFixed(2)}</span>`:""}</td>`
      +CH.map(([k])=>{const v=a.b[k];
        const isEst=a.est&&a.est.ch.includes(k);
        return `<td style="${isEst?"":"opacity:.5;"}color:${v>.15?"var(--up)":v<-.15?"var(--dn)":"var(--tx3)"}">`

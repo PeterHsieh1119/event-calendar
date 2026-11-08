@@ -1393,6 +1393,110 @@ catKeys.forEach((k) => {
     /isFedHol=s=>MKT_HOL\.has\(s\)&&!GOOD_FRI\.has\(s\)/.test(html));
 }
 
+/* ── 31. 手機最小字級的「全覆蓋」檢查（2026-11-08 新增）──
+   第 23 組守的是「手機區塊自己有沒有寫錯」：區塊裡不准有 11px 以下的字級、
+   刻意不動的那三個不准被偷偷放進來。它守不住的是反方向的漏洞——
+   **基礎 CSS 裡新加一個 11px 以下的字級，而手機區塊忘了覆寫**，
+   第 23 組完全看不到，因為它只讀手機區塊裡面寫了什麼。
+
+   2026-11-08 用真的瀏覽器（Chromium 390×780 / 320×780）量了一次，就是這個漏洞：
+   .mlabel small（9px）、.fnode small（10.5px）、.mtab th（10.5px）、
+   table.tm th（10px）四條後代選擇器，加上三個工具列標籤與資產表「估 R²」
+   共四處行內 font-size，全都落在 11px 以下而且沒有被覆寫。
+   行內樣式特別惡劣：它的優先序高過媒體查詢，所以「在手機區塊加一行」救不了它，
+   只能把行內 style 收成類別或直接拿掉——這一組連這件事一起守。
+
+   做法是反過來掃：列出基礎 CSS（所有 @media 之外）每一條宣告 11px 以下字級的規則，
+   每一條都必須滿足其中一個——(a) 在 max-width:560px 的區塊裡被覆寫到 >= 11px，
+   或 (b) 列在下面的白名單裡並且在 index.html 的註解裡講得出理由。
+   兩者都沒有就紅。白名單是刻意的決定，不是例外清單的垃圾桶：
+   加進白名單的同時要在 index.html 那段註解寫清楚為什麼放大反而更糟。 */
+{
+  const styleM = html.match(/<style>([\s\S]*?)<\/style>/);
+  ok("31 index.html 有 <style> 區塊", !!styleM);
+  const cssRaw = styleM ? styleM[1] : "";
+  /* 註解裡有很多「10px」「44px」之類的字，不剝掉會被當成宣告。 */
+  const css = cssRaw.replace(/\/\*[\s\S]*?\*\//g, "");
+
+  /* 從 i 這個位置的 "{" 開始數大括號，回傳 [內容, 整段結束位置] */
+  function block(src, i) {
+    const j = src.indexOf("{", i);
+    if (j < 0) return null;
+    let depth = 0;
+    for (let k = j; k < src.length; k++) {
+      if (src[k] === "{") depth++;
+      else if (src[k] === "}") { depth--; if (depth === 0) return [src.slice(j + 1, k), k + 1]; }
+    }
+    return null;
+  }
+
+  /* 把所有 @media 區塊切出來：560px 的進 mob，其餘丟掉；剩下的是 base。 */
+  let base = "", mob = "", at = 0, nMedia = 0, n560 = 0;
+  for (;;) {
+    const i = css.indexOf("@media", at);
+    if (i < 0) { base += css.slice(at); break; }
+    base += css.slice(at, i);
+    const head = css.slice(i, css.indexOf("{", i));
+    const b = block(css, i);
+    if (!b) { base += css.slice(i); break; }
+    nMedia++;
+    if (/max-width\s*:\s*560px/.test(head)) { mob += "\n" + b[0]; n560++; }
+    at = b[1];
+  }
+  ok("31 切出了至少一個 @media 區塊", nMedia > 0, "n=" + nMedia);
+  ok("31 切出了 max-width:560px 的手機區塊", n560 > 0, "n=" + n560);
+
+  /* 手機區塊裡每個選擇器拿到的最小字級 */
+  const mobSize = new Map();
+  for (const m of mob.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sel = m[1].trim().replace(/\s+/g, " ");
+    const fs = m[2].match(/font-size\s*:\s*([\d.]+)px/);
+    if (!fs) continue;
+    const v = parseFloat(fs[1]);
+    if (!mobSize.has(sel) || v < mobSize.get(sel)) mobSize.set(sel, v);
+  }
+
+  /* 刻意留在 11px 以下的白名單，理由寫在 index.html 那段註解裡 */
+  const SMALL_OK = new Set([".dlab", ".tlmon", ".tlnow", ".tip .td", ".tip .tp"]);
+
+  let checked = 0;
+  for (const m of base.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sel = m[1].trim().replace(/\s+/g, " ");
+    if (sel.startsWith("@") || sel.startsWith(":root")) continue;
+    for (const f of m[2].matchAll(/font-size\s*:\s*([\d.]+)px/g)) {
+      const v = parseFloat(f[1]);
+      if (v >= 11) continue;
+      checked++;
+      if (SMALL_OK.has(sel)) continue;
+      const got = mobSize.get(sel);
+      ok("31 " + sel + "（基礎 " + v + "px）在手機上被墊到 11px 以上",
+        got !== undefined && got >= 11,
+        got === undefined ? "手機區塊沒有這一條規則，也不在白名單裡"
+                          : "手機只給到 " + got + "px");
+    }
+  }
+  ok("31 真的掃到了 11px 以下的基礎規則（掃不到代表正則壞了，不是 CSS 變乾淨了）",
+    checked >= 8, "n=" + checked);
+
+  /* 白名單本身也要是活的：列在裡面但基礎 CSS 已經沒有這條規則了，就該清掉。 */
+  for (const sel of SMALL_OK) {
+    ok("31 白名單的 " + sel + " 在基礎 CSS 裡還真的存在",
+      base.indexOf(sel + "{") >= 0 || new RegExp(
+        sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*\\{").test(base), sel);
+  }
+
+  /* 行內 style 的字級：優先序高過媒體查詢，所以一律不准低於 11px。
+     掃的是整個 index.html（不只 <style>），因為 JS 的樣板字串裡也會寫 style="..."。 */
+  const inlineBad = [];
+  for (const m of html.matchAll(/style="([^"]*)"/g)) {
+    for (const f of m[1].matchAll(/font-size\s*:\s*([\d.]+)px/g)) {
+      if (parseFloat(f[1]) < 11) inlineBad.push(f[1] + "px → " + m[1].slice(0, 60));
+    }
+  }
+  ok("31 沒有任何行內 style 把字級壓到 11px 以下（行內樣式蓋得過媒體查詢，救不回來）",
+    inlineBad.length === 0, inlineBad.join(" ／ "));
+}
+
 /* ── 報告 ── */
 console.log("");
 if (fails.length) {
