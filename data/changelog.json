@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-11-09",
+  "text": "review: 複盤 5 筆（微軟財報 10/28、美國期中選舉 11/3、ADP就業報告 11/4、AI資料中心政策風險重定價 headline 11/5、非農就業 11/6），範圍為「上次複盤(11/6)之後」而非「昨天」。微軟與ADP兩筆分別因同夜Alphabet財報、同日選舉結果而與大盤反應confound，已在memo逐一說明無法乾淨切分的部分。AI headline那筆的根源（德州州長選舉Hinojosa當選、暫停資料中心新建政見、Wells Fargo估27%全美規劃產能在德州）取自data/regime.json 2026-11-08週報的既有分析，未重複調查。"
+ },
+ {
+  "date": "2026-11-09",
   "text": "daily: 補做 11/06–11/08 連續三天缺的每日任務（確認上一筆 daily commit 是 11-05 23:14 UTC，差距由 git log 確認，寫回 daily.md 第零步）。priced.json：移除已公布過期的 11/06 非農，CPI／AMAT／NVDA／WMT 四筆重查（policy.json 最後交易日仍 11-06／週末無缺口，pxd 皆不動），IBKR 連接器 market-data 側連續第 17 天故障（whats_new 正常、get_account_summary／search_contracts 仍回 -32400，已重試），用 node harness 跑 index.html 的 score() 確認 CoreWeave 財報（11/10 earn2）本趟過 45 分門檻（48 分）新收錄進 priced.json，em／emBase 同故障留空。curated.json：清掉 2 筆逾 60 天過期條目（Apple 秋季發表會／伊朗油輪衝突，皆 9/9，台北日期算已 61 天）。WebSearch 複查 WMT 11/19 仍未經官方確認（est 維持 true）、CPI 10 月核心共識仍查不到帶時間戳的機構調查數字。五項檢查：兩道閘門綠、驗證器 10 個警告（皆 reviews.json 對應事件早被清理的舊紀錄，非本趟範圍）、Actions 新鮮（events/px/policy 皆 11-08T01:01 UTC 生成，資料到 11-06 週五，11-07/08 週末無缺口）、reviews.json 最新 11-06（3 天內不紅）、線上版本比對因 peterhsieh1119.github.io 連不出去跳過。優化：把「先確認 daily routine 自己上次 commit 日期」寫回 daily.md 第零步，避免 basis 裡『重查』字樣造成『昨天有人來過』的錯覺。"
  },
  {
