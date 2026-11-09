@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-11-09",
+  "text": "daily: 重查定價 5 筆（CPI／CoreWeave／AMAT／NVDA／WMT，IBKR 連接器連續第 18 天故障，em/emBase 續空）、清除 curated.json 過期 3 筆（9/10 PPI／台積電月營收／歐洲央行利率決議，皆逾 60 天）、score() 複核窗口內無新增，30 天內新事件掃描無新增（AVGO／Oracle 財報日期查核不變）。"
+ },
+ {
+  "date": "2026-11-09",
   "text": "review: 複盤 5 筆（微軟財報 10/28、美國期中選舉 11/3、ADP就業報告 11/4、AI資料中心政策風險重定價 headline 11/5、非農就業 11/6），範圍為「上次複盤(11/6)之後」而非「昨天」。微軟與ADP兩筆分別因同夜Alphabet財報、同日選舉結果而與大盤反應confound，已在memo逐一說明無法乾淨切分的部分。AI headline那筆的根源（德州州長選舉Hinojosa當選、暫停資料中心新建政見、Wells Fargo估27%全美規劃產能在德州）取自data/regime.json 2026-11-08週報的既有分析，未重複調查。"
  },
  {
