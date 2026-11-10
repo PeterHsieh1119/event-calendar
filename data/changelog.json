@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-11-10",
+  "text": "daily: 移除 priced.json 已過期 2 筆（CPI／CoreWeave 財報，皆 11/10，WebSearch 複查結果未索引到——執行時間距兩者公布時點僅約數小時到十餘小時，判為索引延遲非真的找不到，依規矩移除不留舊 pxd）；AMAT／NVDA／WMT 三筆重查，WebSearch 複核官方日期皆不變，pxd 維持不動（0.50／0.45／0.50）。curated.json 清掉 1 筆逾 60 天過期條目（8/31 沙烏地東西原油管線事件，61 天）。IBKR 連接器 market-data 側連續第 19 天故障（whats_new 正常，search_contracts 本趟仍回 -32400，重試一次後仍同），em／emBase 全部繼續留空。第二步 30 天掃描：AVGO／Oracle 財報（12/10，est:true）WebSearch 複查仍無官方確認但與現有日曆一致，未更動；查無新關稅／政府關門公告（12/11 撥款期限既有記錄確認不變）。歸因：px.json 逐標的自算 11/06→11/09 QQQ +3.54%／SOX +6.85%／TWII +4.94% 大幅反彈，對得上 11/06 已公布非農（165K 遠優於共識約 65K）帶動的風險情緒回補，延續上週已記錄的 11/3-11/5 崩跌後反彈，非新的獨立觸發，不另立 headline。五項檢查：1-2 綠（11 個警告皆 reviews.json 對應事件早被清理的舊紀錄，含今天新增的沙烏地原油管線那筆，非本趟範圍）；3 綠——events／px／policy.json 皆 2026-11-10T03:56 UTC 同批次，policy.json hist 與 px.json 的 TWII／GC=F／CL=F／DX-Y.NYB 皆推進到 11-10，QQQ／^SOX／^TNX 停 11-09 屬正常批次時間差；4 綠——reviews.json 最新 asof 11-09，<2 天；5 WebFetch 連 peterhsieh1119.github.io 仍 ENOTFOUND，照例跳過。優化：今天沒有遇到新的摩擦（IBKR 故障與索引延遲皆是已記錄過的既有模式），沒有可優化的。"
+ },
+ {
+  "date": "2026-11-10",
   "text": "review: 複盤範圍掃描（最近15天、2026-10-26起已公布事件）全部已覆盤完畢（Google／KLAC／微軟／Amazon／INTC財報、PCE／GDP／ECB／BOJ／OPEC+／Apple財報／AMD財報／台股重挫／期中選舉／AI資料中心重定價，asof皆落在10-29~11-09），本趟無新筆可補；修掉一筆資料bug：2026-10-28『微軟 財報』在reviews.json裡重複存了兩筆（asof 10-29的初版、asof 11-09的補完整版），違反「同一筆覆蓋」規則，移除較舊的10-29初版，保留11-09補完整版（含ndx/y10/dxy/gld與pxd檢討），items從98筆降為97筆。"
  },
  {
