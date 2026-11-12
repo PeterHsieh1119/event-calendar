@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-11-12",
+  "text": "daily: priced.json 移除 1 筆已公布過期事件（AMAT 財報，11/12 美股收盤後公布，WebSearch 確認非 GAAP EPS 4.16 美元優於共識 4.05、營收 104.1 億美元優於指引中值 102.5 億，已退出 14 天窗口）；NVDA／WMT 兩筆重查，WebSearch 複核官方日期皆不變（NVDA 11/17 二 AMC、WMT 11/19 四仍無官方確認但與現有日曆一致），pxd 維持不動（0.45／0.50）。IBKR 連接器 market-data 側連續第 21 天故障（whats_new 正常，search_contracts 本趟仍回 -32400，重試一次後仍同），em／emBase 全部繼續留空。node harness（TZ=Asia/Taipei）複核 14 天窗口（11/13～11/27）score()：PPI(43)/零售銷售(34)/NVDA(71)/FOMC會議紀要(36)/初領失業金(26)/WMT(45)/月選擇權到期(15)/中國鎵銻等出口管制暫停到期(38)，過 45 分門檻僅 NVDA／WMT 兩筆，與既有收錄一致，無新增。curated.json 清理：cat／t 格式皆合法、無逾 60 天過期、無需合併的重複筆，本趟未變動。歸因缺口（近三個交易日逐標的自算）：QQQ 11/11 +2.31%（z+1.07）／SOX 11/11 +5.66%（z+1.28）／TWII 11/11 +3.62%（z+1.49）皆未達 1.5 倍門檻，不新增；DX-Y.NYB 連兩日（11/10 z+1.60、11/11 z+1.87）與 ^TNX 11/10（z+1.90）確認是已排程的 10 月 CPI（11/10 公布，核心月增 0.3% 高於共識 0.2%）帶動，已是日曆既有事件非新缺口。第二步 30 天掃描：查無新關稅／政府關門／BLS 排程異動公告；台灣端無新排程異動。五項檢查：1-2 綠（11 個警告皆 reviews.json 對應事件早被清理的舊紀錄，非本趟範圍）；3 綠——events／px／policy.json 皆 2026-11-12T02:39 UTC 同批次，policy.json hist 推進到 11-12 與 generated 對齊，px.json 七標的最後日期落在 11-11 或 11-12，屬正常批次時間差；4 綠——reviews.json 最新 asof 11-11，1 天，正常；5 WebFetch 連 peterhsieh1119.github.io 仍 ENOTFOUND，照例跳過。優化：daily.md 補一條——用局部字串替換移除陣列裡第一個 item 並把收尾併進下一個 item 時，容易留下舊 item 的殘骸字段造成重複，改用整份 Write 重寫 items 陣列更保險，已寫回 daily.md 寫入格式段。"
+ },
+ {
+  "date": "2026-11-12",
   "text": "review: 複盤 1 筆（CoreWeave 財報 11/10）。範圍掃描（最近15天、2026-10-28起）其餘事件皆已覆盤，僅這一筆新發生且未複盤。營收36.6億優於共識35.5億、積壓訂單跳升至1,325億，但真正驅動漲幅的是CEO回應融資疑慮（不走無擔保債券）；早盤報價顯示跳升約16~20%，落在財報前選擇權隱含20.7%雙向波動區間下緣，判為已被定價、非方向背離。spx/ndx/y10/dxy/gld五欄留空：px.json的NDX/SOX/10Y序列尚未推進到11/11吸收日，IBKR market-data連接器與FMP的quote/chart端點都打不通，無法自算close-to-close。sigma改用WebSearch查到的CRWV歷史隱含波動率估算（約90%年化換算日波動5.7%），非自算20日實現波動，已在memo標註是近似值。這一筆從未進入priced.json（11/10 daily routine因WebSearch索引延遲已移除），沒有事前pxd可核對。"
  },
  {
