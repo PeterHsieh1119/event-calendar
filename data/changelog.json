@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-11-12",
+  "text": "review: 複盤 1 筆（CoreWeave 財報 11/10）。範圍掃描（最近15天、2026-10-28起）其餘事件皆已覆盤，僅這一筆新發生且未複盤。營收36.6億優於共識35.5億、積壓訂單跳升至1,325億，但真正驅動漲幅的是CEO回應融資疑慮（不走無擔保債券）；早盤報價顯示跳升約16~20%，落在財報前選擇權隱含20.7%雙向波動區間下緣，判為已被定價、非方向背離。spx/ndx/y10/dxy/gld五欄留空：px.json的NDX/SOX/10Y序列尚未推進到11/11吸收日，IBKR market-data連接器與FMP的quote/chart端點都打不通，無法自算close-to-close。sigma改用WebSearch查到的CRWV歷史隱含波動率估算（約90%年化換算日波動5.7%），非自算20日實現波動，已在memo標註是近似值。這一筆從未進入priced.json（11/10 daily routine因WebSearch索引延遲已移除），沒有事前pxd可核對。"
+ },
+ {
   "date": "2026-11-11",
   "text": "daily: priced.json 3 筆（AMAT／NVDA／WMT）重查，WebSearch 複核官方日期皆不變，pxd 維持不動（0.50／0.45／0.50）；IBKR 連接器 market-data 側連續第 20 天故障（whats_new 正常，search_contracts／get_account_summary 本趟仍回 -32400，重試後同），em／emBase 全部繼續留空，AMAT 執行時刻尚未到法說時間。curated.json 新增 1 筆：AVGO 財報日期更正（Broadcom 11/9 官方新聞稿確認 12/9，比規則引擎推算的 12/10 早 1 天），由第二步 30 天 est:true earn* 例行查核找出；Oracle（12/10，est:true）官方仍未確認，未動。node harness（TZ=Asia/Taipei）複核 14 天窗口 score()：AMAT 48／PPI 43／NVDA 71／WMT 45，過門檻的 3 筆與既有 priced.json 完全一致，PPI 未過門檻不收。曾經差點新增一筆 11/9 美股反彈的 headline（QQQ +3.54%／費半 +6.85%），後來查 changelog.json 發現 11-10 那趟已經把同一組數字歸因給 11/06 非農並決定不另立事件，整筆刪除未保留，教訓寫回 daily.md 歸因缺口段。五項檢查：1-2 綠（11 個警告皆 reviews.json 對應事件早被清理的舊紀錄，非本趟範圍）；3 綠——events／px／policy.json 皆 2026-11-11T01:41 UTC 同批次，policy.json hist 推進到 11-11 與 generated 對齊，px.json 七標的最後日期落在 11-10 或 11-11，屬正常批次時間差；4 綠——reviews.json 最新 asof 11-06，最近一次 review commit 是 11-10（複盤範圍已全數覆蓋），6 天，未超過 10 天門檻；5 WebFetch 連 peterhsieh1119.github.io 仍 ENOTFOUND，照例跳過。查無政府關門／BLS 排程異動。優化：daily.md 補一條——大變動配不到事件前，先查 changelog.json 近幾趟是不是已經討論過同一組日期數字並做過『算不算獨立事件』的判斷，避免同一組歸因被不同措辭重複寫兩次。"
  },
