@@ -578,7 +578,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-e0b248ea";
+const APP_VER = "evcal-518fe808";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -1699,11 +1699,27 @@ function sigmaAt(ds){
 /* 校準：實際反應 vs 基準，回推 B 的乘數。
    關鍵是先除以當日的一般波動——否則高波動月份每件事都「反應大」，
    會跟「波動定價水位」那格環境設定重複計算。 */
+/* 不准用複盤樣本去校準的類型。
+   `headline` 是**用結果選出來的樣本**：這一類事件沒有排程，它進到 curated.json 的
+   路徑就是 `_shared.md` 一之四那條「先看到價格動了、回頭去查原因」的歸因缺口流程。
+   也就是說，樣本的進入條件本身就是「那天動得夠大」——平均 z 必然偏高，這是選樣偏誤
+   （selection on the dependent variable），不是基準敏感度估錯。拿它去反推 B 是循環論證。
+   `routines/weekly.md` 任務三早就把這件事寫成結論（「headline 的 B 永遠不要用這套統計
+   去校準」），但 calib() 一直照算：2026-11-15 實測 n=12、平均 z 1.73、ratio 2.55，
+   adj 直接頂到上限 1.500——**網站上每一筆突發事件的分數都被乘了 1.5 倍**，
+   而這個倍數的唯一來源是「我們只記下了會動的那些突發事件」。
+   這一格修的是「文件寫的政策」與「跑著的程式」之間的落差，不是改模型參數。
+   其他看起來也偏高的類型（claims ratio 4.78、quad 2.66）**不在這裡排除**：
+   那兩類都是排程事件，每一期都會進樣本，沒有選樣偏誤；它們的問題是同日有別的事件在動
+   （confound），該走的是逐筆讀 memo 剔除，不是整類關掉——那條路要靠自由文字判斷，
+   自動化容易誤判，留給使用者與複盤 routine 處理，這一趟只在回報裡列出數字。 */
+const NOCALIB=new Set(["headline"]);
 function calib(){
   const acc={};
   Object.entries(REVIEW).forEach(([k,r])=>{
     const e=EVENTS.find(x=>rkey(x)===k); if(!e)return;
     const c=CAT[e.cat]; if(!c)return;
+    if(NOCALIB.has(e.cat))return;
     const mag=reactionMag(r); if(!mag)return;
     const given=parseFloat(r.sigma);           // routine 複盤時附的當日一般波動
     const sg=(isFinite(given)&&given>0.05)?given:sigmaAt(e.date);

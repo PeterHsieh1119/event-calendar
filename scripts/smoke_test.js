@@ -92,7 +92,9 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "backtestHTML:backtestHTML,icVerdict:icVerdict," +
   "polSurprise:polSurprise,spcHTML:spcHTML,polMoves:polMoves,SPC:SPC," +
   "polClean:polClean,thitBox:thitBox,THIT_WANT:THIT_WANT,THIT_MIN:THIT_MIN," +
-  "getBETAS:function(){return BETAS;}};\n";
+  "getBETAS:function(){return BETAS;}," +
+  // 第 32 組要用的：只是把既有的東西露出來，沒有改動任何既有斷言。
+  "applyCalib:applyCalib,NOCALIB:NOCALIB,getCALIB:function(){return CALIB;}};\n";
 
 try {
   vm.createContext(sandbox);
@@ -1495,6 +1497,54 @@ catKeys.forEach((k) => {
   }
   ok("31 沒有任何行內 style 把字級壓到 11px 以下（行內樣式蓋得過媒體查詢，救不回來）",
     inlineBad.length === 0, inlineBad.join(" ／ "));
+}
+
+/* ── 32. 校準不准吃「用結果選出來的樣本」（2026-11-15 新增）──
+   calib() 從 reviews.json 回推每個類型的實際反應倍數，再乘進 score()。
+   問題出在 `headline`：這一類沒有排程，它進到 curated.json 的唯一路徑是
+   `_shared.md` 一之四那條「先看到價格動了、回頭去查原因」的歸因缺口流程，
+   所以樣本的進入條件就是「那天動得夠大」——平均 z 必然偏高。
+   拿它去反推基準敏感度是對著結果選樣本（selection on the dependent variable），
+   `routines/weekly.md` 任務三早就寫成結論「headline 的 B 永遠不要用這套統計去校準」，
+   但程式一直照算：修之前實測 n=12、平均 z 1.73、ratio 2.55、adj 頂到上限 1.500，
+   等於網站上每一筆突發事件的分數都被這個循環論證乘了 1.5 倍。
+   下面四條把「文件寫的政策」釘成程式的不變量。
+   退掉 index.html 裡 calib() 的 `if(NOCALIB.has(e.cat))return;` 這一行，(2) 與 (3) 會紅。 */
+{
+  const base = T.getEVENTS();
+  const baseRev = T.getREVIEW();
+
+  // headline 與一個對照類型（ism，排程事件）各放三筆「反應極大」的複盤
+  const EV = (date, title, cat) => ({ date, title, kind: "D", cat, t: "09:30",
+    est: false, note: "", checks: [], src: "" });
+  const evs = [
+    EV("2026-03-02", "測試 突發一", "headline"),
+    EV("2026-03-03", "測試 突發二", "headline"),
+    EV("2026-03-04", "測試 突發三", "headline"),
+    EV("2026-03-05", "測試 排程一", "ism"),
+    EV("2026-03-06", "測試 排程二", "ism"),
+    EV("2026-03-09", "測試 排程三", "ism"),
+  ];
+  T.setEVENTS(evs);
+  const rev = {};
+  for (const e of evs) rev[e.date + "|" + e.title] = { ndx: "-8.0", sigma: "1.0", memo: "" };
+  T.setREVIEW(rev);
+  T.applyCalib();
+  const C = T.getCALIB();
+
+  ok("32 NOCALIB 至少把 headline 排除掉", T.NOCALIB.has("headline"),
+    Array.from(T.NOCALIB).join(","));
+  ok("32 headline 完全不進校準表（不是 n 變小，是整類不計）",
+    !C.headline, C.headline ? JSON.stringify(C.headline) : "(無)");
+  // 同樣形狀的排程類型必須照算——否則上面那條是靠「把校準整個關掉」過關的
+  ok("32 排程類型（ism）同樣的樣本仍然照算", !!C.ism && C.ism.n === 3,
+    C.ism ? "n=" + C.ism.n : "(無)");
+  ok("32 排程類型的 adj 真的被這些樣本推上去了（對照組有效）",
+    !!C.ism && C.ism.adj > 1.1, C.ism ? String(C.ism.adj) : "(無)");
+
+  T.setEVENTS(base);
+  T.setREVIEW(baseRev);
+  T.applyCalib();
 }
 
 /* ── 報告 ── */
