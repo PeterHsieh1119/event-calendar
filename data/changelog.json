@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-11-16",
+  "text": "daily: 清掉 curated.json 過期 1 筆（9/17 央行理監事會，61 天）；priced.json 三筆（NVDA／WMT／PCE）重查，IBKR 連接器 market-data 側連續第 25 天故障（whats_new 正常，search_contracts 本趟仍回 -32400，重試一次後仍同），em／emBase 繼續留空，pxd 皆不動（0.45／0.50／0.48）。第二步 30 天掃描依昨天新增的規矩核對 D 端巨觀數據官方排程，新增 1 筆：零售銷售 12 月發布日由推算的 12/15 更正為 Census 官方排程的 12/16（11/17 當天的 10 月零售銷售日期本身查核不變）；ISM 製造業 PMI 12/1、CPI／PPI 既有日期皆查核不變。PCE basis 補記 policy.json 的 hist 已卡在11-13 三個交易日（11-14～11-16 無新增），記為資料缺口不當成路徑持平。近三個交易日歸因缺口：沿用 11-15 那趟已查核的結論（^TNX／GC=F／DX-Y.NYB 的 z 分數異常皆歸因於 10 月 CPI 的延續反應，非新缺口），本趟逐標的重算 z 分數後數字一致，未新增 headline。五項檢查：1-2 綠（13 個警告皆reviews.json 對應已清理的舊紀錄，非本趟範圍）；3 綠，px／policy.json 皆卡在 11-13（QQQ／^SOX／^TNX）或 11-16（^TWII／GC=F／CL=F／DX-Y.NYB），generated 11-16 但 hist／series 本身落後，已在 PCE basis 點名；4 綠，reviews.json 最新 asof 11-16，<1 天；5 WebFetch 連peterhsieh1119.github.io 仍 ENOTFOUND，照例跳過。優化：NVDA 財報的日期在 curated.json 早已est:false 確認，但 priced.json 的 basis 連續十幾趟每天都重新 WebSearch 查一次同一個已確認的日期，純屬浪費——已寫回 daily.md：est:false 已確認的筆目之後只需查 IBKR 狀態與 em／emBase，不必每天重查日期。"
+ },
+ {
+  "date": "2026-11-16",
   "text": "review: 複盤 5 筆（財政部季度再融資 11/4、國安基金第十度進場＋金管會限空令 11/6、初領失業金 11/12、AMAT 財報 11/12、Cisco 財報 11/12），範圍是「上次複盤（11/13 台積電月營收）之後到現在、最近15天內未複盤事件」，從最舊的開始，各留一則給下一趟（PPI 11/13）。refund：10Y 當日-5.8bp／股市大漲，但 policy.json 當天 Dec FOMC 隱含利率只動+0.8bp，判斷是confound——11/3期中選舉結果（民主黨拿下國會）才是更可能的主要驅動，refund 本身被市場讀為『中性略偏鴿』（拍賣規模持平）。國安基金：事件date留在公告日11/6，但實際吸收日是11/9（台股+4.94%，≈+2.97σ），11/6當天的-4.51%是觸發護盤的原因不是對政策的反應，已在memo說清楚兩者方向；限空令直接掐住融券強制回補這條正回饋通道，判為環境確認型態。初領失業金：200K小幅高於~195K共識，意外本身在雜訊範圍，但當天10Y+10.5bp的confound查出来源是同日30年期公債標售（refund事件排定的拍賣時程），不是claims造成的，policy.json當天路徑只動+0.8bp可佐證。AMAT／Cisco同日財報都是全面優於預期＋上調財測，但隔天(11/13)股價分別重挫（AMAT盤前-5.41%、Cisco收盤實跌-6.24%，用FMP對CSCO自算，過程中發現WebSearch多次把本次報導跟2025/2026-08兩次舊報告混淆，已改用FMP股價資料校正，依_shared.md六之一第8條處理）——兩筆都判為『方向背離』，讀法是AI資本支出概念股的估值已偏滿、財報再好也難以推升，不是基本面出現裂縫。JOLTS（日曆推算日11/10）查核後確認實際BLS發布日是11/3（已超出可乾淨歸因的範圍，且與11/2台股重挫等confound混在一起），依過去多次同類狀況的慣例（10/14、10/19、10/25的changelog先例）本輪不寫入reviews.json，只在此記錄供下一輪參考，避免在錯誤日期下硬湊一筆複盤。pxd檢討：refund／國安基金／claims三筆過去從未進入priced.json定價流程（B值過低，長期未過45分門檻或屬未排程headline），AMAT的pxd 0.50全程未變、因連接器故障無法用em/emBase驗證準不準；Cisco則從未被daily routine的score()收錄進priced.json，原因未留紀錄，已記錄為缺口。"
  },
  {

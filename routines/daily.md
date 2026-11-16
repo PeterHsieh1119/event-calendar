@@ -112,6 +112,17 @@ est=true 但 `spc` 不同）數字對不上，多花了一輪才發現是查詢�
 
 **同一趟還撞到：抄 `scripts/smoke_test.js` 的 `EXPORT` 字串時，`applyRegime` 並不在清單裡**（它在 index.html 裡是用 `applyRegime(j)` 直接呼叫，`smoke_test.js` 自己沒有測試這個函式，所以沒有匯出它）。照抄整段會在呼叫 `T.applyRegime(regime)` 時得到 `TypeError: T.applyRegime is not a function`。自己寫 harness 時要把 `applyRegime:applyRegime` 手動加進 `EXPORT` 字串最後一個 `};` 之前，不能假設 `smoke_test.js` 已經匯出了這支任務需要的每一個函式——那支檔案匯出的是『測試斷言用得到的』，不是『這份任務算分數用得到的』，兩份清單不保證重疊。
 
+**2026-11-17 這一趟撞到：`priced.json` 的 `basis` 裡，NVDA 財報從 11-03 收錄進窗口以來，連續 10 趟以上
+每天都重新 `WebSearch` 一次『官方日期是不是還是 11/17』，但 `curated.json` 裡這一筆的 `est` 早就是
+`false`（已確認，第一級來源），日期根本沒有理由每天變。重查的意義是抓「規則引擎推算日跟官方不同」，
+一旦官方日期已經用 `curated.json` 的 `est:false` 鎖定，那個問題已經解決了，之後每天再查一次只是在
+重複驗證同一件事，浪費 WebSearch 呼叫、也讓 `basis` 字串無意義地變長（這一筆到今天已經有十幾段幾乎
+一樣的『日期不變』文字疊在一起）。**規矩：第一步重查 `priced.json` 既有筆目之前，先看這一筆在
+`curated.json`（或 `events.json`）裡的 `est` 是不是已經 `false`——是的話，當天的檢查只需要處理
+IBKR 連接器狀態與 `em`／`emBase`，不需要再對日期本身發一次 WebSearch 查詢；只有 `est:true`
+（規則引擎推算、尚未官方確認）的筆目才需要每天重新查日期。** 已確認的日期只有在之後又查到跟原本
+不同的新資訊時才需要重新處理，不是每天例行都要重查一次。
+
 ### 財報 — 用 IBKR 選擇權鏈自己算
 
 **第 0 步，比選擇權鏈還先做：`est:true` 的財報日，先花一次 WebSearch 確認官方日期，
