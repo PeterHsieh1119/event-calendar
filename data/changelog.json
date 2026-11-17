@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-11-17",
+  "text": "review: 複盤 2 筆（10月CPI 11/10、10月PPI 11/13，範圍為最近15天內上次複盤11-12之後仍缺的紀錄）。CPI核心月增0.3%對共識0.2%，五個資產同向確認鷹派重定價，判為環境確認；政策路徑（policy.json）12/9會議隱含機率11/09→11/10從83.1%跳到109.9%，單日+6.7bp，是這週最大的一次路徑移動。PPI核心月增0.3%完全符合共識、本身無意外，但當天股票下跌、殖利率上升，而政策路徑11/12→11/13反而小幅回落（118.4%→111.3%），判為方向背離：驅動不是PPI本身改變了12月決策機率，較可能是CPI已確立的通膨主導敘事疊加這週的風險規避部位動能。兩筆pxd皆因priced.json事前估計已被移除／從未建立，無法回頭檢討準不準，退回類型先驗（cpi 0.35／ppi 0.45）。另查到一個規則引擎的日期錯誤：JOLTS職缺的真實BLS公布日是11/3（9月職缺7.523M，遠優於共識7.100M），但rule engine用「當月第2個週二」推算成11/10，與CPI同一天撞期——這筆沒有寫進reviews.json，因為日期對不上就不會顯示在網站上，寫了等於白做；需要daily routine在curated.json補一筆JOLTS的日期更正（11/3起，往後每月跟BLS官方排程核對，不要用固定的第2個週二推算），下次複盤才補得上這筆。"
+ },
+ {
   "date": "2026-11-16",
   "text": "daily: 清掉 curated.json 過期 1 筆（9/17 央行理監事會，61 天）；priced.json 三筆（NVDA／WMT／PCE）重查，IBKR 連接器 market-data 側連續第 25 天故障（whats_new 正常，search_contracts 本趟仍回 -32400，重試一次後仍同），em／emBase 繼續留空，pxd 皆不動（0.45／0.50／0.48）。第二步 30 天掃描依昨天新增的規矩核對 D 端巨觀數據官方排程，新增 1 筆：零售銷售 12 月發布日由推算的 12/15 更正為 Census 官方排程的 12/16（11/17 當天的 10 月零售銷售日期本身查核不變）；ISM 製造業 PMI 12/1、CPI／PPI 既有日期皆查核不變。PCE basis 補記 policy.json 的 hist 已卡在11-13 三個交易日（11-14～11-16 無新增），記為資料缺口不當成路徑持平。近三個交易日歸因缺口：沿用 11-15 那趟已查核的結論（^TNX／GC=F／DX-Y.NYB 的 z 分數異常皆歸因於 10 月 CPI 的延續反應，非新缺口），本趟逐標的重算 z 分數後數字一致，未新增 headline。五項檢查：1-2 綠（13 個警告皆reviews.json 對應已清理的舊紀錄，非本趟範圍）；3 綠，px／policy.json 皆卡在 11-13（QQQ／^SOX／^TNX）或 11-16（^TWII／GC=F／CL=F／DX-Y.NYB），generated 11-16 但 hist／series 本身落後，已在 PCE basis 點名；4 綠，reviews.json 最新 asof 11-16，<1 天；5 WebFetch 連peterhsieh1119.github.io 仍 ENOTFOUND，照例跳過。優化：NVDA 財報的日期在 curated.json 早已est:false 確認，但 priced.json 的 basis 連續十幾趟每天都重新 WebSearch 查一次同一個已確認的日期，純屬浪費——已寫回 daily.md：est:false 已確認的筆目之後只需查 IBKR 狀態與 em／emBase，不必每天重查日期。"
  },
