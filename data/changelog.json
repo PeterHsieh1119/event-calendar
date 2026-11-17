@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-11-18",
+  "text": "daily: 清掉 curated.json 過期 2 筆（9/18 FTSE台指調整／日本央行決議，皆 61 天）；補記 1 筆新事件（NVIDIA CEO 異動 headline，2026-11-12，上一趟 intraday 誤判為假訊息五天後確認屬實，交接補寫）。priced.json 移除 NVDA 財報（11/17 AMC 已公布，SEC 8-K 確認 Q3 FY27 營收 1158 億美元、EPS 2.70），WMT／PCE 重查 pxd 不變（0.50／0.48，node harness 複核 s=47／71）。IBKR market-data 側連續第 26 天故障（whats_new 正常，search_contracts 仍 -32400）。px.json Actions 落後：QQQ／^SOX／^TNX 卡在 11-13、其餘四個標的卡在 11-16，generated 11-16 未反映，回報裡點名。近三個交易日大變動（TNX／金價 11-12）已由上週 CPI 複盤歸因覆蓋，未另立新事件。優化：修正『連續第 N 天』計數規則本身在同日多筆記錄時會失效的坑，改用故障起算日（10-24）回推，寫進 routines/daily.md。"
+ },
+ {
   "date": "2026-11-17",
   "text": "intraday: 日期核對（NVDA 11/17 財報、WMT 11/19 財報、Anthropic 11/19 掛牌、PCE 11/25）與零售銷售今天的規則引擎推算日皆查核不變，近三日無新突發事件。priced.json 補一筆重大更正：WebSearch 命中 investor.nvidia.com 官方新聞稿『NVIDIA Announces CEO Transition』，確認黃仁勳已於 11/12 辭任總裁兼執行長與董事、CFO Colette Kress 任代理執行長、Harvey C. Jones 任董事會史上首位獨立董事長——這筆過去五趟（11-13～11-17）被誤判為『不可信假訊息』，誤判源自 11-13 那趟核對 Harvey C. Jones 董事簡歷時的邏輯錯誤（資深董事與新任董事長身分並不衝突）。今晚法說會由 Colette Kress 主持而非黃仁勳，今天 NVDA 盤前跌 4.12%（FMP quote）判為黃仁勳回任爭議報導的延續，非新缺口。pxd 維持 earn3 先驗 0.45 不動。IBKR 連接器 search_contracts 本趟再度 -32400，連續第 26 天故障。這次 11/12 CEO 異動事件本身超出 intraday 的今天＋三個交易日範圍，未寫進 curated.json，請下一趟 daily／weekly／review 補一筆 cat: headline、date: 2026-11-12 的事件並檢討五天誤判成因。"
  },
