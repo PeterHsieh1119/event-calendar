@@ -1,7 +1,11 @@
 [
  {
   "date": "2026-11-18",
-  "text": "daily: WMT 財報官方日期已確認（Business Wire／Finviz，11/19 美東 7:00 公布），curated.json est 改 true→false，之後不必每天再查日期；priced.json 重查 2 筆（WMT s=47／PCE s=71，node harness 複核），新增 1 筆特例（Anthropic 掛牌，依 weekly 11-15 指示覆蓋 headline 先驗 pxd=0.6，不受 45 分門檻限制）。IBKR market-data 側連續第 27 天故障。curated.json 補記 1 筆：NVDA CEO 異動（11-12）的延續反應導致 11/16 台股史上第 2 大單日跌點（-6.03%），px.json 批次補齊後才第一次看到完整數字，費半／那斯達克同日未達 1.5σ 門檻不另立事件。五項檢查全綠（15 個警告皆 reviews.json 舊紀錄，非本趟範圍）。優化：記下 score() 的 s 不受 pxd 覆蓋影響、只有 gap 會動，寫回 daily.md。"
+  "text": "daily: WMT 財報官方日期複核不變（已由今天稍早 intraday 確認 est:false，之後不必每天再查日期）；priced.json 重查 2 筆（WMT s=47／PCE s=71，node harness 複核），新增 1 筆特例（Anthropic 掛牌，依 weekly 11-15 的 curated.json note 明確指示覆蓋 headline 先驗 pxd=0.6，不受 45 分門檻限制——與今天稍早 intraday『score()=36 未達門檻、不收』的結論不同，basis 裡寫清楚理由：45 分門檻管的是要不要收進定價分析，weekly 要修正的是前端落差排序用錯 pxd，兩者該分開判斷）。IBKR market-data 側連續第 27 天故障。curated.json 補記 1 筆：NVDA CEO 異動（11-12）的延續反應導致 11/16 台股史上第 2 大單日跌點（-6.03%），px.json 批次補齊後才第一次看到完整數字，費半／那斯達克同日未達 1.5σ 門檻不另立事件。五項檢查全綠（15 個警告皆 reviews.json 舊紀錄，非本趟範圍）。優化：記下 score() 的 s 不受 pxd 覆蓋影響、只有 gap 會動，寫回 daily.md。"
+ },
+ {
+  "date": "2026-11-18",
+  "text": "intraday: WMT 財報（11/19）查到 Walmart 官方 Business Wire 新聞稿確認日期，curated.json est 改 true→false；priced.json 同步更新 basis／src，pxd 維持 0.50 不變（IBKR 連接器仍故障）。Anthropic 掛牌（11/19）score()=36，未達 45 分門檻，不收進 priced.json。"
  },
  {
   "date": "2026-11-18",
