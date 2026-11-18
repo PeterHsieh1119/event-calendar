@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-16T23:08:26Z",
+ "generated": "2026-11-18T23:09:17Z",
  "items": [
   {
    "date": "2026-11-12",
@@ -8,7 +8,7 @@
    "t": "BMO",
    "est": false,
    "title": "NVIDIA CEO 異動：黃仁勳辭任總裁／執行長／董事",
-   "note": "【這是 11/13～11/17 priced.json 多趟誤判後的補記，見同檔 NVDA 財報 11-17 那筆重大更正】NVIDIA 官方新聞稿『NVIDIA Announces CEO Transition』（investor.nvidia.com／nvidianews.nvidia.com，2026-11-12，Santa Clara 發稿）確認黃仁勳即刻辭去總裁、執行長與董事會職務；CFO Colette Kress 兼任代理執行長（同時續任 CFO）至董事會找到永久接任人選；Harvey C. Jones（1993 年起在任的資深董事）同時被任命為董事會首位獨立董事長。公告指原因與一名被指控涉中國間諜活動的女性有婚外情，董事會已委託 Wachtell Lipton 律師事務所調查是否涉及公司機密或國安風險。同日 SMCI 因司法部相關調查報導重挫 11.30%，屬同一條新聞脈絡但不同公司，不合併。後續（11/15-11/17）有黃仁勳可能回任的討論（川普公開表態支持、Musk 等人連署約 18 萬人），但 CNBC 11/16 引述消息稱董事會並未考慮讓他回任，判為同一敘事延續不另開新事件。這一筆的實際股價反應需要下一趟複盤用 NVDA 自身股價（px.json 沒有收錄 NVDA 個股序列）另外查證，這裡只記錄事件本身。t 用 BMO 是估計值：僅查到瑞典金融資訊站 mfn.se 轉載的時間戳 2026-11-12 14:48:12（時區未標明，若為 CET 換算約美東 08:48，落在開盤前），NVIDIA／GlobeNewswire 官方稿本身只標日期沒標時間，est 仍標 false 是因為事件本身（CEO 異動這件事發生在 11/12）已有第一級來源確證，不確定的只是精確時刻。",
+   "note": "【這是 11/13～11/17 priced.json 多趟誤判後的補記，見同檔 NVDA 財報 11-17 那筆重大更正】NVIDIA 官方新聞稿『NVIDIA Announces CEO Transition』（investor.nvidia.com／nvidianews.nvidia.com，2026-11-12，Santa Clara 發稿）確認黃仁勳即刻辭去總裁、執行長與董事會職務；CFO Colette Kress 兼任代理執行長（同時續任 CFO）至董事會找到永久接任人選；Harvey C. Jones（1993 年起在任的資深董事）同時被任命為董事會首位獨立董事長。公告指原因與一名被指控涉中國間諜活動的女性有婚外情，董事會已委託 Wachtell Lipton 律師事務所調查是否涉及公司機密或國安風險。同日 SMCI 因司法部相關調查報導重挫 11.30%，屬同一條新聞脈絡但不同公司，不合併。後續（11/15-11/17）有黃仁勳可能回任的討論（川普公開表態支持、Musk 等人連署約 18 萬人），但 CNBC 11/16 引述消息稱董事會並未考慮讓他回任，判為同一敘事延續不另開新事件。這一筆的實際股價反應需要下一趟複盤用 NVDA 自身股價（px.json 沒有收錄 NVDA 個股序列）另外查證，這裡只記錄事件本身。t 用 BMO 是估計值：僅查到瑞典金融資訊站 mfn.se 轉載的時間戳 2026-11-12 14:48:12（時區未標明，若為 CET 換算約美東 08:48，落在開盤前），NVIDIA／GlobeNewswire 官方稿本身只標日期沒標時間，est 仍標 false 是因為事件本身（CEO 異動這件事發生在 11/12）已有第一級來源確證，不確定的只是精確時刻。\n\n【11-19 補記，歸因缺口回溯】px.json 的 Actions 批次在 11-18 之前一直落後，QQQ／^SOX／^TNX 卡在 11-13，直到今天這批才第一次補上 11-16／11-17 的資料，回頭才看得到完整數字：台股 11/16（一）收 41,040.08，單日 −2,635.04 點／−6.03%（史上第 2 大單日跌點），費半同日 −5.28%、那斯達克 −2.67%。用前 20 個交易日 sigma 回算：只有台股達到 1.5 倍門檻（z −2.44），費半／那斯達克（z 約 −1.2）落在這波 AI 重定價期間已經常態化的波動範圍內，不算新缺口。台股歸因（Focus Taiwan／CNA、uanalyze.com.tw 等第三級交叉確認）：電子權值股領跌、台積電單日即拖累指數約 1,000 點，外資賣超 701.89 億元，法人明確指向黃仁勳辭職衝擊機構對 AI 資本支出前景的評價——也就是本筆事件的延續反應，不是新消息。疊加因素：高盛 11/14 把台股評等自看多調降至中立（2027 亞股展望，僅查到第三級媒體轉述、查無更精確的發布時間與原文，故不單獨成一筆事件）、以及台灣月選擇權 11/18（三）結算前的期貨空單調整。這些疊加因素不另立新 headline，只在此記錄供下次歸因參考。",
    "src": "NVIDIA 官方新聞稿『NVIDIA Announces CEO Transition』investor.nvidia.com／nvidianews.nvidia.com，2026-11-12（第一級，WebSearch 摘要，未讀原文）；GlobeNewswire 轉載同日（第三級）；SEC 8-K 同日提交 sec.gov/Archives/edgar/data/0001045810（第一級，WebSearch 摘要）；時刻推估：mfn.se 轉載時間戳（第四級，僅供推估，未獲確認）"
   },
   {
@@ -536,10 +536,10 @@
    "kind": "N",
    "cat": "earn2",
    "title": "WMT 財報",
-   "est": true,
+   "est": false,
    "t": "BMO",
-   "note": "新增（日曆原本沒有這一筆，WMT 不在 index.html 的 WATCH 清單裡，規則引擎不會生成）：沃爾瑪 Q3 FY2027 財報，多家資料商估 11/19（四），公司尚未公告，所以 est: true。公布時段兩說——一站列美東 16:05、另一站列 08:00；沃爾瑪歷來都是盤前公布，所以填 BMO，這一點若之後官方公告是盤後要回來改。收這一筆的理由是它是 11 月下半唯一的消費端讀數：本週的賣壓驅動是 AI 資本支出的融資成本（見 10/16 與 10/22），分母端又剛往成長主導偏，消費是否跟著轉弱是接下來分子端最關鍵的交叉驗證，而日曆上 11 月完全沒有消費類事件。本季財測來自 2026-08-20 的 Q2 FY2027 財報：Q3 淨銷售年增 3.0–3.75%、調整後營業利益年增 2.0–4.0%、調整後 EPS 0.62–0.64 美元。",
-   "src": "多家財報日曆資料商估計值（WebSearch 摘要，明確標示公司未確認，第三級）；財測數字出自 Walmart Q2 FY2027 財報 2026-08-20（SEC 8-K／corporate.walmart.com，第一級，經搜尋摘要確認，原文未直接讀取）"
+   "note": "新增（日曆原本沒有這一筆，WMT 不在 index.html 的 WATCH 清單裡，規則引擎不會生成）：沃爾瑪 Q3 FY2027 財報。【11-19 更正，第二步查核：官方已確認】Business Wire 公告（經 Finviz 轉載『Walmart to Host Third Quarter Earnings Conference Call, November 19, 2026』）確認結果於美東 11/19（四）7:00（美中 6:00）發布、法說會 8:00（美中 7:00）召開，由 CEO John Furner、CFO John David Rainey 主持；多家第三方日曆（days.to／TipRanks／finviz）同步一致。日期與公布時段（BMO）維持不變，est 由 true 改為 false（官方已確認，不是推算）。本季財測仍出自 2026-08-20 Q2 FY2027 財報：Q3 淨銷售年增 3.0–3.75%、調整後營業利益年增 2.0–4.0%、調整後 EPS 0.62–0.64 美元。",
+   "src": "Business Wire 公告（經 Finviz『Walmart to Host Third Quarter Earnings Conference Call, November 19, 2026』轉載，第一級公司公告，WebSearch 摘要，2026-11-19 查詢，未讀 corporate.walmart.com 原文）；財測數字出自 Walmart Q2 FY2027 財報 2026-08-20（SEC 8-K／corporate.walmart.com，第一級，經搜尋摘要確認，原文未直接讀取）"
   },
   {
    "date": "2026-11-19",
