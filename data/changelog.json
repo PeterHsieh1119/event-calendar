@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-11-19",
+  "text": "intraday: WMT 財報已公布（SEC 8-K 確認 Q3 FY27 營收 188.8 億美元、上調 FY27 展望），priced.json 移除過期 pxd；Anthropic 掛牌確認定價 83 美元（高於區間，募資 813 億美元創史上最大 IPO），curated.json 補充定價資訊並將 est 改 false，priced.json 同步更新 basis。"
+ },
+ {
+  "date": "2026-11-19",
   "text": "review: 複盤 1 筆（NVDA 財報，11/17 AMC）。範圍是上次複盤（11/13 PPI）之後到現在，窗口內只有這一筆已公布且未複盤的事件（WMT 財報與 Anthropic 掛牌排在 11/19 美東尚未發生，未納入）。營收/EPS皆優於guide與可查到的共識，但吸收日(11/18)股價仍跌2.89%，判為方向背離——三週內第三筆AI資本支出概念股『beat不獎勵』（前兩筆AMAT/Cisco），疑似同一正回饋/部位出清訊號；NVDA另疊加黃仁勳辭任後的治理風險重定價(HSBC/Bernstein/Melius三家降評)，vol-adjusted後反應(-0.87σ)其實是三者中最溫和的。pxd(earn3先驗0.45)因IBKR連接器連續故障25+天從未用em/emBase驗證過，這次方向性檢查沒看出明顯偏離,但仍是量化盲點。"
  },
  {

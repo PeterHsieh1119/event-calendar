@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-18T23:09:17Z",
+ "generated": "2026-11-19T13:38:15Z",
  "items": [
   {
    "date": "2026-11-12",
@@ -546,10 +546,10 @@
    "kind": "R",
    "cat": "headline",
    "t": "09:30",
-   "est": true,
+   "est": false,
    "title": "Anthropic 於那斯達克掛牌首日交易（ANT）",
-   "note": "【怎麼進來的】每週前瞻（任務一），日曆上原本沒有這一筆。【事件】申報區間每股 70–78 美元、825 百萬股 A 股（另有最多 123,750,000 股的超額配售選擇權），據報 11/18（三）定價、11/19（四）在 Nasdaq Global Select Market 以代號 ANT 首日交易。以區間上緣計，募資規模約 644 億美元，隱含估值各家算法差距很大（完全稀釋約 1.4 兆美元；只算目前流通股則約 9,160 億–1.02 兆美元），彭博報導早期認購約為發行量的 6 倍。【為什麼標在這個日曆上】這不是一檔新股的個股事件。它落在 AI 資本支出正在被重新定價的當口（見 curated 11/05 那筆與 regime 的 shock 討論），作用有兩條：一是把「市場願意給 AI 資產多少估值」擺到一個公開可觀察的價格上，對整條 AI 供應鏈（QQQ／費半／台股）是估值錨；二是純機械的資金吸收——644 億美元是歷史上最大規模的 IPO 募資之一，同一週還要吸收 NVDA 財報（11/17）。【cat 為什麼選 headline，以及它的副作用】這一類沒有對應的代碼：它不是財報（earn*）、不是產品發表（product）、也不是排程的總經數據。_shared.md 第三節說「挑不出來就選最接近的，並在 note 寫清楚理由」——headline 屬於風險溢酬組，傳導端（估值／風險溢酬）是對的，所以選它。但要特別提醒下一趟：headline 的類型先驗 pxd 只有 0.15，那個數字的理由是「突發的東西不會被 price in」，而這一筆恰好相反，是完全被預告過的排程事件，6 倍超額認購本身就說明它被討論得很充分。照先驗算出來的「定價落差」會嚴重高估。**請每日／當日校正那兩趟在 priced.json 給它一個明確的 pxd（估計 0.6 以上），不要讓它用 headline 的先驗出現在衝擊排序上。**【est 為什麼是 true】多家報導日期一致（11/18 定價、11/19 首日），且彼此的估值算法不同、不是同一份通稿；但 SEC 申報文件本身沒有載明日期（各篇都寫 citing people familiar／company announcement），sec.gov 在這個環境連不出去，拿不到第一級佐證，依「不確定的日期一律 est: true」處理。定價未完成前都還有延期的可能。",
-   "src": "Trading 212『Anthropic IPO: Date, price range, valuation』（稱公司 11/12 announced 定價日 11/18、首日 11/19）、FinanceFeeds『Anthropic IPO Date: $70-$78 Price Range Set, Trading Reported From 19 November』、BigGo Finance『Nasdaq Debut Set for the 19th』、TradingKey（2026-11-14）、indmoney、startupfortune（均第三級，WebSearch 摘要，2026-11-15 查詢，未讀 sec.gov 的 S-1 原文——該網域連不出去）"
+   "note": "【怎麼進來的】每週前瞻（任務一），日曆上原本沒有這一筆。【事件】申報區間每股 70–78 美元、825 百萬股 A 股（另有最多 123,750,000 股的超額配售選擇權），據報 11/18（三）定價、11/19（四）在 Nasdaq Global Select Market 以代號 ANT 首日交易。以區間上緣計，募資規模約 644 億美元，隱含估值各家算法差距很大（完全稀釋約 1.4 兆美元；只算目前流通股則約 9,160 億–1.02 兆美元），彭博報導早期認購約為發行量的 6 倍。【為什麼標在這個日曆上】這不是一檔新股的個股事件。它落在 AI 資本支出正在被重新定價的當口（見 curated 11/05 那筆與 regime 的 shock 討論），作用有兩條：一是把「市場願意給 AI 資產多少估值」擺到一個公開可觀察的價格上，對整條 AI 供應鏈（QQQ／費半／台股）是估值錨；二是純機械的資金吸收——644 億美元是歷史上最大規模的 IPO 募資之一，同一週還要吸收 NVDA 財報（11/17）。【cat 為什麼選 headline，以及它的副作用】這一類沒有對應的代碼：它不是財報（earn*）、不是產品發表（product）、也不是排程的總經數據。_shared.md 第三節說「挑不出來就選最接近的，並在 note 寫清楚理由」——headline 屬於風險溢酬組，傳導端（估值／風險溢酬）是對的，所以選它。但要特別提醒下一趟：headline 的類型先驗 pxd 只有 0.15，那個數字的理由是「突發的東西不會被 price in」，而這一筆恰好相反，是完全被預告過的排程事件，6 倍超額認購本身就說明它被討論得很充分。照先驗算出來的「定價落差」會嚴重高估。**請每日／當日校正那兩趟在 priced.json 給它一個明確的 pxd（估計 0.6 以上），不要讓它用 headline 的先驗出現在衝擊排序上。**【est 為什麼是 true】多家報導日期一致（11/18 定價、11/19 首日），且彼此的估值算法不同、不是同一份通稿；但 SEC 申報文件本身沒有載明日期（各篇都寫 citing people familiar／company announcement），sec.gov 在這個環境連不出去，拿不到第一級佐證，依「不確定的日期一律 est: true」處理。定價未完成前都還有延期的可能。\n\n【11-19 當日校正】CNBC（2026-11-18）等多篇報導確認：Anthropic IPO 實際定價 83 美元／股（高於申報區間 70–78 美元上緣），股數上修至約 9.8 億股 A 股（原估 825M），募資約 813 億美元（原估 644 億美元，此處更正取代原估）；加計 260 億美元同步私募後合計募資上看約 940 億美元，為史上最大規模 IPO、超過 SpaceX。多家交易所與 Nasdaq 官方掛牌排程皆確認今天（11/19）首日交易開始，日期不再只是第三方報導推算，est 改為 false。首日開盤後實際漲跌仍留給今晚盤後複盤處理。",
+   "src": "Trading 212『Anthropic IPO: Date, price range, valuation』（稱公司 11/12 announced 定價日 11/18、首日 11/19）、FinanceFeeds『Anthropic IPO Date: $70-$78 Price Range Set, Trading Reported From 19 November』、BigGo Finance『Nasdaq Debut Set for the 19th』、TradingKey（2026-11-14）、indmoney、startupfortune（均第三級，WebSearch 摘要，2026-11-15 查詢，未讀 sec.gov 的 S-1 原文——該網域連不出去）；定價與股數更正：CNBC『Anthropic IPO raises over $81 billion in largest offering on record, topping SpaceX』（2026-11-18，第三級，WebSearch 摘要）"
   },
   {
    "date": "2026-11-25",
