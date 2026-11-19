@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-11-19",
+  "text": "review: 複盤 1 筆（NVDA 財報，11/17 AMC）。範圍是上次複盤（11/13 PPI）之後到現在，窗口內只有這一筆已公布且未複盤的事件（WMT 財報與 Anthropic 掛牌排在 11/19 美東尚未發生，未納入）。營收/EPS皆優於guide與可查到的共識，但吸收日(11/18)股價仍跌2.89%，判為方向背離——三週內第三筆AI資本支出概念股『beat不獎勵』（前兩筆AMAT/Cisco），疑似同一正回饋/部位出清訊號；NVDA另疊加黃仁勳辭任後的治理風險重定價(HSBC/Bernstein/Melius三家降評)，vol-adjusted後反應(-0.87σ)其實是三者中最溫和的。pxd(earn3先驗0.45)因IBKR連接器連續故障25+天從未用em/emBase驗證過，這次方向性檢查沒看出明顯偏離,但仍是量化盲點。"
+ },
+ {
   "date": "2026-11-18",
   "text": "daily: WMT 財報官方日期複核不變（已由今天稍早 intraday 確認 est:false，之後不必每天再查日期）；priced.json 重查 2 筆（WMT s=47／PCE s=71，node harness 複核），新增 1 筆特例（Anthropic 掛牌，依 weekly 11-15 的 curated.json note 明確指示覆蓋 headline 先驗 pxd=0.6，不受 45 分門檻限制——與今天稍早 intraday『score()=36 未達門檻、不收』的結論不同，basis 裡寫清楚理由：45 分門檻管的是要不要收進定價分析，weekly 要修正的是前端落差排序用錯 pxd，兩者該分開判斷）。IBKR market-data 側連續第 27 天故障。curated.json 補記 1 筆：NVDA CEO 異動（11-12）的延續反應導致 11/16 台股史上第 2 大單日跌點（-6.03%），px.json 批次補齊後才第一次看到完整數字，費半／那斯達克同日未達 1.5σ 門檻不另立事件。五項檢查全綠（15 個警告皆 reviews.json 舊紀錄，非本趟範圍）。優化：記下 score() 的 s 不受 pxd 覆蓋影響、只有 gap 會動，寫回 daily.md。"
  },
