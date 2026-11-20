@@ -1,5 +1,9 @@
 [
  {
+  "date": "2026-11-20",
+  "text": "review: 複盤 3 筆（初領失業金／WMT 財報／Anthropic 掛牌首日交易，皆 11/19）。範圍為上次複盤（11/17 NVDA 財報）之後到現在、最近15天內未複盤事件，三筆皆已補齊。claims：203K 高於共識197K，但訊號被密西根州新上線申請系統的技術性堆積打折，且發現policy.json的『2026-11-19』hist快照其實是claims公布前（甚至開盤前）的舊資料，不能用來說路徑有沒有動，屬於_shared.md二之二FOMC陷阱的claims變體。WMT：EPS/營收皆優於共識、全年指引上調，股價絕對值跌1.04%但relative to大盤（SPX-1.96%）其實是小幅outperform，判為confound非乾淨方向背離。Anthropic：定價83美元（高於區間），開盤+34.3%最終收+17.1%，當天回吐逾半開盤漲幅；weekly覆蓋的pxd=0.6可能高估了已定價程度，寫進memo供下次weekly參考。三筆的spx/sigma皆用FMP(SPY)自算，ndx/y10/dxy/gld因FMP本帳號對ETF/期貨端點拒絕存取、px.json對應標的尚未追上11/19收盤而誠實留空。"
+ },
+ {
   "date": "2026-11-19",
   "text": "daily: priced.json 移除 1 筆已過去的特例（Anthropic 掛牌，11/19 已結束，後續吸收反應留給複盤）；重查 PCE（s=71，pxd 0.48 不變）；新增 1 筆（非農就業，12/4，node harness TZ=Asia/Taipei 複核 14 天窗口 s=88，過 45 分門檻，pxd=0.42——policy.json 的 12/9 FOMC cumBp 近一週在 26～30bp 區間來回無方向性，過去兩次非農意外方向相反（9月29K遠低於90K共識／10月165K遠高於65K共識），不構成連續同向偏誤）。curated.json 本趟無變動：est:true 的 Oracle 財報（12/10）、鎵鍺銻出口管制到期（11/27）、ISM 製造業 PMI（12/1）WebSearch 複查官方日期皆與既有一致，未發現延長或變更消息。近三個交易日歸因：台股 11/16 −6.03% 已由 11-17 那趟記錄（NVDA CEO異動延續反應），本趟未重複；黃金 11/18 −3.16%（z 約 −1.9σ，20日基準 1.67%）查無單一新事件，WebSearch 查到的是美元走強＋降息押注降溫的連續數週下跌（11/12、11/16 已跌破一年低點），判為部位去槓桿的延續，未另立 headline。IBKR 連接器狀態本趟未使用（priced.json 這兩筆皆非選擇權鏈事件）。五項檢查：1-2 綠（15 個警告皆 reviews.json 舊紀錄，非本趟範圍）；3 綠，events/px/policy.json 的 generated 皆 2026-11-19T02:54Z，px.json 七個標的分別卡在 11-18（QQQ／^SOX／^TNX）或 11-19（^TWII／GC=F／CL=F／DX-Y.NYB），正常落差非斷更；4 綠，reviews.json 最新 asof 11-19，<1 天；5 WebFetch 連 peterhsieh1119.github.io 仍 ENOTFOUND，照例跳過。優化：發現 policy.json 的 hist 裡已經落地、日期沒變的某一天數值（11/18 的 12/9 會議隱含利率）隔一天重讀會跟昨天 basis 記錄的不一樣（4.1407→4.1477，cumBp 差 0.70bp），跟 px.json 歷史值會被上游悄悄修正是同一類風險，之前只有 px.json 這麼記錄過，寫回 _shared.md 二之二新增一段。"
  },
