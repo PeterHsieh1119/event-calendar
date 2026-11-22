@@ -578,7 +578,7 @@ const HARDCODED_KEY = "";
 /* 跟 sw.js 的 CACHE 同一個字串。按「更新」時會去抓 sw.js 比對，
    不一樣就代表網站本身有新版，要清快取並重新載入——只重抓資料是不夠的。
    兩邊走鐘的話煙霧測試會擋下來。 */
-const APP_VER = "evcal-518fe808";
+const APP_VER = "evcal-9eba018b";
 
 const WATCH=[
  {s:"NVDA",n:"NVDA",anchor:"2026-08-26",cat:"earn3",t:"AMC"},
@@ -2212,7 +2212,21 @@ function renderImpact(){
   bind($("impactBody"));bindTips($("impactBody"));
 }
 const TLH=108, TLZERO=62;
-let PPD=9;                       // 總覽軸每天幾 px
+/* 總覽軸每天幾 px。桌機維持「季」（9），觸控裝置預設「月」（18）。
+   這一格是 2026-11-08 那一趟留下來的待辦：thitBox() 有一個幾何下限，
+   連續的事件日被左右鄰居夾住時，點擊區只能是 max(10,PPD) px 寬——PPD=9 就是 10px，
+   在手機上按不準，而當時的結論是「那不是樣式修補能解的，要解只能改成
+   『手機上預設換一個縮放』或『手機上不用這條軸互動』，屬於版面決策」。
+   這裡採的是前者：同一個最差情況在 PPD=18 下是 18px，孤立的標記仍然吃到 44px。
+   不去動 thitBox() 的地板——把它直接抬到 24px 會讓鄰日的點擊區互相重疊搶走點擊，
+   那是 2026-10-18 就排除掉的作法。使用者按三顆縮放鈕的行為完全不變，
+   改的只有「一打開是哪一顆」。 */
+const TLPPD={desktop:9,touch:18};
+function isTouchDev(){
+  try{return !!(window.matchMedia&&window.matchMedia("(hover:none)").matches);}catch(e){return false;}
+}
+function defaultPPD(touch){return touch?TLPPD.touch:TLPPD.desktop;}
+let PPD=defaultPPD(isTouchDev());
 const MN=["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
 
 /* 年度軸上每個事件日的點擊區。原本是固定 max(10,PPD) px 寬、置中，
@@ -2708,6 +2722,13 @@ document.querySelectorAll(".chip[data-ppd]").forEach(b=>b.onclick=()=>{
   PPD=parseInt(b.dataset.ppd,10);
   document.querySelectorAll(".chip[data-ppd]").forEach(x=>x.classList.toggle("on",x===b));
   renderTimeline();});
+/* 靜態 HTML 把 on 寫死在「季」那一顆上。觸控裝置的預設是「月」（見 TLPPD），
+   開場要把高亮搬到實際生效的那一顆，不然畫面上的縮放跟亮起來的按鈕對不上，
+   使用者會以為按鈕壞了。 */
+function syncPpdChips(){
+  document.querySelectorAll(".chip[data-ppd]").forEach(x=>
+    x.classList.toggle("on",parseInt(x.dataset.ppd,10)===PPD));
+}
 document.querySelectorAll(".chip[data-lab]").forEach(b=>b.onclick=()=>{
   SHOWLAB=parseInt(b.dataset.lab,10);
   document.querySelectorAll(".chip[data-lab]").forEach(x=>x.classList.toggle("on",x===b));
@@ -2822,6 +2843,7 @@ function pxNote(ok){
        +"手動跑一次 Actions 的「每日更新事件資料」就會有。沒有價格資料的月份顯示 —。");
 }
 (async()=>{
+  syncPpdChips();                   // 觸控裝置的預設縮放跟桌機不同，高亮要對得上
   loadSeeds();                      // prompt 檔慢慢載，不擋主畫面
   loadRegimeLocal();
   await loadReviews(); applyCalib();

@@ -94,7 +94,9 @@ const EXPORT = "\n;globalThis.__T={CAT:CAT,PXD0:PXD0,TOD:TOD,REGIME_DEF:REGIME_D
   "polClean:polClean,thitBox:thitBox,THIT_WANT:THIT_WANT,THIT_MIN:THIT_MIN," +
   "getBETAS:function(){return BETAS;}," +
   // 第 32 組要用的：只是把既有的東西露出來，沒有改動任何既有斷言。
-  "applyCalib:applyCalib,NOCALIB:NOCALIB,getCALIB:function(){return CALIB;}};\n";
+  "applyCalib:applyCalib,NOCALIB:NOCALIB,getCALIB:function(){return CALIB;},"+
+  // 第 33 組要用的：同樣只是把既有的東西露出來，沒有改動任何既有斷言。
+  "TLPPD:TLPPD,defaultPPD:defaultPPD,getPPD:function(){return PPD;}};\n";
 
 try {
   vm.createContext(sandbox);
@@ -1545,6 +1547,46 @@ catKeys.forEach((k) => {
   T.setEVENTS(base);
   T.setREVIEW(baseRev);
   T.applyCalib();
+}
+
+/* ── 33. 總覽軸在觸控裝置上的預設縮放（2026-11-22 新增）──
+   2026-11-08 那一趟用 Playwright 量完手機版，留下一條明寫「還沒解」的待辦：
+   總覽軸在「季」縮放（PPD=9）下，連續事件日的 .thit 只能是 10px 寬，
+   那是 thitBox() 的幾何限制不是 bug，「要解只能改成『手機上預設換一個縮放』
+   或『手機上根本不用這條軸互動』，屬於版面決策」。這一組把前者釘成不變量。
+   退掉 index.html 裡的 TLPPD／defaultPPD（把 `let PPD=9` 寫回去），(1)(2)(3)(4) 會紅。 */
+{
+  const dOK = typeof T.defaultPPD === "function";
+  ok("33 defaultPPD 存在，而且桌機的預設維持「季」（9px/日，沒有被這次改動動到）",
+    dOK && T.defaultPPD(false) === 9, dOK ? String(T.defaultPPD(false)) : "(沒有 defaultPPD)");
+  ok("33 觸控裝置的預設換成「月」（18px/日）",
+    dOK && T.defaultPPD(true) === 18, dOK ? String(T.defaultPPD(true)) : "(沒有 defaultPPD)");
+
+  /* 真正要守的不是那個數字，是它換來的點擊區寬度。連續三個事件日、取中間那一個
+     （左右都被鄰居夾住＝最差情況），桌機預設是 10px、觸控預設必須明顯更寬。 */
+  const run = (ppd) => {
+    const x0 = 300, xs = [x0, x0 + ppd, x0 + 2 * ppd];
+    return T.thitBox(xs, 1, ppd, 4000).width;
+  };
+  const wDesk = dOK ? run(T.defaultPPD(false)) : null;
+  const wTouch = dOK ? run(T.defaultPPD(true)) : null;
+  ok("33 最差情況（連續事件日）的點擊區，觸控預設下至少 18px、且比桌機預設更寬",
+    wTouch !== null && wTouch >= 18 && wTouch > wDesk,
+    `桌機 ${wDesk}px ／ 觸控 ${wTouch}px`);
+
+  // 孤立的標記不能因為換了預設縮放就縮水——它本來就吃得到 44px。
+  const wAlone = dOK ? T.thitBox([300], 0, T.defaultPPD(true), 4000).width : null;
+  ok("33 孤立標記在觸控預設下仍然吃到 THIT_WANT（44px）",
+    wAlone === T.THIT_WANT, `${wAlone}px vs ${T.THIT_WANT}px`);
+
+  /* 預設值必須真的是那三顆縮放鈕裡的一個，否則開場的高亮搬不過去，
+     使用者看到的縮放會跟亮起來的按鈕對不上。 */
+  const ppds = Array.from(html.matchAll(/data-ppd="(\d+)"/g)).map((m) => +m[1]);
+  ok("33 觸控預設值是縮放鈕裡真的存在的一檔",
+    dOK && ppds.includes(T.defaultPPD(true)), `按鈕有 ${ppds.join("／")}`);
+  ok("33 開場會把縮放鈕的高亮搬到實際生效的那一顆（syncPpdChips 有被呼叫）",
+    /function syncPpdChips\(/.test(html) && /\n\s*syncPpdChips\(\);/.test(html),
+    "index.html 裡找得到定義與呼叫");
 }
 
 /* ── 報告 ── */
