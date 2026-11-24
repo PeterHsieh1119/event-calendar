@@ -452,6 +452,26 @@ invesco.com  tipranks.com  sinotrade.com.tw  news.futunn.com  tradingeconomics.c
    一律當成沒查到，不要抄進任何欄位**，必要時換一個更直接點名數字本身的查詢句重新確認，
    或者就承認查不到、不要寫那一筆（見第七節不准捏造）。
 
+12. **用「這件事到底有沒有發生」查詢時，查詢句要帶『逆轉／回任／reverses／reinstated』這種**
+   **描述事件本身的字，不要只查『官方公告時間』『announcement time』這種中性措辭的衍生問句。**
+   2026-11-25 這一趟撞到：px.json 今天第一次把 QQQ／^SOX 追上 11/23 這個交易日，算出 QQQ +7.00%、
+   ^SOX +14.02%，起初用「NASDAQ semiconductor stocks rally November 23 2026 rebound reason」
+   「Jensen Huang reinstated CEO Nvidia November 23 2026 board announcement time」這類中性或
+   聚焦細節（公告時間）的查詢句，連續兩次都查無結果，甚至命中 NVIDIA 官方 IR 頁對 11/12 那次
+   「辭任」新聞稿的舊快取，一度幾乎判定成 px.json 資料異常、打算只在回報裡點名不寫事件。換成直接
+   描述「逆轉」這個動作本身的查詢句——「Nvidia board reverses decision brings back Jensen Huang
+   as CEO」——才一次命中 TechCrunch／Bloomberg／NBC／CNBC／Forbes 多篇報導與 SEC 8-K 官方新聞稿
+   （sec.gov 原文連結），確認董事會真的在 11/17 公開表態「不會回任」之後，11/23 又整個逆轉、黃仁勳
+   重新回任執行長，費半單日 +14.02% 正是因為市場原本已經把「不會回來」當成確定的事實定價進去。
+   **原因**：搜尋引擎對「發生了什麼」比對「這件事的細節（時間、流程）」更敏感字面匹配——查細節的
+   問句容易命中舊新聞裡同樣在談「時間」「公告」的舊頁面（尤其官方 IR 頁常常只掛最新一次新聞稿的
+   連結，新聞發生在舊新聞稿之後但索引還沒換過來），查「發生了什麼」的問句（尤其用事件本身的動詞：
+   逆轉、回任、reverses、reinstated、brings back）才會命中真正報導這件事的獨立文章。
+   **规矩：算出一個大到可疑的價格變動、第一輪用中性措辭查不到對應事件時，不要急著判定是資料異常，
+   换一個用「動作動詞＋這個動作的直接受試者」組成的查詢句再試一次，尤其是「逆轉／推翻／reverses／
+   reinstated／reversal」這類暗示『跟先前公開立場相反』的字——這種事件的市場反應最大，也最容易被
+   「查公告細節」型的查詢句錯過。**
+
 **這件事直接影響 `src` 怎麼寫。** 拿不到原文就不能把來源標成第一級官網——
 `src` 要寫「這個數字實際上是從哪裡看到的」，例如
 「Broadcom 官方新聞稿 2026-08-03（PRNewswire，搜尋摘要）」、
