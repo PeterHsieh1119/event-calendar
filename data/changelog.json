@@ -1,6 +1,10 @@
 [
  {
   "date": "2026-11-26",
+  "text": "daily：重查定價 5 筆（NFP／FOMC／AVGO／CPI／Oracle），新增政府撥款期限（12/11,score58,pxd0.35,首次用Kalshi預測市場機率）進priced.json；IBKR連接器故障第35天；daily.md補記二元風險事件pxd估法"
+ },
+ {
+  "date": "2026-11-26",
   "text": "review：複盤 3 筆（2026-11-25 同日公布的 PCE 物價指數、Q3 GDP 修正值（第二次估計）＋企業利潤、初領失業金），範圍檢查確認 2026-11-11～11-23 之間已無缺口。三筆皆查過 WebSearch（PCE 核心年增3.3%高於共識3.2%／GDP第二次估計4.3%遠高於共識3.5%／初領失業金18.9萬遠低於預期20萬），views 共10則、含正反方具名引述。當日market數據：spx 用 FMP/SPY 自算 -0.29%，y10 因 px.json 的^TNX尚未更新到11-25改用FMP treasury-rates算出-6bp，dxy／gld 用px.json自算，ndx 因 px.json／FMP 皆無11-25的QQQ資料留空，twse留空（美股事件）。四象限判讀為『意外大、反應小→已被定價』，並記錄policy.json這次的11-25快照早於當天08:30美東公布與收盤、不能拿來判斷政策路徑是否被推動這個陷阱。priced.json 確認這三筆從未進過14天窗口，沒有事前pxd可檢討。"
  },
  {
